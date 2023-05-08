@@ -3,6 +3,6 @@ import { renderIndexPage } from './general.controller.js';
 
 const generalRouter = express.Router();
 
-generalRouter.use('/', renderIndexPage);
+generalRouter.get('/', renderIndexPage);
 
 export default generalRouter;

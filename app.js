@@ -1,6 +1,6 @@
 import express from 'express';
 import routes from './routes/index.js';
-import getDirname from './helpers/dirname.js';
+import getDirname from './utils/dirname.js';
 
 const app = express();
 
