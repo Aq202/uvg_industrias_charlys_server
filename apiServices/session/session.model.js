@@ -15,8 +15,8 @@ const deleteRefreshToken = async (token) => {
   const sql = 'DELETE FROM session WHERE token = $1';
   const { rowCount } = await query(sql, token);
 
-  if (rowCount !== 1) {
-    throw new CustomError('No se pudo registrar el refresh token.', 500);
+  if (rowCount === 0) {
+    throw new CustomError('No se pudo eliminar el refresh token.', 500);
   }
 };
 
@@ -27,7 +27,7 @@ const validateRefreshToken = async (userId, token) => {
     token,
   );
 
-  if (rowCount !== 1) throw new CustomError('Refresh token invalido.', 400);
+  if (rowCount !== 1) throw new CustomError('Refresh token invalido.', 401);
 
   return true;
 };

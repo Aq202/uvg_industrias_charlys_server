@@ -1,10 +1,12 @@
 import express from 'express';
+import cors from 'cors';
 import routes from './routes/index.js';
 import getDirname from './utils/dirname.js';
 
 const app = express();
 
 global.dirname = getDirname(import.meta.url);
+app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('./public'));
