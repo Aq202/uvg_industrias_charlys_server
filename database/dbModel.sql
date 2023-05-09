@@ -24,3 +24,7 @@ CREATE TABLE employee(
 	id_employee VARCHAR(15) PRIMARY KEY,
 	role varchar(15) NOT NULL
 );
+CREATE TABLE session(
+	id_user VARCHAR(15) NOT NULL,
+	token TEXT NOT NULL
+);

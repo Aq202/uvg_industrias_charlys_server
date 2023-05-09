@@ -7,11 +7,11 @@ import connection from './connection.js';
  * @returns Object \{rowCount} filas encontradas/modificadas.
  */
 export default async (query, ...params) => {
-    const queryResult = await connection.query(
-        query,
-        params.length > 0 ? [...params] : null,
-    );
-    const { rows: result, rowCount } = queryResult;
+  const queryResult = await connection.query(
+    query,
+    params.length > 0 ? [...params] : null,
+  );
+  const { rows: result, rowCount } = queryResult;
 
-    return { result, rowCount };
+  return { result, rowCount };
 };

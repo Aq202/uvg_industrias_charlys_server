@@ -1,7 +1,7 @@
 import pgPkg from 'pg';
 import {
   dbUser, dbHost, dbName, dbPassword, dbPort,
-} from '../config/default.js';
+} from '../config/index.js';
 
 const { Pool } = pgPkg;
 

@@ -10,3 +10,6 @@ ADD CONSTRAINT corg_check_email CHECK (email ~ '^(([^<>()\[\]\\.,;:\s@”]+(\.[^
 
 ALTER TABLE employee
 ADD CONSTRAINT employee_check_role CHECK (role IN ('ADMIN', 'PRODUCTION', 'SALES'));
+
+ALTER TABLE session
+ADD CONSTRAINT session_user_fk FOREIGN KEY (id_user) REFERENCES user_account(id_user);
