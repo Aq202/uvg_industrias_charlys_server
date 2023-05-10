@@ -8,7 +8,8 @@ const dbName = process.env.DB_NAME;
 const dbUser = process.env.DB_USER;
 const dbPassword = process.env.DB_PASSWORD;
 const dbPort = process.env.DB_PORT;
+const allowInsecureConnections = false;
 
 export {
-  port, dbName, dbUser, dbPassword, dbHost, dbPort,
+  port, dbName, dbUser, dbPassword, dbHost, dbPort, allowInsecureConnections,
 };

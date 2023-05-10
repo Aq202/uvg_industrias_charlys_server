@@ -1,10 +1,20 @@
 import sha256 from 'js-sha256';
+import moment from 'moment';
 import CustomError from '../../utils/customError.js';
 import {
   authenticate, deleteRefreshToken, storeRefreshToken, validateRefreshToken,
 } from './session.model.js';
 import { signAccessToken, signRefreshToken } from '../../services/jwt.js';
 import { begin, commit, rollback } from '../../database/transactions.js';
+import { allowInsecureConnections } from '../../config/index.js';
+
+const saveRefreshTokenInCookies = (res, token) => {
+  res.cookie('refreshToken', token, {
+    secure: allowInsecureConnections,
+    httpOnly: true,
+    expires: moment().add(1, 'weeks').toDate(),
+  });
+};
 
 const loginController = async (req, res) => {
   const { email, password } = req.body;
@@ -19,9 +29,13 @@ const loginController = async (req, res) => {
       userId, name, lastName, sex, role,
     });
 
+    // guardar refresh token en bd
     await storeRefreshToken(userId, refreshToken);
 
-    res.send({ refreshToken });
+    // almacenar token en cookies
+    saveRefreshTokenInCookies(res, refreshToken);
+
+    res.sendStatus(200);
   } catch (ex) {
     let err = 'Ocurrio un error al intentar loggearse.';
     let status = 500;
@@ -36,10 +50,10 @@ const loginController = async (req, res) => {
 
 const refreshAccessTokenController = async (req, res) => {
   const {
-    session: {
-      userId, name, lastName, sex, role,
-    }, refreshToken,
-  } = req;
+    userId, name, lastName, sex, role,
+  } = req.session;
+
+  const { refreshToken } = req.cookies;
 
   try {
     // validar refresh token en bd
@@ -48,14 +62,16 @@ const refreshAccessTokenController = async (req, res) => {
     // create transaction
     await begin();
 
-    // replace access token
+    // replace refresh token
     await deleteRefreshToken(refreshToken);
 
     const newRefreshToken = await signRefreshToken({
       userId, name, lastName, sex, role,
     });
 
-    await storeRefreshToken(userId, refreshToken);
+    await storeRefreshToken(userId, newRefreshToken);
+
+    saveRefreshTokenInCookies(res, newRefreshToken);
 
     // create access token
     const accessToken = await signAccessToken({
@@ -65,7 +81,7 @@ const refreshAccessTokenController = async (req, res) => {
     // finalizar transaccion
     await commit();
 
-    res.send({ refreshToken: newRefreshToken, accessToken });
+    res.send({ accessToken });
   } catch (ex) {
     await rollback();
 

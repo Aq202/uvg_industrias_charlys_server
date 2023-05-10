@@ -15,7 +15,7 @@ const signRefreshToken = async ({
   lastName,
   sex,
   role,
-  exp: moment().add(1, 'day').unix(),
+  exp: moment().add(1, 'week').unix(),
   type: consts.token.refresh,
 }, key);
 
