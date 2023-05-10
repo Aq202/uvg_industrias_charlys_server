@@ -49,7 +49,7 @@ const authenticate = async ({ email, passwordHash }) => {
     } = userData[0];
     let role;
 
-    if (clientOrganizationId !== null) role = consts.role.client;
+    if (clientOrganizationId) role = consts.role.client;
     else {
       // realizar consulta para obtener rol de usuario
       const sql2 = `SELECT E.role AS role FROM employee E 

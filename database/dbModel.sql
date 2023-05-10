@@ -1,4 +1,4 @@
-drop table if exists user_account, client_organization, employee CASCADE;
+drop table if exists user_account, client_organization, employee, session, order_request, "order" CASCADE;
 
 CREATE TABLE user_account(
 	id_user VARCHAR(15) PRIMARY KEY,

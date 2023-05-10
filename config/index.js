@@ -1,1 +1,1 @@
-export * from './develop.js';
+export * from './default.js';
