@@ -13,3 +13,6 @@ ADD CONSTRAINT employee_check_role CHECK (role IN ('ADMIN', 'PRODUCTION', 'SALES
 
 ALTER TABLE session
 ADD CONSTRAINT session_user_fk FOREIGN KEY (id_user) REFERENCES user_account(id_user);
+
+alter table "order"
+add constraint order_fk foreign key (order_request_no) references order_request(no_request);

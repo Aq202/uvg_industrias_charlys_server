@@ -24,7 +24,23 @@ CREATE TABLE employee(
 	id_employee VARCHAR(15) PRIMARY KEY,
 	role varchar(15) NOT NULL
 );
+
 CREATE TABLE session(
 	id_user VARCHAR(15) NOT NULL,
 	token TEXT NOT NULL
 );
+
+create table order_request(
+no_request varchar(15) primary key,
+description text,
+date_placed date
+);
+
+create table "order"(
+no_order varchar(15) primary key,
+order_request_no varchar(15),
+src_date date,
+deadline date,
+details text
+);
+
