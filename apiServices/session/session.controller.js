@@ -10,7 +10,7 @@ import { allowInsecureConnections } from '../../config/index.js';
 
 const saveRefreshTokenInCookies = (res, token) => {
   res.cookie('refreshToken', token, {
-    secure: allowInsecureConnections,
+    secure: !allowInsecureConnections,
     httpOnly: true,
     expires: moment().add(1, 'weeks').toDate(),
   });
@@ -35,7 +35,12 @@ const loginController = async (req, res) => {
     // almacenar token en cookies
     saveRefreshTokenInCookies(res, refreshToken);
 
-    res.sendStatus(200);
+    // crea un access token
+    const accessToken = await signAccessToken({
+      userId, name, lastName, sex, role,
+    });
+
+    res.send({ accessToken });
   } catch (ex) {
     let err = 'Ocurrio un error al intentar loggearse.';
     let status = 500;

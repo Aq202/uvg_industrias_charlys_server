@@ -7,6 +7,7 @@ import getDirname from './utils/dirname.js';
 const app = express();
 
 global.dirname = getDirname(import.meta.url);
+
 app.use(cors());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));

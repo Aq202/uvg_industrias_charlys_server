@@ -14,6 +14,7 @@ const ensureRefreshTokenAuth = async (req, res, next) => {
     const userData = await validateToken(authToken);
 
     if (userData.type !== consts.token.refresh) {
+      res.clearCookie('refreshToken');
       res.statusMessage = 'El token de autorización no es de tipo refresh.';
       return res.sendStatus(403);
     }
@@ -21,8 +22,8 @@ const ensureRefreshTokenAuth = async (req, res, next) => {
     next();
   } catch (ex) {
     // Token invalido, retirarlo de la bd si existe
+    res.clearCookie('refreshToken');
     deleteRefreshToken(authToken);
-
     res.statusMessage = 'El token de autorización no es válido o ha expirado.';
     res.sendStatus(401);
   }
