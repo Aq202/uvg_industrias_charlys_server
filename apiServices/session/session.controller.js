@@ -101,4 +101,25 @@ const refreshAccessTokenController = async (req, res) => {
   }
 };
 
-export { loginController, refreshAccessTokenController };
+const logoutController = async (req, res) => {
+  const { refreshToken } = req.cookies;
+
+  try {
+    // Eliminar token de bd y cookie
+    res.clearCookie('refreshToken');
+    await deleteRefreshToken(refreshToken);
+
+    res.sendStatus(200);
+  } catch (ex) {
+    let err = 'Ocurrio un error al cerrar sesión.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+export { loginController, refreshAccessTokenController, logoutController };

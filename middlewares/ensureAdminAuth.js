@@ -6,7 +6,7 @@ const ensureAdminAuth = async (req, res, next) => {
 
   if (!authToken) {
     res.statusMessage = 'No se ha especificado el token de autorización.';
-    return res.sendStatus(400);
+    return res.sendStatus(401);
   }
 
   try {
