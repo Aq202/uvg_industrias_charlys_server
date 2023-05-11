@@ -27,7 +27,7 @@ const signAccessToken = ({
   lastName,
   sex,
   role,
-  exp: moment().add(10, 'minute').unix(),
+  exp: moment().add(1, 'day').unix(),
   type: consts.token.access,
 }, key);
 
