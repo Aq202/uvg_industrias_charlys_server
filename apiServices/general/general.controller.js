@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 const renderIndexPage = async (req, res) => {
-  res.send('hola');
+  res.sendFile(`${global.dirname}/public/index.html`);
 };
 
 export { renderIndexPage };
