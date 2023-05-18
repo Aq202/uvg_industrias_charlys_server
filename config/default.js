@@ -1,7 +1,3 @@
-import { config } from 'dotenv';
-
-config();
-
 const port = 3000;
 const dbHost = process.env.DB_HOST;
 const dbName = process.env.DB_NAME;
