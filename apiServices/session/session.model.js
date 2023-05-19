@@ -67,6 +67,7 @@ const authenticate = async ({ email, passwordHash }) => {
     };
   } catch (ex) {
     if (ex instanceof CustomError) throw ex;
+    console.log(ex);
     throw new CustomError('Error al conectar con la base de datos.', 500);
   }
 };

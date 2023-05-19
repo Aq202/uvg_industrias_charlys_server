@@ -52,11 +52,11 @@
  $BODY$
  declare prev_id_number integer;
  begin
- 	SELECT CAST(SUBSTRING(no_request FROM 2) AS INTEGER) INTO prev_id_number FROM order_request ORDER BY no_request DESC LIMIT 1;
+ 	SELECT CAST(SUBSTRING(no_request FROM 3) AS INTEGER) INTO prev_id_number FROM order_request ORDER BY no_request DESC LIMIT 1;
 	IF (prev_id_number IS NULL) THEN
 		prev_id_number = 0;
 		END IF;
-	NEW.no_request = CONCAT('E', LPAD(CAST(prev_id_number + 1 AS VARCHAR), 14, '0'));
+	NEW.no_request = CONCAT('OR', LPAD(CAST(prev_id_number + 1 AS VARCHAR), 13, '0'));
 	RETURN NEW;
  END;
  $BODY$
@@ -79,7 +79,7 @@
 	IF (prev_id_number IS NULL) THEN
 		prev_id_number = 0;
 		END IF;
-	NEW.no_order = CONCAT('E', LPAD(CAST(prev_id_number + 1 AS VARCHAR), 14, '0'));
+	NEW.no_order = CONCAT('O', LPAD(CAST(prev_id_number + 1 AS VARCHAR), 14, '0'));
 	RETURN NEW;
  END;
  $BODY$
