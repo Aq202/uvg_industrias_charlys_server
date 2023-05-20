@@ -1,7 +1,11 @@
 INSERT INTO "size"("size") VALUES('4'),('6'),('8'),('10'),('12'),('14'),('16'),('S'),('M'),('L'),
 	('XL'),('XXL'),('XXXL'),('XXXXL');
 
-INSERT INTO product(nombre) VALUES('polo'),('playera'),('pants'),('chumpa'),('suéter'),('chaleco');
+INSERT INTO product_type(nombre) VALUES('polo'),('playera'),('pants'),('chumpa'),('suéter'),('chaleco');
+
+select * from client_organization
+
+INSERT INTO product("type", client, color) VALUES('PT0000000000001', 1, 'rojo');
 
 INSERT INTO material(description)
 	VALUES('botón metálico rojo'),('zipper negro'),('botón plástico azul'),('remache'),('zipper verde');
@@ -23,4 +27,4 @@ INSERT INTO "order" VALUES(NULL, 'OR0000000000001', now(),now(),'Esto es una pru
 
 INSERT INTO order_request VALUES(null, 'Prueba','prueba@gmail.com','12345678','Zona 10', 'Esto es una prueba', now());
 
-INSERT INTO order_detail values('O00000000000001','P00000000000001','S00000000000001','rojo',10);
+INSERT INTO order_detail values('O00000000000001','P00000000000001','S00000000000001',10);

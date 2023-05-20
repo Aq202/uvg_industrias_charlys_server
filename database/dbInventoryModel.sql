@@ -1,22 +1,28 @@
-DROP TABLE IF EXISTS order_detail, inventory, requirements, product, "size", material, fabric;
+DROP TABLE IF EXISTS order_detail, inventory, requirements, product, product_type, "size", material, fabric;
 
 CREATE TABLE "size"(
 	"id_size" VARCHAR(15) PRIMARY KEY,
 	"size" VARCHAR(10)
 );
 
+CREATE TABLE product_type(
+	id_product_type VARCHAR(15) PRIMARY KEY,
+	nombre VARCHAR(100)
+);
+
 CREATE TABLE product(
 	id_product VARCHAR(15) PRIMARY KEY,
-	nombre VARCHAR(100)
+	"type" VARCHAR(15),
+	client VARCHAR(15),
+	color VARCHAR(100)
 );
 
 CREATE TABLE order_detail(
 	no_order VARCHAR(15),
 	product VARCHAR(15),
 	"size" VARCHAR(15),
-	color VARCHAR(100),
 	quantity INT,
-	PRIMARY KEY(no_order, product, "size", color)
+	PRIMARY KEY(no_order, product, "size")
 );
 
 CREATE TABLE material(

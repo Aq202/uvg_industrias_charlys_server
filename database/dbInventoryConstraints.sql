@@ -23,3 +23,7 @@ ADD CONSTRAINT check_requirement CHECK (
 	(material IS NULL AND fabric IS NOT NULL)
 	OR (material IS NOT NULL AND fabric IS NULL AND FLOOR(quantity_per_unit) = quantity_per_unit)
 );
+
+ALTER TABLE product
+ADD CONSTRAINT product_ptype_fk FOREIGN KEY ("type") REFERENCES product_type(id_product_type),
+ADD CONSTRAINT product_client_fk FOREIGN KEY (client) REFERENCES client_organization(id_client_organization);
