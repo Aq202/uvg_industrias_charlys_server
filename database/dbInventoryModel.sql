@@ -7,7 +7,7 @@ CREATE TABLE "size"(
 
 CREATE TABLE product_type(
 	id_product_type VARCHAR(15) PRIMARY KEY,
-	nombre VARCHAR(100)
+	"name" VARCHAR(100)
 );
 
 CREATE TABLE product(
@@ -38,11 +38,12 @@ CREATE TABLE fabric(
 
 CREATE TABLE inventory(
 	id_inventory VARCHAR(15) PRIMARY KEY,
-	material VARCHAR(15),
-	fabric VARCHAR(15),
+	material VARCHAR(15) UNIQUE,
+	fabric VARCHAR(15) UNIQUE,
 	product VARCHAR(15),
 	"size" VARCHAR(15),
-	quantity FLOAT
+	quantity FLOAT,
+	UNIQUE(product, "size")
 );
 
 CREATE TABLE requirements(
