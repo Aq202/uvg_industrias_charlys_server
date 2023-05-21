@@ -50,10 +50,10 @@ const getProducts = async (searchQuery) => {
     const sql = `select prod.id_product, pt.name product, prod.client client_id, co.name client, prod.color from product prod
                 inner join product_type pt on prod.type = pt.id_product_type
                 inner join client_organization co on prod.client = co.id_client_organization
-                where prod.client = $1
-                or prod.id_product = $1
-                or pt.name = $1
-                or prod.color = $1`;
+                where prod.client ilike $1
+                or prod.id_product ilike $1
+                or pt.name ilike $1
+                or prod.color ilike $1`;
     queryResult = await query(sql, `%${searchQuery}%`);
   } else {
     const sql = `select prod.id_product, pt.name product, prod.client client_id, co.name client, prod.color from product prod
@@ -119,7 +119,7 @@ const getRequirements = async (product, searchQuery) => {
                 left join fabric f on r.fabric = f.id_fabric
                 where r.product = $1
                 AND (s.size ilike $2 or mat.description ilike $2 or f.fabric ilike $2);`;
-    queryResult = await query(sql, [product, `%${searchQuery}%`]);
+    queryResult = await query(sql, product, `%${searchQuery}%`);
   } else {
     const sql = `select r.product id_product, s.size, COALESCE(mat.description, f.fabric) material,
                 r.quantity_per_unit from requirements r

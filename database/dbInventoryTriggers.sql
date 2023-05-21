@@ -167,13 +167,16 @@ DROP TRIGGER IF EXISTS tr_check_availability ON order_detail;
  EXECUTE PROCEDURE check_availability();
  
  /* Actualizar cantidad de producto duplicado */
- CREATE OR REPLACE FUNCTION update_inventory()
+ /* TRIGGER NO UTILIZADO */
+ /* CREATE OR REPLACE FUNCTION update_inventory()
  RETURNS trigger as
  $BODY$
  begin
- 	if new.material is not null and new.fabric is null and new.product is null and new.size is null and
-		(select count(*) > 0 from inventory where material = new.material) then
-		update inventory set quantity = quantity + new.quantity where material = new.material;
+ 	if new.material is not null then
+		INSERT INTO inventory(material, fabric, product, "size", quantity)
+		VALUES(new.material,new.fabric,new.product,new.size,new.quantity)
+			on conflict(material) do update set quantity = inventory.quantity + excluded.quantity
+			returning id_inventory as id;
 	elsif new.fabric is not null and new.material is null and new.product is null and new.size is null and
 		(select count(*) > 0 from inventory where fabric = new.fabric) then
 		update inventory set quantity = quantity + new.quantity where fabric = new.fabric;
@@ -193,4 +196,4 @@ DROP TRIGGER IF EXISTS tr_update_inventory ON inventory;
  BEFORE INSERT
  ON inventory
  FOR EACH ROW
- EXECUTE PROCEDURE update_inventory();
+ EXECUTE PROCEDURE update_inventory(); */

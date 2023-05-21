@@ -1,5 +1,8 @@
 import CustomError from '../../utils/customError.js';
-import { getSizes, newSize } from './generalInfo.model.js';
+import {
+  getFabrics,
+  getMaterials, getSizes, newFabric, newMaterial, newSize,
+} from './generalInfo.model.js';
 
 const newSizeController = async (req, res) => {
   const { size } = req.body;
@@ -36,4 +39,81 @@ const getSizesController = async (req, res) => {
   }
 };
 
-export { newSizeController, getSizesController };
+const newMaterialController = async (req, res) => {
+  const { description } = req.body;
+
+  try {
+    const { id } = await newMaterial({ description });
+    res.send({ id });
+  } catch (ex) {
+    let err = 'Ocurrio un error al registrar el nuevo material.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getMaterialsController = async (req, res) => {
+  try {
+    const result = await getMaterials();
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener los materiales disponibles.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const newFabricController = async (req, res) => {
+  const { fabric, color } = req.body;
+
+  try {
+    const { id } = await newFabric({ fabric, color });
+    res.send({ id });
+  } catch (ex) {
+    let err = 'Ocurrio un error al registrar la nueva tela.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getFabricsController = async (req, res) => {
+  try {
+    const result = await getFabrics();
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener las telas disponibles.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+export {
+  newSizeController,
+  getSizesController,
+  newMaterialController,
+  getMaterialsController,
+  newFabricController,
+  getFabricsController,
+};

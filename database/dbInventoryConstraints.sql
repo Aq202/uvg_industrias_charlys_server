@@ -19,6 +19,8 @@ ADD CONSTRAINT requirement_material_fk FOREIGN KEY (material) REFERENCES materia
 ADD CONSTRAINT requirement_fabric_fk FOREIGN KEY (fabric) REFERENCES fabric(id_fabric),
 ADD CONSTRAINT requirement_product_fk FOREIGN KEY (product) REFERENCES product(id_product),
 ADD CONSTRAINT requirement_size_fk FOREIGN KEY ("size") REFERENCES size(id_size),
+ADD CONSTRAINT requirement_unique_material UNIQUE(product, "size", material),
+ADD CONSTRAINT requirement_unique_fabric UNIQUE(product, "size", fabric),
 ADD CONSTRAINT check_requirement CHECK (
 	(material IS NULL AND fabric IS NOT NULL)
 	OR (material IS NOT NULL AND fabric IS NULL AND FLOOR(quantity_per_unit) = quantity_per_unit)
