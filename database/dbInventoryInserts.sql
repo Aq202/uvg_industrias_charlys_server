@@ -13,12 +13,10 @@ INSERT INTO fabric(fabric, color) VALUES('seda','rojo'),('Seda', 'Azul'), ('Algo
 	('Satén', 'Rojo'), ('Encaje', 'Crema'), ('Cuero', 'Café'), ('Chiffon', 'Rosa'), ('Tweed', 'Gris Claro'),
 	('Pana', 'Beige'), ('Brocado', 'Dorado');
 
-select count(*) > 1 from inventory where material = 'MAT000000000001' and quantity = 30
-
 INSERT INTO inventory(material, fabric, product, "size", quantity)
 	VALUES('MAT000000000001',null,null,null,30),
 	(null,'F00000000000001',null,NULL,15.5),
-	(null,null,'P00000000000001','S00000000000001',5)
+	(null,null,'P00000000000001','S00000000000001',5);
 
 INSERT INTO requirements VALUES('P00000000000001','S00000000000001','MAT000000000001',NULL,15),
 	('P00000000000001','S00000000000001',NULL,'F00000000000001',15.5);

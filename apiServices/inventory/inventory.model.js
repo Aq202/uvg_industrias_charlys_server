@@ -4,8 +4,24 @@ import CustomError from '../../utils/customError.js';
 const newInventoryElement = async ({
   material, fabric, product, size, quantity,
 }) => {
-  const sql = `INSERT INTO inventory(material, fabric, product, "size", quantity)
-              VALUES($1,$2,$3,$4,$5) RETURNING id_inventory as id;`;
+  let sql;
+
+  if (material) {
+    sql = `INSERT INTO inventory(material, fabric, product, "size", quantity)
+          VALUES($1,$2,$3,$4,$5)
+          on conflict(material) do update set quantity = inventory.quantity + excluded.quantity
+          returning id_inventory as id`;
+  } else if (fabric) {
+    sql = `INSERT INTO inventory(material, fabric, product, "size", quantity)
+          VALUES($1,$2,$3,$4,$5)
+          on conflict(fabric) do update set quantity = inventory.quantity + excluded.quantity
+          returning id_inventory as id`;
+  } else {
+    sql = `INSERT INTO inventory(material, fabric, product, "size", quantity)
+          VALUES($1,$2,$3,$4,$5)
+          on conflict(product, "size") do update set quantity = inventory.quantity + excluded.quantity
+          returning id_inventory as id`;
+  }
 
   try {
     const { result, rowCount } = await query(

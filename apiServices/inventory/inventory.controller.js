@@ -12,7 +12,7 @@ const newInventoryElementController = async (req, res) => {
     });
     res.send({ id });
   } catch (ex) {
-    let err = 'Ocurrio un error al agregar el elemento al inventario.';
+    let err = 'La información ingresada no es válida.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
