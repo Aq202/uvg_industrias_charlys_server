@@ -1,18 +1,18 @@
 import CustomError from '../../utils/customError.js';
-import { getOrderRequests, newOrderRequest } from './orderDetail.model.js';
+import { getOrderDetails, newOrderDetail } from './orderDetail.model.js';
 
-const newOrderRequestController = async (req, res) => {
+const newOrderDetailController = async (req, res) => {
   const {
-    name, email, phone, address, description,
+    noOrder, product, size, quantity,
   } = req.body;
 
   try {
-    const { id } = await newOrderRequest({
-      name, email, phone, address, description,
+    const { id } = await newOrderDetail({
+      noOrder, product, size, quantity,
     });
     res.send({ id });
   } catch (ex) {
-    let err = 'Ocurrio un error al registrar intención de compra.';
+    let err = `Ocurrio un error al agregar el elemento a la orden ${noOrder}.`;
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -23,15 +23,15 @@ const newOrderRequestController = async (req, res) => {
   }
 };
 
-const getOrderRequestsController = async (req, res) => {
-  const { search } = req.query;
+const getOrderDetailsController = async (req, res) => {
+  const { noOrder, search } = req.query;
 
   try {
-    const result = await getOrderRequests(search);
+    const result = await getOrderDetails(noOrder, search);
 
     res.send(result);
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener solicitudes de pedido.';
+    let err = `Ocurrio un error al obtener el detalle de la orden ${noOrder}.`;
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -43,4 +43,4 @@ const getOrderRequestsController = async (req, res) => {
 };
 
 // eslint-disable-next-line import/prefer-default-export
-export { newOrderRequestController, getOrderRequestsController };
+export { newOrderDetailController, getOrderDetailsController };

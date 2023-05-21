@@ -28,7 +28,6 @@ const getInventoryController = async (req, res) => {
 
   try {
     const result = await getInventory(search);
-
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener registros del inventario.';

@@ -63,6 +63,7 @@ const getOrderDetails = async (noOrder, searchQuery) => {
     client_id: val.client_id,
     client: val.client,
     color: val.color,
+    size: val.size,
     quantity: val.quantity,
   }));
 };

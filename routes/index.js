@@ -5,6 +5,7 @@ import sessionRouter from '../apiServices/session/session.route.js';
 import orderRequestRouter from '../apiServices/orderRequest/orderRequest.route.js';
 import generalInfoRouter from '../apiServices/generalInfo/generalInfo.route.js';
 import inventoryRouter from '../apiServices/inventory/inventory.route.js';
+import orderDetailRouter from '../apiServices/orderDetail/orderRequest.route.js';
 
 const router = express.Router();
 
@@ -17,5 +18,6 @@ router.use(`${apiPath}/session`, sessionRouter);
 router.use(`${apiPath}/orderRequest`, orderRequestRouter);
 router.use(`${apiPath}/generalInfo`, generalInfoRouter);
 router.use(`${apiPath}/inventory`, inventoryRouter);
+router.use(`${apiPath}/orderDetail`, orderDetailRouter);
 
 export default router;

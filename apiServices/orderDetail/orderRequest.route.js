@@ -1,12 +1,12 @@
 import express from 'express';
 import validateBody from '../../middlewares/validateBody.js';
-import newOrderRequestSchema from '../../utils/validationSchemas/newOrderRequestSchema.js';
-import { getOrderRequestsController, newOrderRequestController } from './orderRequest.controller.js';
+import newOrderDetailSchema from '../../utils/validationSchemas/newOrderDetailSchema.js';
+import { getOrderDetailsController, newOrderDetailController } from './orderDetail.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 
-const orderRequestRouter = express.Router();
+const orderDetailRouter = express.Router();
 
-orderRequestRouter.post('/', validateBody(newOrderRequestSchema), newOrderRequestController);
-orderRequestRouter.get('/', ensureAdminAuth, getOrderRequestsController);
+orderDetailRouter.post('/', validateBody(newOrderDetailSchema), newOrderDetailController);
+orderDetailRouter.get('/', ensureAdminAuth, getOrderDetailsController);
 
-export default orderRequestRouter;
+export default orderDetailRouter;

@@ -61,10 +61,10 @@ const getInventory = async (searchQuery) => {
                 left join product_type pt on prod.type = pt.id_product_type
                 left join client_organization co on prod.client = co.id_client_organization
                 left join "size" s on i.size = s.id_size
-                where prod.id_product ilike '%%' or prod.client ilike '%%'
-                  or mat.id_material ilike '%%' or f.id_fabric ilike '%%'
+                where prod.id_product ilike $1 or prod.client ilike $1
+                  or mat.id_material ilike $1 or f.id_fabric ilike $1
                   or COALESCE(mat.description, f.fabric,
-                    CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) ilike '%%';`;
+                    CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) ilike $1;`;
     queryResult = await query(sql, `%${searchQuery}%`);
   } else {
     const sql = `select id_inventory, COALESCE(mat.description, f.fabric,
