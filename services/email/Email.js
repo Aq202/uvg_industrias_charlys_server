@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import moment from 'moment';
 import 'moment/locale/es.js';
+import { clientId, clientSecret, refreshToken } from '../../config/index.js';
 
 export default class Email {
   constructor({
@@ -11,9 +12,9 @@ export default class Email {
       auth: {
         type: 'OAuth2',
         user: 'soporte.industrias.charlys@gmail.com',
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+        clientId,
+        clientSecret,
+        refreshToken,
       },
     });
 
