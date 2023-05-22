@@ -2,23 +2,23 @@ import query from '../../database/query.js';
 import CustomError from '../../utils/customError.js';
 
 const newInventoryElement = async ({
-  material, fabric, product, size, quantity,
+  material, fabric, product, size, quantity, measurementUnit, supplier, details,
 }) => {
   let sql;
 
   if (material) {
-    sql = `INSERT INTO inventory(material, fabric, product, "size", quantity)
-          VALUES($1,$2,$3,$4,$5)
+    sql = `INSERT INTO inventory(material, fabric, product, "size", quantity, measurement_unit, supplier, details)
+          VALUES($1,$2,$3,$4,$5,$6,$7,$8)
           on conflict(material) do update set quantity = inventory.quantity + excluded.quantity
           returning id_inventory as id`;
   } else if (fabric) {
-    sql = `INSERT INTO inventory(material, fabric, product, "size", quantity)
-          VALUES($1,$2,$3,$4,$5)
+    sql = `INSERT INTO inventory(material, fabric, product, "size", quantity, measurement_unit, supplier, details)
+          VALUES($1,$2,$3,$4,$5,$6,$7,$8)
           on conflict(fabric) do update set quantity = inventory.quantity + excluded.quantity
           returning id_inventory as id`;
   } else {
-    sql = `INSERT INTO inventory(material, fabric, product, "size", quantity)
-          VALUES($1,$2,$3,$4,$5)
+    sql = `INSERT INTO inventory(material, fabric, product, "size", quantity, measurement_unit, supplier, details)
+          VALUES($1,$2,$3,$4,$5,$6,$7,$8)
           on conflict(product, "size") do update set quantity = inventory.quantity + excluded.quantity
           returning id_inventory as id`;
   }
@@ -31,12 +31,16 @@ const newInventoryElement = async ({
       product,
       size,
       quantity,
+      measurementUnit,
+      supplier,
+      details,
     );
 
     if (rowCount !== 1) throw new CustomError('No se pudo agregar el elemento al inventario', 500);
 
     return result[0];
   } catch (err) {
+    console.log(err);
     if (err instanceof CustomError) throw err;
 
     if (err?.constraint === 'check_element') {
@@ -53,7 +57,7 @@ const getInventory = async (searchQuery) => {
   if (searchQuery) {
     const sql = `select id_inventory, COALESCE(mat.description, f.fabric,
                 CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) "element",
-                quantity
+                quantity, measurement_unit, supplier, details
                 from inventory i
                 left join material mat on i.material = mat.id_material
                 left join fabric f on i.fabric = f.id_fabric
@@ -63,13 +67,14 @@ const getInventory = async (searchQuery) => {
                 left join "size" s on i.size = s.id_size
                 where prod.id_product ilike $1 or prod.client ilike $1
                   or mat.id_material ilike $1 or f.id_fabric ilike $1
+                  or measurement_unit ilike $1 or supplier ilike $1 or details ilike $1
                   or COALESCE(mat.description, f.fabric,
                     CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) ilike $1;`;
     queryResult = await query(sql, `%${searchQuery}%`);
   } else {
     const sql = `select id_inventory, COALESCE(mat.description, f.fabric,
                 CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) "element",
-                quantity
+                quantity, measurement_unit, supplier, details
                 from inventory i
                 left join material mat on i.material = mat.id_material
                 left join fabric f on i.fabric = f.id_fabric
@@ -88,6 +93,9 @@ const getInventory = async (searchQuery) => {
     id: val.id_inventory,
     element: val.element,
     quantity: val.quantity,
+    measurementUnit: val.measurement_unit,
+    supplier: val.supplier,
+    details: val.details,
   }));
 };
 

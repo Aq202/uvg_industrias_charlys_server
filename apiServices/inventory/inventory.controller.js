@@ -3,12 +3,12 @@ import { getInventory, newInventoryElement } from './inventory.model.js';
 
 const newInventoryElementController = async (req, res) => {
   const {
-    material, fabric, product, size, quantity,
+    material, fabric, product, size, quantity, measurementUnit, supplier, details,
   } = req.body;
 
   try {
     const { id } = await newInventoryElement({
-      material, fabric, product, size, quantity,
+      material, fabric, product, size, quantity, measurementUnit, supplier, details,
     });
     res.send({ id });
   } catch (ex) {

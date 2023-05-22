@@ -43,6 +43,9 @@ CREATE TABLE inventory(
 	product VARCHAR(15),
 	"size" VARCHAR(15),
 	quantity FLOAT,
+	measurement_unit VARCHAR(100),
+	supplier VARCHAR(100),
+	details VARCHAR(500),
 	UNIQUE(product, "size")
 );
 
@@ -51,6 +54,5 @@ CREATE TABLE requirements(
 	"size" VARCHAR(15),
 	material VARCHAR(15),
 	fabric VARCHAR(15),
-	quantity_per_unit FLOAT,
-	UNIQUE(product, "size", material, fabric)
+	quantity_per_unit FLOAT
 );
