@@ -8,7 +8,8 @@
     "dev": "nodemon ./bin/www.js",
     "start": "node ./bin/www.js",
     "lint": "eslint ./*.js",
-    "debug": "node --inspect ./bin/www.js"
+    "debug": "node --inspect ./bin/www.js",
+    "production": "pm2 start ./bin/www.js --name charlysApp"
   },
   "author": "Diego Aquino, Erick Guerra, Pablo Zamora, Jose Kiesling, Elias Alvarado",
   "license": "ISC",
