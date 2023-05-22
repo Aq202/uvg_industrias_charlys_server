@@ -1,11 +1,9 @@
 import jwt from 'jsonwebtoken';
 import moment from 'moment';
-import { config } from 'dotenv';
 import consts from '../utils/consts.js';
+import { jwtKey } from '../config/index.js';
 
-config();
-
-const key = process.env.KEY;
+const key = jwtKey;
 
 const signRefreshToken = async ({
   userId, name, lastName, sex, role,

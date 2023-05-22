@@ -1,8 +1,11 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import { config } from 'dotenv';
 import routes from './routes/index.js';
 import getDirname from './utils/dirname.js';
+
+config(); // hace accesibles las variables de entorno
 
 const app = express();
 
