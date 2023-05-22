@@ -8,8 +8,9 @@ CREATE TABLE user_account(
 	phone VARCHAR(15),
 	password TEXT NOT NULL,
 	sex CHAR NOT NULL,
-	id_client_organization VARCHAR(15) UNIQUE,
-	id_employee VARCHAR(15) UNIQUE
+	id_client_organization VARCHAR(15),
+	id_employee VARCHAR(15),
+	UNIQUE(id_client_organization, id_employee)
 );
 
 CREATE TABLE client_organization(
