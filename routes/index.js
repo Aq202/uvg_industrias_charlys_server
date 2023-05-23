@@ -6,6 +6,7 @@ import generalInfoRouter from '../apiServices/generalInfo/generalInfo.route.js';
 import inventoryRouter from '../apiServices/inventory/inventory.route.js';
 import orderDetailRouter from '../apiServices/orderDetail/orderDetail.route.js';
 import productRouter from '../apiServices/product/product.route.js';
+import imageRouter from '../apiServices/Image/image.route.js';
 
 const router = express.Router();
 
@@ -18,6 +19,7 @@ router.use(`${apiPath}/generalInfo`, generalInfoRouter);
 router.use(`${apiPath}/inventory`, inventoryRouter);
 router.use(`${apiPath}/orderDetail`, orderDetailRouter);
 router.use(`${apiPath}/product`, productRouter);
+router.use(`${apiPath}/image`, imageRouter);
 
 router.get('*', (req, res) => {
   res.sendFile(`${global.dirname}/public/index.html`);
