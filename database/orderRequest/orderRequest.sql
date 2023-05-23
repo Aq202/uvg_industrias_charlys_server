@@ -10,7 +10,7 @@ date_placed date
 
 CREATE TABLE order_request_media(
   no_request varchar(15) NOT NULL,
-  url varchar(1000) NOT NULL
+  name varchar(1000) NOT NULL
 );
 
 alter table order_request

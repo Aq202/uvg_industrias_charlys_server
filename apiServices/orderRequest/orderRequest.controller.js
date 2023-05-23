@@ -36,7 +36,7 @@ const newOrderRequestController = async (req, res) => {
             await uploadFileToBucket(fileKey, filePath, file.type);
 
             // save file url in db
-            promises.push(addOrderRequestMedia(id, fileKey));
+            promises.push(addOrderRequestMedia(id, fileId));
           } catch (ex) {
             uploadError = true;
           }
