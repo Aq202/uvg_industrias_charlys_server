@@ -10,7 +10,6 @@ const getOrderRequestImageController = async (req, res) => {
     res.write(fileResult, 'binary');
     res.end(null, 'binary');
   } catch (ex) {
-    console.log(ex);
     res.sendStatus(404);
   }
 };
