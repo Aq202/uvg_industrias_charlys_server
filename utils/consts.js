@@ -9,6 +9,7 @@ export default {
     refresh: 'REFRESH',
     access: 'ACCESS',
   },
+  apiPath: '/api',
   bucketRoutes: {
     orderRequest: 'order-request',
   },

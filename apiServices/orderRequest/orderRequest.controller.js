@@ -4,7 +4,9 @@ import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.j
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import randomString from '../../utils/randomString.js';
-import { addOrderRequestMedia, getOrderRequests, newOrderRequest } from './orderRequest.model.js';
+import {
+  addOrderRequestMedia, getOrderRequestById, getOrderRequests, newOrderRequest,
+} from './orderRequest.model.js';
 
 const newOrderRequestController = async (req, res) => {
   const {
@@ -90,5 +92,22 @@ const getOrderRequestsController = async (req, res) => {
   }
 };
 
+const getOrderRequestByIdController = async (req, res) => {
+  const { orderRequestId } = req.params;
+  try {
+    const result = await getOrderRequestById(orderRequestId);
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener solicitudes de pedido.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 // eslint-disable-next-line import/prefer-default-export
-export { newOrderRequestController, getOrderRequestsController };
+export { newOrderRequestController, getOrderRequestsController, getOrderRequestByIdController };

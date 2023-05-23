@@ -1,4 +1,5 @@
 import query from '../../database/query.js';
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 
 const newOrderRequest = async ({
@@ -64,4 +65,35 @@ const addOrderRequestMedia = async (orderRequestId, name) => {
   if (rowCount !== 1) throw new CustomError('No se pudo guardar el recurso para la solicitud de orden.', 500);
 };
 
-export { newOrderRequest, getOrderRequests, addOrderRequestMedia };
+const getOrderRequestMedia = async (orderRequestId) => {
+  const sql = 'SELECT name FROM order_request_media WHERE no_request = $1';
+  const { result, rowCount } = await query(sql, orderRequestId);
+
+  return rowCount > 0 ? result.map((val) => `${consts.apiPath}/image/orderRequest/${val.name}`) : null;
+};
+
+const getOrderRequestById = async (orderRequestId) => {
+  const sql = 'SELECT * FROM order_request WHERE no_request = $1 LIMIT 1';
+  const { result, rowCount } = await query(sql, orderRequestId);
+
+  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  const [val] = result;
+
+  const media = await getOrderRequestMedia(orderRequestId);
+
+  return {
+    id: val.no_request,
+    customerName: val.customer_name,
+    customerEmail: val.customer_email,
+    customerPhone: val.customer_phone,
+    customerAddress: val.customer_address,
+    description: val.description,
+    datePlaced: val.date_placed,
+    media,
+  };
+};
+
+export {
+  newOrderRequest, getOrderRequests, addOrderRequestMedia, getOrderRequestById,
+};
