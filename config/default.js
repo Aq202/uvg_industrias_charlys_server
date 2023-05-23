@@ -13,6 +13,9 @@ const jwtKey = process.env.KEY;
 const clientId = process.env.GOOGLE_CLIENT_ID;
 const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+const awsBucketAccess = process.env.AWS_BUCKET_ACCESS;
+const awsBucketSecret = process.env.AWS_BUCKET_SECRET;
+const bucketName = process.env.BUCKET_NAME;
 
 export {
   port,
@@ -26,4 +29,7 @@ export {
   clientId,
   clientSecret,
   refreshToken,
+  awsBucketAccess,
+  awsBucketSecret,
+  bucketName,
 };

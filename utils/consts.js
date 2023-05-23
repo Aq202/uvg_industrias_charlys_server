@@ -9,4 +9,7 @@ export default {
     refresh: 'REFRESH',
     access: 'ACCESS',
   },
+  bucketRoutes: {
+    orderRequest: 'order-request',
+  },
 };

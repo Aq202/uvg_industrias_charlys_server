@@ -13,6 +13,7 @@
     "rules": {
         "linebreak-style":"off",
         "import/extensions":"off",
-        "no-underscore-dangle": ["error", { "allowAfterThis": true }]
+        "no-underscore-dangle": ["error", { "allowAfterThis": true }],
+        "no-restricted-syntax": ["error", "LabeledStatement", "WithStatement"]
     }
 }

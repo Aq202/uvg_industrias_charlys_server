@@ -8,6 +8,9 @@ import {
   dbUser as defaultDBUser,
   dbPassword as defaultDBPassword,
   dbPort as defaultDBPort,
+  awsBucketAccess as defaultAwsBucketAccess,
+  awsBucketSecret as defaultAwsBucketSecret,
+  bucketName as defaultBucketName,
 } from './default.js';
 
 config();
@@ -23,6 +26,9 @@ const jwtKey = defaultJwtKey;
 const clientId = defaultClientId;
 const clientSecret = defaultClientSecret;
 const refreshToken = defaultRefreshToken;
+const awsBucketAccess = defaultAwsBucketAccess;
+const awsBucketSecret = defaultAwsBucketSecret;
+const bucketName = defaultBucketName;
 
 export {
   port,
@@ -36,4 +42,7 @@ export {
   clientId,
   clientSecret,
   refreshToken,
+  awsBucketAccess,
+  awsBucketSecret,
+  bucketName,
 };

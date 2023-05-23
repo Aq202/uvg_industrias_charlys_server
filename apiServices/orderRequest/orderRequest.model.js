@@ -52,4 +52,21 @@ const getOrderRequests = async (searchQuery) => {
   }));
 };
 
-export { newOrderRequest, getOrderRequests };
+const addOrderRequestMedia = async (orderRequestId, url) => {
+  const sql = 'INSERT INTO order_request_media(no_request, url) VALUES ($1, $2) ;';
+
+  try {
+    const { rowCount } = await query(
+      sql,
+      orderRequestId,
+      url,
+    );
+
+    if (rowCount !== 1) throw new CustomError('No se pudo guardar el recurso para la solicitud de orden.', 500);
+  } catch (ex) {
+    console.log(ex);
+    throw ex;
+  }
+};
+
+export { newOrderRequest, getOrderRequests, addOrderRequestMedia };

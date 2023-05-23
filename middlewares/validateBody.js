@@ -10,14 +10,14 @@ export default (schema) => async (req, res, next) => {
     if (uploadedFiles !== null && uploadedFiles !== undefined) {
       if (Array.isArray(uploadedFiles)) {
         uploadedFiles.forEach((file) => {
-          fs.unlink(`${global.dirname}/files/${file}`, (error) => {
+          fs.unlink(`${global.dirname}/files/${file.fileName}`, (error) => {
             // eslint-disable-next-line no-console
             console.log('🚀 ~ file: validateBody.js:15 ~ fs.unlink ~ error:', error);
           });
           return null;
         });
       } else {
-        fs.unlink(`${global.dirname}/files/${uploadedFiles}`, (error) => {
+        fs.unlink(`${global.dirname}/files/${uploadedFiles.fileName}`, (error) => {
         // eslint-disable-next-line no-console
           console.log('🚀 ~ file: validateBody.js:21 ~ error:', error);
         });
