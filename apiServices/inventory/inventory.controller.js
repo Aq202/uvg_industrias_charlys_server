@@ -30,6 +30,7 @@ const getInventoryController = async (req, res) => {
     const result = await getInventory(search);
     res.send(result);
   } catch (ex) {
+    console.log(ex);
     let err = 'Ocurrio un error al obtener registros del inventario.';
     let status = 500;
     if (ex instanceof CustomError) {

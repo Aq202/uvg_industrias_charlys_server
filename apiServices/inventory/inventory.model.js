@@ -66,7 +66,7 @@ const getInventory = async (searchQuery) => {
                 left join client_organization co on prod.client = co.id_client_organization
                 left join "size" s on i.size = s.id_size
                 where prod.id_product ilike $1 or prod.client ilike $1
-                  or mat.id_material ilike $1 or f.id_fabric ilike $1
+                  or i.id_inventory ilike $1 or mat.id_material ilike $1 or f.id_fabric ilike $1
                   or measurement_unit ilike $1 or supplier ilike $1 or details ilike $1
                   or COALESCE(mat.description, f.fabric,
                     CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) ilike $1;`;
