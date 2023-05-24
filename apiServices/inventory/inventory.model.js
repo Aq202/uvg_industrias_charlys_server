@@ -117,4 +117,175 @@ const getInventory = async (searchQuery) => {
   }));
 };
 
-export { getInventory, newInventoryElement };
+const getInventorybyId = async (searchQuery) => {
+  const sql = `select id_inventory,
+  coalesce(prod.id_product, f.id_fabric, mat.id_material) as category_id,
+  COALESCE(mat.description, f.fabric, pt.name) as description,
+  coalesce(f.color, prod.color) as color,
+  s.size,
+  co.name as client,
+  quantity, measurement_unit, supplier, details
+      from inventory i
+      left join material mat on i.material = mat.id_material
+      left join fabric f on i.fabric = f.id_fabric
+      left join product prod on i.product = prod.id_product
+      left join product_type pt on prod.type = pt.id_product_type
+      left join client_organization co on prod.client = co.id_client_organization
+      left join "size" s on i.size = s.id_size
+      where i.id_inventory = $1;`;
+  const queryResult = await query(sql, searchQuery);
+
+  const { result, rowCount } = queryResult;
+
+  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+  return result;
+};
+
+const updateInventoryElement = async ({
+  material, fabric, product, description, color, quantity, supplier, details,
+}) => {
+  let sql1;
+  let sql2;
+
+  if (material != null) {
+    sql1 = `update material
+      set description = $2
+    where id_material = $1
+    returning id_material as id;`;
+
+    sql2 = `update inventory
+     set quantity = $2, supplier = $3, details = $4
+    where material = $1
+    returning id_inventory as id;`;
+
+    try {
+      const { rowCount } = await query(
+        sql1,
+        material,
+        description,
+      );
+
+      if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
+    } catch (err) {
+      console.log(err);
+      if (err instanceof CustomError) throw err;
+      const error = 'Datos no válidos.';
+
+      throw new CustomError(error, 400);
+    }
+
+    try {
+      const { result, rowCount } = await query(
+        sql2,
+        material,
+        quantity,
+        supplier,
+        details,
+      );
+      if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
+      return result[0];
+    } catch (err) {
+      console.log(err);
+      if (err instanceof CustomError) throw err;
+      const error = 'Datos no válidos.';
+
+      throw new CustomError(error, 400);
+    }
+  } else if (fabric != null) {
+    sql1 = `update fabric
+      set fabric = $2, color = $3
+    where id_fabric = $1
+    returning id_fabric as id;`;
+
+    sql2 = `update inventory
+      set quantity = $2, supplier = $3, details = $4
+    where fabric = $1
+    returning id_inventory as id;`;
+
+    try {
+      const { rowCount } = await query(
+        sql1,
+        fabric,
+        description,
+        color,
+      );
+
+      if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
+    } catch (err) {
+      console.log(err);
+      if (err instanceof CustomError) throw err;
+      const error = 'Datos no válidos.';
+
+      throw new CustomError(error, 400);
+    }
+
+    try {
+      const { result, rowCount } = await query(
+        sql2,
+        fabric,
+        quantity,
+        supplier,
+        details,
+      );
+      if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
+      return result[0];
+    } catch (err) {
+      console.log(err);
+      if (err instanceof CustomError) throw err;
+      const error = 'Datos no válidos.';
+
+      throw new CustomError(error, 400);
+    }
+  } else {
+    sql1 = `update product
+    set color = $2
+    where id_product = $1
+    returning id_product as id;`;
+
+    sql2 = `update inventory
+    set quantity = $2, supplier = $3, details = $4
+    where product = $1
+    returning id_inventory as id;`;
+
+    try {
+      const { rowCount } = await query(
+        sql1,
+        product,
+        color,
+      );
+
+      if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
+    } catch (err) {
+      console.log(err);
+      if (err instanceof CustomError) throw err;
+      const error = 'Datos no válidos.';
+
+      throw new CustomError(error, 400);
+    }
+
+    try {
+      const { result, rowCount } = await query(
+        sql2,
+        product,
+        quantity,
+        supplier,
+        details,
+      );
+      if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
+      return result[0];
+    } catch (err) {
+      console.log(err);
+      if (err instanceof CustomError) throw err;
+      const error = 'Datos no válidos.';
+
+      throw new CustomError(error, 400);
+    }
+  }
+};
+
+export {
+  getInventory,
+  newInventoryElement,
+  getInventorybyId,
+  updateInventoryElement,
+};
