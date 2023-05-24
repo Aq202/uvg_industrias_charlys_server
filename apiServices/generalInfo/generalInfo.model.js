@@ -48,15 +48,15 @@ const getMaterials = async (searchQuery) => {
   let queryResult;
   if (searchQuery) {
     queryResult = await query(`select i.id_inventory, mat.id_material, mat.description, i.quantity,
-                                i.measurement_unit, i.supplier, i.details
-                                from inventory i inner join material mat on i.material = mat.id_material`);
-  } else {
-    queryResult = await query(`select i.id_inventory, mat.id_material, mat.description, i.quantity,
                               i.measurement_unit, i.supplier, i.details
                               from inventory i
                               inner join material mat on i.material = mat.id_material
-                              where i.id_inventory ilike $1 or mat.description ilike $1,
+                              where i.id_inventory ilike $1 or mat.description ilike $1
                                 or i.measurement_unit ilike $1 or i.supplier ilike $1 or i.details ilike $1`);
+  } else {
+    queryResult = await query(`select i.id_inventory, mat.id_material, mat.description, i.quantity,
+                              i.measurement_unit, i.supplier, i.details
+                              from inventory i inner join material mat on i.material = mat.id_material`);
   }
 
   const { result, rowCount } = queryResult;
@@ -93,13 +93,13 @@ const getFabrics = async (searchQuery) => {
   if (searchQuery) {
     queryResult = await query(`select i.id_inventory, f.id_fabric, f.fabric, f.color, i.quantity,
                               i.measurement_unit, i.supplier, i.details
-                              from inventory i inner join fabric f on i.fabric = f.id_fabric`);
+                              from inventory i inner join fabric f on i.fabric = f.id_fabric
+                              where i.id_inventory ilike $1 or f.fabric ilike $1, f.color ilike $1
+                                or i.measurement_unit ilike $1 or i.supplier ilike $1 or i.details ilike $1`);
   } else {
     queryResult = await query(`select i.id_inventory, f.id_fabric, f.fabric, f.color, i.quantity,
                               i.measurement_unit, i.supplier, i.details
-                              from inventory i inner join fabric f on i.fabric = f.id_fabric
-                              where i.id_inventory ilike $1 or f.fabric ilike $1, f.color ilike $1,
-                                or i.measurement_unit ilike $1 or i.supplier ilike $1 or i.details ilike $1`);
+                              from inventory i inner join fabric f on i.fabric = f.id_fabric`);
   }
 
   const { result, rowCount } = queryResult;
