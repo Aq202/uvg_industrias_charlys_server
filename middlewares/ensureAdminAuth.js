@@ -14,7 +14,7 @@ const ensureAdminAuth = async (req, res, next) => {
 
     if (userData.type !== consts.token.access) {
       res.statusMessage = 'El token de autorización no es de tipo access.';
-      return res.sendStatus(403);
+      return res.sendStatus(401);
     }
 
     if (userData.role !== consts.role.admin) {

@@ -31,16 +31,6 @@ CREATE TABLE session(
 	token TEXT NOT NULL
 );
 
-create table order_request(
-no_request varchar(15) primary key,
-customer_name VARCHAR(100) NOT NULL,
-customer_email VARCHAR(100),
-customer_phone VARCHAR(100),
-customer_address VARCHAR(300) NOT null,
-description text,
-date_placed date
-);
-
 create table "order"(
 no_order varchar(15) primary key,
 order_request_no varchar(15),
