@@ -60,12 +60,12 @@ const newInventoryElement = async ({
   }
 };
 
-const getInventory = async (searchQuery) => {
+const getInventory = async (searchQuery, type) => {
   let queryResult;
   if (searchQuery) {
-    const sql = `select id_inventory, COALESCE(mat.description, f.fabric,
+    const sql = `select id_inventory, COALESCE(mat.description, CONCAT(f.fabric, ' ', f.color),
                   CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) "element",
-                  quantity, measurement_unit, supplier, details, f.color AS fabric_color,
+                  quantity, measurement_unit, supplier, details,
                   mat.id_material, f.id_fabric, prod.id_product
                   from inventory i
                   left join material mat on i.material = mat.id_material
@@ -78,12 +78,13 @@ const getInventory = async (searchQuery) => {
                   or mat.id_material ilike $1 or f.id_fabric ilike $1
                   or measurement_unit ilike $1 or supplier ilike $1 or details ilike $1
                   or COALESCE(mat.description, f.fabric,
-                    CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) ilike $1;`;
-    queryResult = await query(sql, `%${searchQuery}%`);
+                    CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) ilike $1
+                    and (prod.id_product ilike $2 or mat.id_material ilike $2 or f.id_fabric ilike $2);`;
+    queryResult = await query(sql, `%${searchQuery}%`, `%${type}%`);
   } else {
-    const sql = `select id_inventory, COALESCE(mat.description, f.fabric,
+    const sql = `select id_inventory, COALESCE(mat.description, CONCAT(f.fabric, ' ', f.color),
                   CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) "element",
-                  quantity, measurement_unit, supplier, details, f.color AS fabric_color,
+                  quantity, measurement_unit, supplier, details,
                   mat.id_material, f.id_fabric, prod.id_product
                   from inventory i
                   left join material mat on i.material = mat.id_material
@@ -106,7 +107,6 @@ const getInventory = async (searchQuery) => {
     measurementUnit: val.measurement_unit,
     supplier: val.supplier,
     details: val.details,
-    fabricColor: val.fabric_color,
     itemId: val.id_material || val.id_fabric || val.id_product,
     // eslint-disable-next-line no-nested-ternary
     type: val.id_material

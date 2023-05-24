@@ -44,16 +44,32 @@ const newMaterial = async ({ description }) => {
   }
 };
 
-const getMaterials = async () => {
-  const queryResult = await query('select * from material');
+const getMaterials = async (searchQuery) => {
+  let queryResult;
+  if (searchQuery) {
+    queryResult = await query(`select i.id_inventory, mat.id_material, mat.description, i.quantity,
+                                i.measurement_unit, i.supplier, i.details
+                                from inventory i inner join material mat on i.material = mat.id_material`);
+  } else {
+    queryResult = await query(`select i.id_inventory, mat.id_material, mat.description, i.quantity,
+                              i.measurement_unit, i.supplier, i.details
+                              from inventory i
+                              inner join material mat on i.material = mat.id_material
+                              where i.id_inventory ilike $1 or mat.description ilike $1,
+                                or i.measurement_unit ilike $1 or i.supplier ilike $1 or i.details ilike $1`);
+  }
 
   const { result, rowCount } = queryResult;
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
   return result.map((val) => ({
-    id: val.id_material,
+    id: val.id_inventory,
     description: val.description,
+    quantity: val.quantity,
+    measurementUnit: val.measurement_unit,
+    supplier: val.supplier,
+    details: val.details,
   }));
 };
 
@@ -72,17 +88,32 @@ const newFabric = async ({ fabric, color }) => {
   }
 };
 
-const getFabrics = async () => {
-  const queryResult = await query('select * from fabric');
+const getFabrics = async (searchQuery) => {
+  let queryResult;
+  if (searchQuery) {
+    queryResult = await query(`select i.id_inventory, f.id_fabric, f.fabric, f.color, i.quantity,
+                              i.measurement_unit, i.supplier, i.details
+                              from inventory i inner join fabric f on i.fabric = f.id_fabric`);
+  } else {
+    queryResult = await query(`select i.id_inventory, f.id_fabric, f.fabric, f.color, i.quantity,
+                              i.measurement_unit, i.supplier, i.details
+                              from inventory i inner join fabric f on i.fabric = f.id_fabric
+                              where i.id_inventory ilike $1 or f.fabric ilike $1, f.color ilike $1,
+                                or i.measurement_unit ilike $1 or i.supplier ilike $1 or i.details ilike $1`);
+  }
 
   const { result, rowCount } = queryResult;
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
   return result.map((val) => ({
-    id: val.id_fabric,
+    id: val.id_inventory,
     fabric: val.fabric,
     color: val.color,
+    quantity: val.quantity,
+    measurementUnit: val.measurement_unit,
+    supplier: val.supplier,
+    details: val.details,
   }));
 };
 
