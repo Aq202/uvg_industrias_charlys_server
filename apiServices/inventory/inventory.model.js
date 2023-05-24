@@ -56,20 +56,20 @@ const getInventory = async (searchQuery) => {
   let queryResult;
   if (searchQuery) {
     const sql = `select id_inventory, COALESCE(mat.description, f.fabric,
-                CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) "element",
-                quantity, measurement_unit, supplier, details
-                from inventory i
-                left join material mat on i.material = mat.id_material
-                left join fabric f on i.fabric = f.id_fabric
-                left join product prod on i.product = prod.id_product
-                left join product_type pt on prod.type = pt.id_product_type
-                left join client_organization co on prod.client = co.id_client_organization
-                left join "size" s on i.size = s.id_size
-                where prod.id_product ilike $1 or prod.client ilike $1
-                  or mat.id_material ilike $1 or f.id_fabric ilike $1
-                  or measurement_unit ilike $1 or supplier ilike $1 or details ilike $1
-                  or COALESCE(mat.description, f.fabric,
-                    CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) ilike $1;`;
+      CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) "element",
+      quantity, measurement_unit, supplier, details
+      from inventory i
+      left join material mat on i.material = mat.id_material
+      left join fabric f on i.fabric = f.id_fabric
+      left join product prod on i.product = prod.id_product
+      left join product_type pt on prod.type = pt.id_product_type
+      left join client_organization co on prod.client = co.id_client_organization
+      left join "size" s on i.size = s.id_size
+      where prod.id_product ilike $1 or prod.client ilike $1
+        or i.id_inventory ilike $1 or mat.id_material ilike $1 or f.id_fabric ilike $1
+        or measurement_unit ilike $1 or supplier ilike $1 or details ilike $1
+        or COALESCE(mat.description, f.fabric,
+          CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) ilike $1;`;
     queryResult = await query(sql, `%${searchQuery}%`);
   } else {
     const sql = `select id_inventory, COALESCE(mat.description, f.fabric,
