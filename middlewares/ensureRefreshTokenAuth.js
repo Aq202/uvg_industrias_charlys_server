@@ -16,7 +16,7 @@ const ensureRefreshTokenAuth = async (req, res, next) => {
     if (userData.type !== consts.token.refresh) {
       res.clearCookie('refreshToken');
       res.statusMessage = 'El token de autorización no es de tipo refresh.';
-      return res.sendStatus(403);
+      return res.sendStatus(401);
     }
     req.session = userData;
     next();
