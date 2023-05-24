@@ -283,9 +283,95 @@ const updateInventoryElement = async ({
   }
 };
 
+const deleteInventoryElement = async ({
+  materialId, productId,
+}) => {
+  let sql1;
+  let sql2;
+
+  if (materialId != null) {
+    sql1 = `delete from material
+    where id_material = $1
+    returning id_material as id;`;
+
+    sql2 = `delete from inventory
+    where material = $1
+    returning id_inventory as id;`;
+
+    try {
+      const { rowCount } = await query(
+        sql1,
+        materialId,
+      );
+
+      if (rowCount !== 1) throw new CustomError('No se pudo eliminar el elemento', 500);
+    } catch (err) {
+      console.log(err);
+      if (err instanceof CustomError) throw err;
+      const error = 'Datos no válidos.';
+
+      throw new CustomError(error, 400);
+    }
+
+    try {
+      const { result, rowCount } = await query(
+        sql2,
+        materialId,
+      );
+      if (rowCount !== 1) throw new CustomError('No se pudo eliminar el elemento', 500);
+      return result[0];
+    } catch (err) {
+      console.log(err);
+      if (err instanceof CustomError) throw err;
+      const error = 'Datos no válidos.';
+
+      throw new CustomError(error, 400);
+    }
+  } else {
+    sql1 = `delete from product
+    where id_product = $1
+    returning id_product as id;`;
+
+    sql2 = `delete from inventory
+    where product = $1
+    returning id_inventory as id;`;
+
+    try {
+      const { rowCount } = await query(
+        sql1,
+        productId,
+      );
+
+      if (rowCount !== 1) throw new CustomError('No se pudo eliminar el elemento', 500);
+    } catch (err) {
+      console.log(err);
+      if (err instanceof CustomError) throw err;
+      const error = 'Datos no válidos.';
+
+      throw new CustomError(error, 400);
+    }
+
+    try {
+      const { result, rowCount } = await query(
+        sql2,
+        productId,
+      );
+      if (rowCount !== 1) throw new CustomError('No se pudo eliminar el elemento', 500);
+      return result[0];
+    } catch (err) {
+      console.log(err);
+      if (err instanceof CustomError) throw err;
+      const error = 'Datos no válidos.';
+
+      throw new CustomError(error, 400);
+    }
+  }
+};
+
 export {
   getInventory,
   newInventoryElement,
   getInventorybyId,
   updateInventoryElement,
+  deleteInventoryElement,
 };

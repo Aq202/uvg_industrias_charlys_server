@@ -98,9 +98,34 @@ const updateInventoryElementController = async (req, res) => {
   }
 };
 
+const deleteInventoryElementController = async (req, res) => {
+  const {
+    materialId,
+    productId,
+  } = req.body;
+
+  try {
+    const { id } = await updateInventoryElement({
+      materialId,
+      productId,
+    });
+    res.send({ id });
+  } catch (ex) {
+    let err = 'La información ingresada no es válida.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newInventoryElementController,
   getInventoryController,
   getInventorybyIdController,
   updateInventoryElementController,
+  deleteInventoryElementController,
 };
