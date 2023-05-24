@@ -1,8 +1,16 @@
 import query from '../../database/query.js';
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 
 const newInventoryElement = async ({
-  material, fabric, product, size, quantity, measurementUnit, supplier, details,
+  material,
+  fabric,
+  product,
+  size,
+  quantity,
+  measurementUnit,
+  supplier,
+  details,
 }) => {
   let sql;
 
@@ -57,7 +65,7 @@ const getInventory = async (searchQuery) => {
   if (searchQuery) {
     const sql = `select id_inventory, COALESCE(mat.description, f.fabric,
                 CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) "element",
-                quantity, measurement_unit, supplier, details
+                quantity, measurement_unit, supplier, details, mat.id_material, f.id_fabric, prod.id_product
                 from inventory i
                 left join material mat on i.material = mat.id_material
                 left join fabric f on i.fabric = f.id_fabric
@@ -74,7 +82,7 @@ const getInventory = async (searchQuery) => {
   } else {
     const sql = `select id_inventory, COALESCE(mat.description, f.fabric,
                 CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) "element",
-                quantity, measurement_unit, supplier, details
+                quantity, measurement_unit, supplier, details, mat.id_material, f.id_fabric, prod.id_product
                 from inventory i
                 left join material mat on i.material = mat.id_material
                 left join fabric f on i.fabric = f.id_fabric
@@ -96,10 +104,13 @@ const getInventory = async (searchQuery) => {
     measurementUnit: val.measurement_unit,
     supplier: val.supplier,
     details: val.details,
+    // eslint-disable-next-line no-nested-ternary
+    type: val.id_material
+      ? consts.inventoryType.material
+      : val.id_fabric
+        ? consts.inventoryType.fabric
+        : consts.inventoryType.product,
   }));
 };
 
-export {
-  getInventory,
-  newInventoryElement,
-};
+export { getInventory, newInventoryElement };

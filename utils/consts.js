@@ -13,4 +13,9 @@ export default {
   bucketRoutes: {
     orderRequest: 'order-request',
   },
+  inventoryType: {
+    product: 'PRODUCT',
+    fabric: 'FABRIC',
+    material: 'MATERIAL',
+  },
 };
