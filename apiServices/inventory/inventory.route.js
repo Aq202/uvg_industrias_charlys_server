@@ -6,6 +6,7 @@ import {
   newInventoryElementController,
   getInventorybyIdController,
   updateInventoryElementController,
+  deleteInventoryElementController,
 } from './inventory.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 
@@ -15,5 +16,6 @@ inventoryRouter.post('/', validateBody(newInventoryElementSchema), newInventoryE
 inventoryRouter.get('/', ensureAdminAuth, getInventoryController);
 inventoryRouter.get('/id', ensureAdminAuth, getInventorybyIdController);
 inventoryRouter.put('/update', ensureAdminAuth, updateInventoryElementController);
+inventoryRouter.put('/delete', ensureAdminAuth, deleteInventoryElementController);
 
 export default inventoryRouter;
