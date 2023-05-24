@@ -47,16 +47,18 @@ const newMaterial = async ({ description }) => {
 const getMaterials = async (searchQuery) => {
   let queryResult;
   if (searchQuery) {
-    queryResult = await query(`select i.id_inventory, mat.id_material, mat.description, i.quantity,
+    const sql = `select i.id_inventory, mat.id_material, mat.description, i.quantity,
                               i.measurement_unit, i.supplier, i.details
                               from inventory i
                               inner join material mat on i.material = mat.id_material
                               where i.id_inventory ilike $1 or mat.description ilike $1
-                                or i.measurement_unit ilike $1 or i.supplier ilike $1 or i.details ilike $1`);
+                                or i.measurement_unit ilike $1 or i.supplier ilike $1 or i.details ilike $1`;
+    queryResult = await query(sql, `%${searchQuery}%`);
   } else {
-    queryResult = await query(`select i.id_inventory, mat.id_material, mat.description, i.quantity,
+    const sql = `select i.id_inventory, mat.id_material, mat.description, i.quantity,
                               i.measurement_unit, i.supplier, i.details
-                              from inventory i inner join material mat on i.material = mat.id_material`);
+                              from inventory i inner join material mat on i.material = mat.id_material`;
+    queryResult = await query(sql);
   }
 
   const { result, rowCount } = queryResult;

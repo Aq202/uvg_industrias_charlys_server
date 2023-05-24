@@ -58,8 +58,9 @@ const newMaterialController = async (req, res) => {
 };
 
 const getMaterialsController = async (req, res) => {
+  const { search } = req.query;
   try {
-    const result = await getMaterials();
+    const result = await getMaterials(search);
 
     res.send(result);
   } catch (ex) {
@@ -94,8 +95,9 @@ const newFabricController = async (req, res) => {
 };
 
 const getFabricsController = async (req, res) => {
+  const { search } = req.query;
   try {
-    const result = await getFabrics();
+    const result = await getFabrics(search);
 
     res.send(result);
   } catch (ex) {
