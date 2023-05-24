@@ -93,15 +93,17 @@ const newFabric = async ({ fabric, color }) => {
 const getFabrics = async (searchQuery) => {
   let queryResult;
   if (searchQuery) {
-    queryResult = await query(`select i.id_inventory, f.id_fabric, f.fabric, f.color, i.quantity,
+    const sql = `select i.id_inventory, f.id_fabric, f.fabric, f.color, i.quantity,
                               i.measurement_unit, i.supplier, i.details
                               from inventory i inner join fabric f on i.fabric = f.id_fabric
-                              where i.id_inventory ilike $1 or f.fabric ilike $1, f.color ilike $1
-                                or i.measurement_unit ilike $1 or i.supplier ilike $1 or i.details ilike $1`);
+                              where i.id_inventory ilike $1 or f.fabric ilike $1 or f.color ilike $1
+                                or i.measurement_unit ilike $1 or i.supplier ilike $1 or i.details ilike $1`;
+    queryResult = await query(sql, `%${searchQuery}%`);
   } else {
-    queryResult = await query(`select i.id_inventory, f.id_fabric, f.fabric, f.color, i.quantity,
+    const sql = `select i.id_inventory, f.id_fabric, f.fabric, f.color, i.quantity,
                               i.measurement_unit, i.supplier, i.details
-                              from inventory i inner join fabric f on i.fabric = f.id_fabric`);
+                              from inventory i inner join fabric f on i.fabric = f.id_fabric`;
+    queryResult = await query(sql);
   }
 
   const { result, rowCount } = queryResult;

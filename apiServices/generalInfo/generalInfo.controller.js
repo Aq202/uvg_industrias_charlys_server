@@ -101,6 +101,7 @@ const getFabricsController = async (req, res) => {
 
     res.send(result);
   } catch (ex) {
+    console.log(ex);
     let err = 'Ocurrio un error al obtener las telas disponibles.';
     let status = 500;
     if (ex instanceof CustomError) {
