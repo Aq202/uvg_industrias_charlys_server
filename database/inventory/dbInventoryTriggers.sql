@@ -90,28 +90,6 @@
  FOR EACH ROW
  EXECUTE PROCEDURE assign_material_id();
  
- /*Función para asignar el nuevo id a la tela*/
- CREATE OR REPLACE FUNCTION assign_fabric_id()
- RETURNS trigger as
- $BODY$
- declare prev_id_number integer;
- begin
- 	SELECT CAST(SUBSTRING(id_fabric FROM 2) AS INTEGER) INTO prev_id_number FROM fabric ORDER BY id_fabric DESC LIMIT 1;
-	IF (prev_id_number IS NULL) THEN
-		prev_id_number = 0;
-		END IF;
-	NEW.id_fabric = CONCAT('F', LPAD(CAST(prev_id_number + 1 AS VARCHAR), 14, '0'));
-	RETURN NEW;
- END;
- $BODY$
- LANGUAGE 'plpgsql';
-
- DROP TRIGGER IF EXISTS tr_assign_fabric_id ON fabric; 
- CREATE TRIGGER tr_assign_fabric_id
- BEFORE INSERT
- ON fabric
- FOR EACH ROW
- EXECUTE PROCEDURE assign_fabric_id();
  
  /*Función para asignar el nuevo id al elemento en bodega*/
  CREATE OR REPLACE FUNCTION assign_inventory_id()
