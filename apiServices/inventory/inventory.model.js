@@ -2,59 +2,55 @@ import query from '../../database/query.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 
+const newMaterial = async ({
+  name, supplier, color, typeId,
+}) => {
+  try {
+    const sql = `INSERT INTO material(name, supplier, color, type) VALUES ($1, $2, $3, $4)
+                RETURNING id_material AS id`;
+
+    const { result, rowCount } = await query(sql, name, supplier, color, typeId);
+    if (rowCount !== 1) throw new CustomError('Ocurrió un error al insertar el material.', 500);
+
+    return result[0].id;
+  } catch (ex) {
+    if (ex instanceof CustomError) throw ex;
+    throw ex;
+  }
+};
+
 const newInventoryElement = async ({
-  material,
-  fabric,
-  product,
-  size,
+  materialId,
+  productId,
   quantity,
   measurementUnit,
-  supplier,
   details,
 }) => {
-  let sql;
-
-  if (material) {
-    sql = `INSERT INTO inventory(material, fabric, product, "size", quantity, measurement_unit, supplier, details)
-          VALUES($1,$2,$3,$4,$5,$6,$7,$8)
-          on conflict(material) do update set quantity = inventory.quantity + excluded.quantity
-          returning id_inventory as id`;
-  } else if (fabric) {
-    sql = `INSERT INTO inventory(material, fabric, product, "size", quantity, measurement_unit, supplier, details)
-          VALUES($1,$2,$3,$4,$5,$6,$7,$8)
-          on conflict(fabric) do update set quantity = inventory.quantity + excluded.quantity
-          returning id_inventory as id`;
-  } else {
-    sql = `INSERT INTO inventory(material, fabric, product, "size", quantity, measurement_unit, supplier, details)
-          VALUES($1,$2,$3,$4,$5,$6,$7,$8)
-          on conflict(product, "size") do update set quantity = inventory.quantity + excluded.quantity
-          returning id_inventory as id`;
-  }
+  const sql = `INSERT INTO inventory(material, product,  quantity, measurement_unit, details)
+              VALUES($1,$2,$3,$4,$5)
+              on conflict(material) do update set quantity = inventory.quantity + excluded.quantity
+              returning id_inventory as id`;
 
   try {
     const { result, rowCount } = await query(
       sql,
-      material,
-      fabric,
-      product,
-      size,
+      materialId ?? null,
+      productId ?? null,
       quantity,
       measurementUnit,
-      supplier,
       details,
     );
 
     if (rowCount !== 1) throw new CustomError('No se pudo agregar el elemento al inventario', 500);
 
-    return result[0];
+    return result[0].id;
   } catch (err) {
-    console.log(err);
     if (err instanceof CustomError) throw err;
 
     if (err?.constraint === 'check_element') {
-      throw new CustomError('Solo puede agregar un tipo de elemento a la vez.', 400);
+      if (materialId || productId) { throw new CustomError('Solo puede agregar un tipo de elemento a la vez.', 400); } else throw new CustomError('Se debe de espeficicar el tipo de elemento de inventario. ', 400);
     }
-    const error = 'Datos no válidos.';
+    const error = 'Datos no válidos al agregar nuevo articulo de inventario.';
 
     throw new CustomError(error, 400);
   }
@@ -291,10 +287,20 @@ const newMaterialType = async (name) => {
   return result[0].id;
 };
 
+const getMaterialsTypeList = async () => {
+  const sql = 'SELECT id_material_type AS id, name from material_type';
+  const { result, rowCount } = await query(sql);
+
+  if (rowCount < 1) throw new CustomError('No se encontraron tipos de material.', 404);
+  return result;
+};
+
 export {
   getInventory,
   newInventoryElement,
   getInventorybyId,
   updateInventoryElement,
   newMaterialType,
+  getMaterialsTypeList,
+  newMaterial,
 };

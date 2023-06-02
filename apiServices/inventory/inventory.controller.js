@@ -1,20 +1,44 @@
+import { begin, commit, rollback } from '../../database/transactions.js';
 import CustomError from '../../utils/customError.js';
 import {
-  getInventory, getInventorybyId, newInventoryElement, newMaterialType, updateInventoryElement,
+  getInventory,
+  getInventorybyId,
+  getMaterialsTypeList,
+  newInventoryElement,
+  newMaterial,
+  newMaterialType,
+  updateInventoryElement,
 } from './inventory.model.js';
 
-const newInventoryElementController = async (req, res) => {
+const newMaterialController = async (req, res) => {
   const {
-    material, fabric, product, size, quantity, measurementUnit, supplier, details,
+    name, supplier, color, type, quantity, measurementUnit, details,
   } = req.body;
 
   try {
-    const { id } = await newInventoryElement({
-      material, fabric, product, size, quantity, measurementUnit, supplier, details,
+    await begin();
+
+    const materialId = await newMaterial({
+      name,
+      supplier,
+      color,
+      typeId: type,
     });
-    res.send({ id });
+
+    const inventoryId = await newInventoryElement({
+      materialId,
+      productId: null,
+      quantity,
+      measurementUnit,
+      details,
+    });
+
+    await commit();
+
+    res.send({ id: inventoryId });
   } catch (ex) {
-    let err = 'La información ingresada no es válida.';
+    await rollback();
+    let err = 'La información ingresada no es válida al insertar nuevo material.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -32,7 +56,6 @@ const getInventoryController = async (req, res) => {
     const result = await getInventory(search);
     res.send(result);
   } catch (ex) {
-    console.log(ex);
     let err = 'Ocurrio un error al obtener registros del inventario.';
     let status = 500;
     if (ex instanceof CustomError) {
@@ -64,14 +87,7 @@ const getInventorybyIdController = async (req, res) => {
 
 const updateInventoryElementController = async (req, res) => {
   const {
-    material,
-    fabric,
-    product,
-    description,
-    color,
-    quantity,
-    supplier,
-    details,
+    material, fabric, product, description, color, quantity, supplier, details,
   } = req.body;
 
   try {
@@ -117,10 +133,28 @@ const newMaterialTypeController = async (req, res) => {
   }
 };
 
+const getMaterialsTypeController = async (req, res) => {
+  try {
+    const result = await getMaterialsTypeList();
+
+    res.send({ result });
+  } catch (ex) {
+    let err = 'Ocurrió un error al obtener los tipos de material.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
-  newInventoryElementController,
+  newMaterialController,
   getInventoryController,
   getInventorybyIdController,
   updateInventoryElementController,
   newMaterialTypeController,
+  getMaterialsTypeController,
 };

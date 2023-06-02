@@ -27,7 +27,7 @@ CREATE TABLE order_detail(
 
 	CREATE TABLE material(
 		id_material VARCHAR(15) PRIMARY KEY,
-		description VARCHAR(500),
+		name VARCHAR(200) NOT NULL,
 		supplier VARCHAR(100),
 		color VARCHAR(100),
 		type INTEGER NOT NULL
