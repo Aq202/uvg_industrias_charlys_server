@@ -50,10 +50,10 @@ const newMaterialController = async (req, res) => {
 };
 
 const getInventoryController = async (req, res) => {
-  const { search } = req.query;
+  const { search, id, type } = req.query;
 
   try {
-    const result = await getInventory(search);
+    const result = await getInventory({ id, type, search });
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener registros del inventario.';

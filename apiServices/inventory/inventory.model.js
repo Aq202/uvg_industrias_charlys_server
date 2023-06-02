@@ -48,7 +48,9 @@ const newInventoryElement = async ({
     if (err instanceof CustomError) throw err;
 
     if (err?.constraint === 'check_element') {
-      if (materialId || productId) { throw new CustomError('Solo puede agregar un tipo de elemento a la vez.', 400); } else throw new CustomError('Se debe de espeficicar el tipo de elemento de inventario. ', 400);
+      if (materialId || productId) {
+        throw new CustomError('Solo puede agregar un tipo de elemento a la vez.', 400);
+      } else { throw new CustomError('Se debe de espeficicar el tipo de elemento de inventario. ', 400); }
     }
     const error = 'Datos no válidos al agregar nuevo articulo de inventario.';
 
@@ -56,60 +58,45 @@ const newInventoryElement = async ({
   }
 };
 
-const getInventory = async (searchQuery) => {
-  let queryResult;
-  if (searchQuery) {
-    const sql = `select id_inventory, COALESCE(mat.description, f.fabric,
-                  CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) "element",
-                  quantity, measurement_unit, supplier, details, f.color AS fabric_color,
-                  mat.id_material, f.id_fabric, prod.id_product
-                  from inventory i
-                  left join material mat on i.material = mat.id_material
-                  left join fabric f on i.fabric = f.id_fabric
-                  left join product prod on i.product = prod.id_product
-                  left join product_type pt on prod.type = pt.id_product_type
-                  left join client_organization co on prod.client = co.id_client_organization
-                  left join "size" s on i.size = s.id_size
-                  where prod.id_product ilike $1 or prod.client ilike $1
-                  or mat.id_material ilike $1 or f.id_fabric ilike $1
-                  or measurement_unit ilike $1 or supplier ilike $1 or details ilike $1
-                  or COALESCE(mat.description, f.fabric,
-                    CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) ilike $1;`;
-    queryResult = await query(sql, `%${searchQuery}%`);
-  } else {
-    const sql = `select id_inventory, COALESCE(mat.description, f.fabric,
-                  CONCAT(pt.name, ' talla ', s.size, ' color ', prod.color, ' de ', co.name)) "element",
-                  quantity, measurement_unit, supplier, details, f.color AS fabric_color,
-                  mat.id_material, f.id_fabric, prod.id_product
-                  from inventory i
-                  left join material mat on i.material = mat.id_material
-                  left join fabric f on i.fabric = f.id_fabric
-                  left join product prod on i.product = prod.id_product
-                  left join product_type pt on prod.type = pt.id_product_type
-                  left join client_organization co on prod.client = co.id_client_organization
-                  left join "size" s on i.size = s.id_size`;
-    queryResult = await query(sql);
+const getInventory = async ({ id, type, search }) => {
+  let sql = `SELECT I.id_inventory, I.material, I.product, I.quantity, I.measurement_unit, I.details, M.name as material_name, 
+                M.supplier, M.color, T.id_material_type, T.name AS material_type   FROM inventory I
+                INNER JOIN material M ON I.material = M.id_material
+                INNER JOIN material_type T ON M.type = T.id_material_type
+                WHERE 1=1`;
+  const params = [];
+  if (id) {
+    params.push(id);
+    sql += ` AND I.id_inventory = $${params.length}`;
   }
 
-  const { result, rowCount } = queryResult;
+  if (type !== undefined && type !== null) {
+    params.push(type);
+    sql += ` AND T.id_material_type = $${params.length}`;
+  }
+
+  if (search) {
+    params.push(`%${search}%`);
+    const paramsIndex = params.length;
+    sql += ` AND (I.details ILIKE $${paramsIndex} OR M.name ILIKE $${paramsIndex} 
+                OR M.supplier ILIKE $${paramsIndex} OR M.color ILIKE $${paramsIndex} )`;
+  }
+
+  const { result, rowCount } = params.length > 0 ? await query(sql, ...params) : await query(sql);
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
   return result.map((val) => ({
     id: val.id_inventory,
-    element: val.element,
     quantity: val.quantity,
     measurementUnit: val.measurement_unit,
     supplier: val.supplier,
     details: val.details,
-    fabricColor: val.fabric_color,
-    itemId: val.id_material || val.id_fabric || val.id_product,
-    // eslint-disable-next-line no-nested-ternary
-    type: val.id_material
-      ? consts.inventoryType.material
-      : val.id_fabric
-        ? consts.inventoryType.fabric
-        : consts.inventoryType.product,
+    color: val.color,
+    type: val.material ? consts.inventoryType.material : consts.inventoryType.product,
+    idMaterialType: val.id_material_type,
+    materialType: val.material_type,
+    materialName: val.material_name,
   }));
 };
 
@@ -138,7 +125,14 @@ const getInventorybyId = async (searchQuery) => {
 };
 
 const updateInventoryElement = async ({
-  material, fabric, product, description, color, quantity, supplier, details,
+  material,
+  fabric,
+  product,
+  description,
+  color,
+  quantity,
+  supplier,
+  details,
 }) => {
   let sql1;
   let sql2;
@@ -155,11 +149,7 @@ const updateInventoryElement = async ({
     returning id_inventory as id;`;
 
     try {
-      const { rowCount } = await query(
-        sql1,
-        material,
-        description,
-      );
+      const { rowCount } = await query(sql1, material, description);
 
       if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
     } catch (err) {
@@ -171,13 +161,7 @@ const updateInventoryElement = async ({
     }
 
     try {
-      const { result, rowCount } = await query(
-        sql2,
-        material,
-        quantity,
-        supplier,
-        details,
-      );
+      const { result, rowCount } = await query(sql2, material, quantity, supplier, details);
       if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
       return result[0];
     } catch (err) {
@@ -199,12 +183,7 @@ const updateInventoryElement = async ({
     returning id_inventory as id;`;
 
     try {
-      const { rowCount } = await query(
-        sql1,
-        fabric,
-        description,
-        color,
-      );
+      const { rowCount } = await query(sql1, fabric, description, color);
 
       if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
     } catch (err) {
@@ -216,13 +195,7 @@ const updateInventoryElement = async ({
     }
 
     try {
-      const { result, rowCount } = await query(
-        sql2,
-        fabric,
-        quantity,
-        supplier,
-        details,
-      );
+      const { result, rowCount } = await query(sql2, fabric, quantity, supplier, details);
       if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
       return result[0];
     } catch (err) {
@@ -244,11 +217,7 @@ const updateInventoryElement = async ({
     returning id_inventory as id;`;
 
     try {
-      const { rowCount } = await query(
-        sql1,
-        product,
-        color,
-      );
+      const { rowCount } = await query(sql1, product, color);
 
       if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
     } catch (err) {
@@ -260,13 +229,7 @@ const updateInventoryElement = async ({
     }
 
     try {
-      const { result, rowCount } = await query(
-        sql2,
-        product,
-        quantity,
-        supplier,
-        details,
-      );
+      const { result, rowCount } = await query(sql2, product, quantity, supplier, details);
       if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
       return result[0];
     } catch (err) {
