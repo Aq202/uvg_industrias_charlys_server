@@ -283,9 +283,18 @@ const updateInventoryElement = async ({
   }
 };
 
+const newMaterialType = async (name) => {
+  const sql = 'INSERT INTO material_type (name) VALUES ($1) RETURNING id_material_type AS id';
+  const { result, rowCount } = await query(sql, name);
+
+  if (rowCount !== 1) throw new CustomError('No se pudo insertar un nuevo tipo de material.', 500);
+  return result[0].id;
+};
+
 export {
   getInventory,
   newInventoryElement,
   getInventorybyId,
   updateInventoryElement,
+  newMaterialType,
 };

@@ -1,6 +1,6 @@
 import CustomError from '../../utils/customError.js';
 import {
-  getInventory, getInventorybyId, newInventoryElement, updateInventoryElement,
+  getInventory, getInventorybyId, newInventoryElement, newMaterialType, updateInventoryElement,
 } from './inventory.model.js';
 
 const newInventoryElementController = async (req, res) => {
@@ -98,9 +98,29 @@ const updateInventoryElementController = async (req, res) => {
   }
 };
 
+const newMaterialTypeController = async (req, res) => {
+  try {
+    const { name } = req.body;
+
+    const materialTypeId = await newMaterialType(name);
+
+    res.send({ id: materialTypeId });
+  } catch (ex) {
+    let err = 'No fue posible crear un nuevo tipo de material.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newInventoryElementController,
   getInventoryController,
   getInventorybyIdController,
   updateInventoryElementController,
+  newMaterialTypeController,
 };

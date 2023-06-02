@@ -6,8 +6,10 @@ import {
   newInventoryElementController,
   getInventorybyIdController,
   updateInventoryElementController,
+  newMaterialTypeController,
 } from './inventory.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
+import newMaterialTypeSchema from '../../utils/validationSchemas/newMaterialTypeSchema.js';
 
 const inventoryRouter = express.Router();
 
@@ -15,5 +17,5 @@ inventoryRouter.post('/', validateBody(newInventoryElementSchema), newInventoryE
 inventoryRouter.get('/', ensureAdminAuth, getInventoryController);
 inventoryRouter.get('/id', ensureAdminAuth, getInventorybyIdController);
 inventoryRouter.put('/update', ensureAdminAuth, updateInventoryElementController);
-
+inventoryRouter.post('/materialType', ensureAdminAuth, validateBody(newMaterialTypeSchema), newMaterialTypeController);
 export default inventoryRouter;
