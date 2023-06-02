@@ -8,6 +8,7 @@ import {
   newMaterial,
   newMaterialType,
   updateInventoryElement,
+  updateMaterial,
 } from './inventory.model.js';
 
 const newMaterialController = async (req, res) => {
@@ -49,6 +50,38 @@ const newMaterialController = async (req, res) => {
   }
 };
 
+const updateMaterialController = async (req, res) => {
+  const {
+    inventoryId, name, supplier, color, type, quantity, measurementUnit, details,
+  } = req.body;
+
+  try {
+    await begin();
+
+    await updateMaterial({
+      inventoryId, name, supplier, color, typeId: type,
+    });
+
+    await updateInventoryElement({
+      inventoryId, quantity, measurementUnit, details,
+    });
+
+    await commit();
+
+    res.send({ id: inventoryId });
+  } catch (ex) {
+    await rollback();
+    let err = 'La información ingresada no es válida al actualizar el material.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 const getInventoryController = async (req, res) => {
   const { search, id, type } = req.query;
 
@@ -75,35 +108,6 @@ const getInventorybyIdController = async (req, res) => {
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener la información del inventario.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
-  }
-};
-
-const updateInventoryElementController = async (req, res) => {
-  const {
-    material, fabric, product, description, color, quantity, supplier, details,
-  } = req.body;
-
-  try {
-    const { id } = await updateInventoryElement({
-      material,
-      fabric,
-      product,
-      description,
-      color,
-      quantity,
-      supplier,
-      details,
-    });
-    res.send({ id });
-  } catch (ex) {
-    let err = 'La información ingresada no es válida.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -154,7 +158,7 @@ export {
   newMaterialController,
   getInventoryController,
   getInventorybyIdController,
-  updateInventoryElementController,
   newMaterialTypeController,
   getMaterialsTypeController,
+  updateMaterialController,
 };

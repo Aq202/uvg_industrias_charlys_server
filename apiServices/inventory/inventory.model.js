@@ -58,6 +58,48 @@ const newInventoryElement = async ({
   }
 };
 
+const updateMaterial = async ({
+  inventoryId, name, supplier, color, typeId,
+}) => {
+  try {
+    const sql = `UPDATE material SET name = $1, supplier = $2, color = $3, type=$4
+                  WHERE id_material = (SELECT material FROM inventory WHERE id_inventory = $5)`;
+
+    const { rowCount } = await query(sql, name, supplier, color, typeId, inventoryId);
+    if (rowCount !== 1) throw new CustomError('No se encontró el material.', 400);
+  } catch (ex) {
+    if (ex instanceof CustomError) throw ex;
+    throw ex;
+  }
+};
+
+const updateInventoryElement = async ({
+  inventoryId,
+  quantity,
+  measurementUnit,
+  details,
+}) => {
+  const sql = `UPDATE inventory SET quantity=$1, measurement_unit=$2, details=$3
+                WHERE id_inventory =$4`;
+
+  try {
+    const { rowCount } = await query(
+      sql,
+      quantity,
+      measurementUnit,
+      details,
+      inventoryId,
+    );
+
+    if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento al inventario', 500);
+  } catch (err) {
+    if (err instanceof CustomError) throw err;
+
+    const error = 'Datos no válidos al agregar nuevo articulo de inventario.';
+    throw new CustomError(error, 400);
+  }
+};
+
 const getInventory = async ({ id, type, search }) => {
   let sql = `SELECT I.id_inventory, I.material, I.product, I.quantity, I.measurement_unit, I.details, M.name as material_name, 
                 M.supplier, M.color, T.id_material_type, T.name AS material_type   FROM inventory I
@@ -124,124 +166,6 @@ const getInventorybyId = async (searchQuery) => {
   return result;
 };
 
-const updateInventoryElement = async ({
-  material,
-  fabric,
-  product,
-  description,
-  color,
-  quantity,
-  supplier,
-  details,
-}) => {
-  let sql1;
-  let sql2;
-
-  if (material != null) {
-    sql1 = `update material
-      set description = $2
-    where id_material = $1
-    returning id_material as id;`;
-
-    sql2 = `update inventory
-     set quantity = $2, supplier = $3, details = $4
-    where material = $1
-    returning id_inventory as id;`;
-
-    try {
-      const { rowCount } = await query(sql1, material, description);
-
-      if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
-    } catch (err) {
-      console.log(err);
-      if (err instanceof CustomError) throw err;
-      const error = 'Datos no válidos.';
-
-      throw new CustomError(error, 400);
-    }
-
-    try {
-      const { result, rowCount } = await query(sql2, material, quantity, supplier, details);
-      if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
-      return result[0];
-    } catch (err) {
-      console.log(err);
-      if (err instanceof CustomError) throw err;
-      const error = 'Datos no válidos.';
-
-      throw new CustomError(error, 400);
-    }
-  } else if (fabric != null) {
-    sql1 = `update fabric
-      set fabric = $2, color = $3
-    where id_fabric = $1
-    returning id_fabric as id;`;
-
-    sql2 = `update inventory
-      set quantity = $2, supplier = $3, details = $4
-    where fabric = $1
-    returning id_inventory as id;`;
-
-    try {
-      const { rowCount } = await query(sql1, fabric, description, color);
-
-      if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
-    } catch (err) {
-      console.log(err);
-      if (err instanceof CustomError) throw err;
-      const error = 'Datos no válidos.';
-
-      throw new CustomError(error, 400);
-    }
-
-    try {
-      const { result, rowCount } = await query(sql2, fabric, quantity, supplier, details);
-      if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
-      return result[0];
-    } catch (err) {
-      console.log(err);
-      if (err instanceof CustomError) throw err;
-      const error = 'Datos no válidos.';
-
-      throw new CustomError(error, 400);
-    }
-  } else {
-    sql1 = `update product
-    set color = $2
-    where id_product = $1
-    returning id_product as id;`;
-
-    sql2 = `update inventory
-    set quantity = $2, supplier = $3, details = $4
-    where product = $1
-    returning id_inventory as id;`;
-
-    try {
-      const { rowCount } = await query(sql1, product, color);
-
-      if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
-    } catch (err) {
-      console.log(err);
-      if (err instanceof CustomError) throw err;
-      const error = 'Datos no válidos.';
-
-      throw new CustomError(error, 400);
-    }
-
-    try {
-      const { result, rowCount } = await query(sql2, product, quantity, supplier, details);
-      if (rowCount !== 1) throw new CustomError('No se pudo actualizar el elemento', 500);
-      return result[0];
-    } catch (err) {
-      console.log(err);
-      if (err instanceof CustomError) throw err;
-      const error = 'Datos no válidos.';
-
-      throw new CustomError(error, 400);
-    }
-  }
-};
-
 const newMaterialType = async (name) => {
   const sql = 'INSERT INTO material_type (name) VALUES ($1) RETURNING id_material_type AS id';
   const { result, rowCount } = await query(sql, name);
@@ -266,4 +190,5 @@ export {
   newMaterialType,
   getMaterialsTypeList,
   newMaterial,
+  updateMaterial,
 };
