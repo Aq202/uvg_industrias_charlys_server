@@ -25,28 +25,27 @@ CREATE TABLE order_detail(
 	PRIMARY KEY(no_order, product, "size")
 );
 
-CREATE TABLE material(
-	id_material VARCHAR(15) PRIMARY KEY,
-	description VARCHAR(500)
-);
+	CREATE TABLE material(
+		id_material VARCHAR(15) PRIMARY KEY,
+		name VARCHAR(200) NOT NULL,
+		supplier VARCHAR(100),
+		color VARCHAR(100),
+		type INTEGER NOT NULL
+	);
 
-CREATE TABLE fabric(
-	id_fabric VARCHAR(15) PRIMARY KEY,
-	fabric VARCHAR(100),
-	color VARCHAR(100)
-);
+	CREATE TABLE material_type(
+		id_material_type SERIAL PRIMARY KEY,
+		name VARCHAR(200) NOT NULL
+	);
+
 
 CREATE TABLE inventory(
 	id_inventory VARCHAR(15) PRIMARY KEY,
 	material VARCHAR(15) UNIQUE,
-	fabric VARCHAR(15) UNIQUE,
-	product VARCHAR(15),
-	"size" VARCHAR(15),
-	quantity FLOAT,
-	measurement_unit VARCHAR(100),
-	supplier VARCHAR(100),
-	details VARCHAR(500),
-	UNIQUE(product, "size")
+	product VARCHAR(15) UNIQUE,
+	quantity FLOAT NOT NULL DEFAULT 0,
+	measurement_unit VARCHAR(100) NOT NULL,
+	details VARCHAR(500)
 );
 
 CREATE TABLE requirements(

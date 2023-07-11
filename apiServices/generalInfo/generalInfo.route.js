@@ -1,12 +1,10 @@
 import express from 'express';
 import validateBody from '../../middlewares/validateBody.js';
 import newSizeSchema from '../../utils/validationSchemas/newSizeSchema.js';
-import newMaterialSchema from '../../utils/validationSchemas/newMaterialSchema.js';
 import newFabricSchema from '../../utils/validationSchemas/newFabricSchema.js';
 import {
   newSizeController,
   getSizesController,
-  newMaterialController,
   getMaterialsController,
   newFabricController,
   getFabricsController,
@@ -17,7 +15,6 @@ const generalInfoRouter = express.Router();
 
 generalInfoRouter.post('/size', validateBody(newSizeSchema), newSizeController);
 generalInfoRouter.get('/size', ensureAdminAuth, getSizesController);
-generalInfoRouter.post('/material', validateBody(newMaterialSchema), newMaterialController);
 generalInfoRouter.get('/material', ensureAdminAuth, getMaterialsController);
 generalInfoRouter.post('/fabric', validateBody(newFabricSchema), newFabricController);
 generalInfoRouter.get('/fabric', ensureAdminAuth, getFabricsController);

@@ -3,7 +3,7 @@ import yup from 'yup';
 export default yup
   .object()
   .shape({
-
+    inventoryId: yup.string().nullable().required("El campo 'inventoryId' es obligatorio."),
     supplier: yup.string().nullable(),
     details: yup.string().nullable(),
     measurementUnit: yup.string().nullable().required("El campo 'measurementUnit' es obligatorio."),
