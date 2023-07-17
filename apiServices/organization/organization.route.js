@@ -3,6 +3,7 @@ import {
   newOrganizationController,
   updateOrganizationController,
   deleteOrganizationController,
+  getOrganizationsController,
 } from './organization.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import validateBody from '../../middlewares/validateBody.js';
@@ -11,6 +12,7 @@ import updateOrganizationSchema from '../../utils/validationSchemas/updateOrgani
 
 const organizationRouter = express.Router();
 
+organizationRouter.get('/', ensureAdminAuth, getOrganizationsController);
 organizationRouter.post('/newOrganization', ensureAdminAuth, validateBody(newOrganizationSchema), newOrganizationController);
 organizationRouter.put('/updateOrganization', ensureAdminAuth, validateBody(updateOrganizationSchema), updateOrganizationController);
 organizationRouter.delete('/deleteOrganization', ensureAdminAuth, deleteOrganizationController);

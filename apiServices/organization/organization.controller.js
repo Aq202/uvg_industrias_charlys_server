@@ -3,6 +3,7 @@ import {
   newOrganization,
   updateOrganization,
   deleteOrganization,
+  getOrganizations,
 } from './organization.model.js';
 
 const newOrganizationController = async (req, res) => {
@@ -64,8 +65,26 @@ const deleteOrganizationController = async (req, res) => {
   }
 };
 
+const getOrganizationsController = async (req, res) => {
+  const { page } = req.query;
+  try {
+    const result = await getOrganizations({ page });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener las organizaciones.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newOrganizationController,
   updateOrganizationController,
   deleteOrganizationController,
+  getOrganizationsController,
 };
