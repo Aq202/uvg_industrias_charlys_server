@@ -1,6 +1,7 @@
 import express from 'express';
 import userRouter from '../apiServices/user/user.route.js';
 import sessionRouter from '../apiServices/session/session.route.js';
+import organizationRouter from '../apiServices/organization/organization.route.js';
 import orderRequestRouter from '../apiServices/orderRequest/orderRequest.route.js';
 import generalInfoRouter from '../apiServices/generalInfo/generalInfo.route.js';
 import inventoryRouter from '../apiServices/inventory/inventory.route.js';
@@ -14,6 +15,7 @@ const router = express.Router();
 const { apiPath } = consts;
 router.use(`${apiPath}/user`, userRouter);
 router.use(`${apiPath}/session`, sessionRouter);
+router.use(`${apiPath}/organization`, organizationRouter);
 router.use(`${apiPath}/orderRequest`, orderRequestRouter);
 router.use(`${apiPath}/generalInfo`, generalInfoRouter);
 router.use(`${apiPath}/inventory`, inventoryRouter);
