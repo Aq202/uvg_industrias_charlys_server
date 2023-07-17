@@ -62,5 +62,8 @@ ADD CONSTRAINT client_or_temporary_check CHECK ((id_client_organization IS NULL 
 ALTER TABLE order_request_media
 ADD CONSTRAINT ord_req_media_fk FOREIGN KEY (id_order_request) REFERENCES order_request(id_order_request);
 
+ALTER TABLE order_media
+ADD CONSTRAINT ord_media_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order);
+
 ALTER TABLE temporary_client 
 ADD CONSTRAINT temp_client_check_email CHECK (email ~ '^(([^<>()\[\]\\.,;:\s@”]+(\.[^<>()\[\]\\.,;:\s@”]+)*)|(“.+”))@((\[[0–9]{1,3}\.[0–9]{1,3}\.[0–9]{1,3}\.[0–9]{1,3}])|(([a-zA-Z\-0–9]+\.)+[a-zA-Z]{2,}))$');

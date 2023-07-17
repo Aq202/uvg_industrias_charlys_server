@@ -37,8 +37,9 @@ create table "order"(
 id_order varchar(15) primary key,
 id_order_request varchar(15),
 deadline date,
-details text,
-id_client_organization VARCHAR(15)
+description text,
+id_client_organization VARCHAR(15),
+"cost" FLOAT,
 );
 
 CREATE TABLE "size"(
@@ -110,11 +111,19 @@ create table order_request(
 	description text,
 	date_placed date,
 	id_client_organization VARCHAR(15),
-	id_temporary_client VARCHAR(15)
+	id_temporary_client VARCHAR(15),
+	deadline DATE,
+	"cost" FLOAT,
+	aditional_details TEXT
 );
 
 CREATE TABLE order_request_media(
   id_order_request varchar(15) NOT NULL,
+  name varchar(1000) NOT NULL
+);
+
+CREATE TABLE order_media(
+  id_order varchar(15) NOT NULL,
   name varchar(1000) NOT NULL
 );
 
