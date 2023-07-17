@@ -3,27 +3,27 @@ import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 
 const newOrderRequest = async ({
-  name, email, phone, address, description,
+  description, idClientOrganization = null, idTemporaryClient = null,
 }) => {
-  const sql = `INSERT INTO order_request(customer_name, customer_email, customer_phone, customer_address, description, date_placed)
-                VALUES ($1, $2, $3, $4, $5, $6) RETURNING no_request as id;`;
+  const sql = `INSERT INTO order_request(description, date_placed, id_client_organization, id_temporary_client)
+                VALUES ($1, now(), $2, $3) RETURNING id_order_request as id;`;
 
   try {
     const { result, rowCount } = await query(
       sql,
-      name,
-      email,
-      phone,
-      address,
       description,
-      new Date(),
+      idClientOrganization,
+      idTemporaryClient,
     );
 
     if (rowCount !== 1) throw new CustomError('No se pudo registrar la solicitud de orden', 500);
 
     return result[0];
   } catch (ex) {
-    if (ex?.constraint === 'check_email') { throw new CustomError('El formato del email es inválido.', 400); }
+    if (ex?.code === '23503') {
+      if (ex.detail?.includes('id_client_organization')) throw new CustomError('La organización cliente no existe.', 400);
+      if (ex.detail?.includes('id_temporary_client')) throw new CustomError('El cliente temporal no existe.', 400);
+    }
     throw ex;
   }
 };
@@ -43,7 +43,7 @@ const getOrderRequests = async (searchQuery) => {
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
   return result.map((val) => ({
-    id: val.no_request,
+    id: val.id_order_requestt,
     customerName: val.customer_name,
     customerEmail: val.customer_email,
     customerPhone: val.customer_phone,
@@ -54,7 +54,7 @@ const getOrderRequests = async (searchQuery) => {
 };
 
 const addOrderRequestMedia = async (orderRequestId, name) => {
-  const sql = 'INSERT INTO order_request_media(no_request, name) VALUES ($1, $2) ;';
+  const sql = 'INSERT INTO order_request_media(id_order_request, name) VALUES ($1, $2) ;';
 
   const { rowCount } = await query(
     sql,
@@ -66,14 +66,14 @@ const addOrderRequestMedia = async (orderRequestId, name) => {
 };
 
 const getOrderRequestMedia = async (orderRequestId) => {
-  const sql = 'SELECT name FROM order_request_media WHERE no_request = $1';
+  const sql = 'SELECT name FROM order_request_media WHERE id_order_request = $1';
   const { result, rowCount } = await query(sql, orderRequestId);
 
   return rowCount > 0 ? result.map((val) => `${consts.apiPath}/image/orderRequest/${val.name}`) : null;
 };
 
 const getOrderRequestById = async (orderRequestId) => {
-  const sql = 'SELECT * FROM order_request WHERE no_request = $1 LIMIT 1';
+  const sql = 'SELECT * FROM order_request WHERE id_order_request = $1 LIMIT 1';
   const { result, rowCount } = await query(sql, orderRequestId);
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
@@ -83,7 +83,7 @@ const getOrderRequestById = async (orderRequestId) => {
   const media = await getOrderRequestMedia(orderRequestId);
 
   return {
-    id: val.no_request,
+    id: val.id_order_request,
     customerName: val.customer_name,
     customerEmail: val.customer_email,
     customerPhone: val.customer_phone,

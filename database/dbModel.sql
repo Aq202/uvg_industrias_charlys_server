@@ -34,11 +34,11 @@ CREATE TABLE session(
 );
 
 create table "order"(
-no_order varchar(15) primary key,
-order_request_no varchar(15),
-src_date date,
+id_order varchar(15) primary key,
+id_order_request varchar(15),
 deadline date,
-details text
+details text,
+id_client_organization VARCHAR(15)
 );
 
 CREATE TABLE "size"(
@@ -97,17 +97,24 @@ CREATE TABLE requirements(
 	quantity_per_unit FLOAT
 );
 
+CREATE TABLE temporary_client(
+	id_temporary_client VARCHAR(15) primary key,
+	name VARCHAR(100) NOT NULL,
+	email VARCHAR(100) NOT NULL,
+	phone VARCHAR(15),
+	address VARCHAR(200) NOT NULL
+);
+
 create table order_request(
-no_request varchar(15) primary key,
-customer_name VARCHAR(100) NOT NULL,
-customer_email VARCHAR(100),
-customer_phone VARCHAR(100),
-customer_address VARCHAR(300) NOT null,
-description text,
-date_placed date
+	id_order_request varchar(15) primary key,
+	description text,
+	date_placed date,
+	id_client_organization VARCHAR(15),
+	id_temporary_client VARCHAR(15)
 );
 
 CREATE TABLE order_request_media(
-  no_request varchar(15) NOT NULL,
+  id_order_request varchar(15) NOT NULL,
   name varchar(1000) NOT NULL
 );
+

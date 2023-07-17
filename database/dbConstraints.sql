@@ -14,8 +14,10 @@ ADD CONSTRAINT employee_check_role CHECK (role IN ('ADMIN', 'PRODUCTION', 'SALES
 ALTER TABLE "session"
 ADD CONSTRAINT session_user_fk FOREIGN KEY (id_user) REFERENCES user_account(id_user);
 
-alter table "order"
-add constraint order_fk foreign key (order_request_no) references order_request(no_request);
+ALTER TABLE "order"
+ADD CONSTRAINT order_fk FOREIGN KEY (id_order_request) REFERENCES order_request(id_order_request),
+ADD CONSTRAINT order_client_fk FOREIGN KEY (id_client_organization) REFERENCES client_organization(id_client_organization);
+
 
 ALTER TABLE "order_detail" 
 ADD CONSTRAINT orderd_order_fk FOREIGN KEY (no_order) REFERENCES "order"(no_order),
@@ -50,7 +52,15 @@ ADD CONSTRAINT product_ptype_fk FOREIGN KEY ("type") REFERENCES product_type(id_
 ADD CONSTRAINT product_client_fk FOREIGN KEY (client) REFERENCES client_organization(id_client_organization);
 
 ALTER TABLE order_request
-ADD CONSTRAINT check_email CHECK (customer_email ~ '^(([^<>()\[\]\\.,;:\s@”]+(\.[^<>()\[\]\\.,;:\s@”]+)*)|(“.+”))@((\[[0–9]{1,3}\.[0–9]{1,3}\.[0–9]{1,3}\.[0–9]{1,3}])|(([a-zA-Z\-0–9]+\.)+[a-zA-Z]{2,}))$');
+ADD CONSTRAINT client_organization_fk FOREIGN KEY (id_client_organization) REFERENCES client_organization(id_client_organization),
+ADD CONSTRAINT temporary_client_fk FOREIGN KEY (id_temporary_client) REFERENCES temporary_client(id_temporary_client);
+ADD CONSTRAINT client_or_temporary_check CHECK ((id_client_organization IS NULL AND id_temporary_client IS NOT NULL) 
+	OR (id_client_organization IS NOT NULL AND id_temporary_client IS NULL) 
+	OR (id_client_organization IS NULL AND id_temporary_client IS NULL));
+
 
 ALTER TABLE order_request_media
-ADD CONSTRAINT ord_req_media_fk FOREIGN KEY (no_request) REFERENCES order_request(no_request);
+ADD CONSTRAINT ord_req_media_fk FOREIGN KEY (id_order_request) REFERENCES order_request(id_order_request);
+
+ALTER TABLE temporary_client 
+ADD CONSTRAINT temp_client_check_email CHECK (email ~ '^(([^<>()\[\]\\.,;:\s@”]+(\.[^<>()\[\]\\.,;:\s@”]+)*)|(“.+”))@((\[[0–9]{1,3}\.[0–9]{1,3}\.[0–9]{1,3}\.[0–9]{1,3}])|(([a-zA-Z\-0–9]+\.)+[a-zA-Z]{2,}))$');

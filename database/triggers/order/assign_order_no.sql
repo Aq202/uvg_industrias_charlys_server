@@ -4,11 +4,11 @@
  $BODY$
  declare prev_id_number integer;
  begin
- 	SELECT CAST(SUBSTRING(no_order FROM 2) AS INTEGER) INTO prev_id_number FROM "order" ORDER BY no_order DESC LIMIT 1;
+ 	SELECT CAST(SUBSTRING(id_order FROM 2) AS INTEGER) INTO prev_id_number FROM "order" ORDER BY id_order DESC LIMIT 1;
 	IF (prev_id_number IS NULL) THEN
 		prev_id_number = 0;
 		END IF;
-	NEW.no_order = CONCAT('O', LPAD(CAST(prev_id_number + 1 AS VARCHAR), 14, '0'));
+	NEW.id_order = CONCAT('O', LPAD(CAST(prev_id_number + 1 AS VARCHAR), 14, '0'));
 	RETURN NEW;
  END;
  $BODY$
