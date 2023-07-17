@@ -9,4 +9,13 @@ export default {
     refresh: 'REFRESH',
     access: 'ACCESS',
   },
+  apiPath: '/api',
+  bucketRoutes: {
+    orderRequest: 'order-request',
+  },
+  inventoryType: {
+    product: 'PRODUCT',
+    fabric: 'FABRIC',
+    material: 'MATERIAL',
+  },
 };

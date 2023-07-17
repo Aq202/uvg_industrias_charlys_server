@@ -58,11 +58,13 @@ const newMaterialController = async (req, res) => {
 };
 
 const getMaterialsController = async (req, res) => {
+  const { search } = req.query;
   try {
-    const result = await getMaterials();
+    const result = await getMaterials(search);
 
     res.send(result);
   } catch (ex) {
+    console.log(ex);
     let err = 'Ocurrio un error al obtener los materiales disponibles.';
     let status = 500;
     if (ex instanceof CustomError) {
@@ -93,11 +95,13 @@ const newFabricController = async (req, res) => {
 };
 
 const getFabricsController = async (req, res) => {
+  const { search } = req.query;
   try {
-    const result = await getFabrics();
+    const result = await getFabrics(search);
 
     res.send(result);
   } catch (ex) {
+    console.log(ex);
     let err = 'Ocurrio un error al obtener las telas disponibles.';
     let status = 500;
     if (ex instanceof CustomError) {
