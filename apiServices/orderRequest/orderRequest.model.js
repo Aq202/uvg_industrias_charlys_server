@@ -31,11 +31,25 @@ const newOrderRequest = async ({
 const getOrderRequests = async (searchQuery) => {
   let queryResult;
   if (searchQuery) {
-    const sql = `select * from order_request WHERE customer_name ILIKE $1 OR customer_email ILIKE $1 OR
-                customer_phone ILIKE $1 OR customer_address ILIKE $1 OR description ILIKE $1 ORDER BY date_placed DESC`;
+    const sql = `
+      SELECT * FROM (
+      SELECT O.*, CO.name AS client FROM order_request O
+      INNER JOIN client_organization CO ON O.id_client_organization = CO.id_client_organization
+      UNION
+      SELECT O.*, TC.name AS client FROM order_request O
+      INNER JOIN temporary_client TC ON O.id_temporary_client = TC.id_temporary_client
+      ) AS sub_query
+      WHERE client ILIKE $1 OR description ILIKE $1 ORDER BY date_placed DESC
+    `;
     queryResult = await query(sql, `%${searchQuery}%`);
   } else {
-    queryResult = await query('select * from order_request ORDER BY date_placed DESC');
+    queryResult = await query(`
+      SELECT O.*, CO.name AS client FROM order_request O
+      INNER JOIN client_organization CO ON O.id_client_organization = CO.id_client_organization
+      UNION
+      SELECT O.*, TC.name AS client FROM order_request O
+      INNER JOIN temporary_client TC ON O.id_temporary_client = TC.id_temporary_client
+    `);
   }
 
   const { result, rowCount } = queryResult;
@@ -43,13 +57,12 @@ const getOrderRequests = async (searchQuery) => {
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
   return result.map((val) => ({
-    id: val.id_order_requestt,
-    customerName: val.customer_name,
-    customerEmail: val.customer_email,
-    customerPhone: val.customer_phone,
-    customerAddress: val.customer_address,
+    id: val.id_order_request,
+    client: val.client,
     description: val.description,
     datePlaced: val.date_placed,
+    clientOrganization: val.id_client_organization ?? undefined,
+    temporaryClient: val.id_temporary_client ?? undefined,
   }));
 };
 
