@@ -5,7 +5,9 @@ import {
   authenticate, deleteRefreshToken, storeRefreshToken, validateRefreshToken,
 } from './session.model.js';
 import { signAccessToken, signRefreshToken } from '../../services/jwt.js';
-import { allowInsecureConnections } from '../../config/index.js';
+import config  from 'config';
+
+const allowInsecureConnections = config.get("allowInsecureConnections");
 
 const saveRefreshTokenInCookies = (res, token) => {
   res.cookie('refreshToken', token, {

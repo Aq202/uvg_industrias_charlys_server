@@ -1,7 +1,9 @@
 import jwt from 'jsonwebtoken';
 import moment from 'moment';
+import config from 'config';
 import consts from '../utils/consts.js';
-import { jwtKey } from '../config/index.js';
+
+const jwtKey = config.get('jwtKey');
 
 const key = jwtKey;
 

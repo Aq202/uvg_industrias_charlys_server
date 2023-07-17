@@ -1,5 +1,9 @@
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { awsBucketAccess, awsBucketSecret, bucketName } from '../../config/index.js';
+import config from 'config';
+
+const awsBucketAccess = config.get('awsBucketAccess');
+const awsBucketSecret = config.get('awsBucketSecret');
+const bucketName = config.get('bucketName');
 
 const client = new S3Client({
   region: 'us-west-1',
