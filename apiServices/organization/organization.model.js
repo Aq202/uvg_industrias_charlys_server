@@ -44,7 +44,7 @@ const deleteOrganization = async ({ id }) => {
 };
 
 const getOrganizations = async ({ page }) => {
-  const sql = `SELECT * FROM client_organization LIMIT 11 OFFSET ${(page - 1) * 10}`;
+  const sql = `SELECT * FROM client_organization ORDER BY id_client_organization LIMIT 11 OFFSET ${(page - 1) * 10}`;
   const { result, rowCount } = await query(sql);
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
   return result.map((val) => ({
