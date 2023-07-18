@@ -46,12 +46,7 @@ const createUser = async ({
 };
 
 const createAdmin = async ({
-  name,
-  lastName,
-  email,
-  phone,
-  sex,
-  passwordHash,
+  name, lastName, email, phone, sex, passwordHash,
 }) => {
   try {
     await query('BEGIN');
@@ -70,7 +65,13 @@ const createAdmin = async ({
 
     // insertar al usuario
     const userId = await createUser({
-      name, lastName, email, phone, sex, passwordHash, idEmployee,
+      name,
+      lastName,
+      email,
+      phone,
+      sex,
+      passwordHash,
+      idEmployee,
     });
 
     await query('COMMIT');
@@ -83,7 +84,54 @@ const createAdmin = async ({
   }
 };
 
+const createOrganizationMember = async ({
+  name,
+  lastName,
+  email,
+  phone,
+  sex,
+  idClientOrganization,
+}) => {
+  try {
+    const sqlQuery = `
+  INSERT INTO user_account (name, lastname, email, phone, sex, id_client_organization)
+  VALUES ($1, $2, $3, $4, $5, $6)
+  RETURNING id_user AS id
+  `;
+
+    const { rowCount, result } = await query(
+      sqlQuery,
+      name,
+      lastName,
+      email,
+      phone,
+      sex,
+      idClientOrganization,
+    );
+
+    if (rowCount !== 1) {
+      throw new CustomError('No se pudo registrar al nuevo miembro.', 500);
+    }
+
+    return result[0];
+  } catch (ex) {
+    if (ex?.code === '23503') throw new CustomError('La organización del nuevo miembro no existe.', 400);
+    throw ex;
+  }
+};
+
+const saveRegisterToken = async ({ idUser, token }) => {
+  const sqlQuery = `
+    INSERT INTO alter_user_token (id_user, token) VALUES ($1, $2);
+  `;
+
+  const { rowCount } = await query(sqlQuery, idUser, token);
+
+  if (rowCount !== 1) {
+    throw new CustomError('No se pudo almacenar el token de miembro.', 500);
+  }
+};
+
 export {
-  // eslint-disable-next-line import/prefer-default-export
-  createAdmin,
+  createAdmin, createOrganizationMember, saveRegisterToken,
 };

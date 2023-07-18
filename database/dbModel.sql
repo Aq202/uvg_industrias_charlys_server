@@ -8,7 +8,7 @@ CREATE TABLE user_account(
 	lastname VARCHAR(100) NOT NULL,
 	email VARCHAR(100) NOT NULL UNIQUE,
 	phone VARCHAR(15),
-	password TEXT NOT NULL,
+	password TEXT,
 	sex CHAR NOT NULL,
 	id_client_organization VARCHAR(15),
 	id_employee VARCHAR(15),
@@ -125,5 +125,10 @@ CREATE TABLE order_request_media(
 CREATE TABLE order_media(
   id_order varchar(15) NOT NULL,
   name varchar(1000) NOT NULL
+);
+
+CREATE TABLE alter_user_token(
+	id_user VARCHAR(15) NOT NULL,
+	token TEXT NOT NULL
 );
 

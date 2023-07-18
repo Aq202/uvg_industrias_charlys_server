@@ -1,7 +1,11 @@
 import nodemailer from 'nodemailer';
 import moment from 'moment';
 import 'moment/locale/es.js';
-import { clientId, clientSecret, refreshToken } from '../../config/index.js';
+import config from 'config';
+
+const clientId = config.get('clientId');
+const clientSecret = config.get('clientSecret');
+const refreshToken = config.get('refreshToken');
 
 export default class Email {
   constructor({

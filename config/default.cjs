@@ -4,6 +4,7 @@ dotenv.config(); // hace accesibles las variables de entorno
 
 module.exports = {
   port: 3000,
+  host: '',
   dbHost: process.env.DB_HOST,
   dbName: process.env.DB_NAME,
   dbUser: process.env.DB_USER,

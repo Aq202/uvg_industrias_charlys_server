@@ -8,6 +8,7 @@ export default {
   token: {
     refresh: 'REFRESH',
     access: 'ACCESS',
+    register: 'REGISTER',
   },
   apiPath: '/api',
   bucketRoutes: {
