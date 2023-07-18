@@ -1,9 +1,13 @@
 import pgPkg from 'pg';
-import {
-  dbUser, dbHost, dbName, dbPassword, dbPort,
-} from '../config/index.js';
+import config from 'config';
 
 const { Pool } = pgPkg;
+
+const dbUser = config.get('dbUser');
+const dbHost = config.get('dbHost');
+const dbName = config.get('dbName');
+const dbPassword = config.get('dbPassword');
+const dbPort = config.get('dbPort');
 
 // Coloca aquí tus credenciales
 const pool = new Pool({

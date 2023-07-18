@@ -5,9 +5,48 @@ import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 import randomString from '../../utils/randomString.js';
 import {
-  addOrderRequestMedia, getOrderRequestById, getOrderRequests, newOrderRequest,
+  addOrderRequestMedia,
+  getOrderRequestById,
+  getOrderRequests,
+  newOrderRequest,
 } from './orderRequest.model.js';
+import { createTemporaryClient } from '../temporaryClient/temporaryClient.model.js';
 
+const saveOrderRequestMedia = async ({ files, id }) => {
+  let uploadError = false;
+  const promises = [];
+
+  for (const file of files) {
+    const filePath = `${global.dirname}/files/${file.fileName}`;
+
+    // subir archivos
+    if (!uploadError) {
+      const fileId = `${id}-${randomString(15)}-${Date.now()}.${file.type}`;
+      const fileKey = `${consts.bucketRoutes.orderRequest}/${fileId}`;
+
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await uploadFileToBucket(fileKey, filePath, file.type);
+
+        // save file url in db
+        promises.push(addOrderRequestMedia(id, fileId));
+      } catch (ex) {
+        uploadError = true;
+      }
+    }
+
+    // eliminar archivos temporales
+
+    fs.unlink(filePath, () => {});
+  }
+
+  await Promise.all(promises);
+
+  if (uploadError) {
+    await rollback();
+    throw new CustomError('No se pudieron guardar imagenes en el servidor.', 500);
+  }
+};
 const newOrderRequestController = async (req, res) => {
   const {
     name, email, phone, address, description,
@@ -16,53 +55,61 @@ const newOrderRequestController = async (req, res) => {
   try {
     begin(); // begin transaction
 
+    const { id: idTemporaryClient } = await createTemporaryClient({
+      name,
+      email,
+      phone,
+      address,
+    });
+
     const { id } = await newOrderRequest({
-      name, email, phone, address, description,
+      description,
+      idTemporaryClient,
     });
 
     // save files
     if (Array.isArray(req.uploadedFiles)) {
-      let uploadError = false;
-      const promises = [];
-
-      for (const file of req.uploadedFiles) {
-        const filePath = `${global.dirname}/files/${file.fileName}`;
-
-        // subir archivos
-        if (!uploadError) {
-          const fileId = `${id}-${randomString(15)}-${Date.now()}.${file.type}`;
-          const fileKey = `${consts.bucketRoutes.orderRequest}/${fileId}`;
-
-          try {
-            // eslint-disable-next-line no-await-in-loop
-            await uploadFileToBucket(fileKey, filePath, file.type);
-
-            // save file url in db
-            promises.push(addOrderRequestMedia(id, fileId));
-          } catch (ex) {
-            uploadError = true;
-          }
-        }
-
-        // eliminar archivos temporales
-
-        fs.unlink(filePath, () => {
-        });
-      }
-
-      await Promise.all(promises);
-
-      if (uploadError) {
-        rollback();
-        throw new CustomError('No se pudieron guardar imagenes en el servidor.', 500);
-      }
+      await saveOrderRequestMedia({ files: req.uploadedFiles, id });
     }
 
-    commit();
+    await commit();
 
     res.send({ id });
   } catch (ex) {
+    await rollback();
     let err = 'Ocurrio un error al registrar intención de compra.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const newClientOrderRequestController = async (req, res) => {
+  const { description, idClientOrganization } = req.body;
+
+  try {
+    begin(); // begin transaction
+
+    const { id } = await newOrderRequest({
+      description,
+      idClientOrganization,
+    });
+
+    // save files
+    if (Array.isArray(req.uploadedFiles)) {
+      await saveOrderRequestMedia({ files: req.uploadedFiles, id });
+    }
+
+    await commit();
+
+    res.send({ id });
+  } catch (ex) {
+    await rollback();
+    let err = 'Ocurrio un error al registrar intención de compra de un cliente ya registrado.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -110,4 +157,9 @@ const getOrderRequestByIdController = async (req, res) => {
 };
 
 // eslint-disable-next-line import/prefer-default-export
-export { newOrderRequestController, getOrderRequestsController, getOrderRequestByIdController };
+export {
+  newOrderRequestController,
+  getOrderRequestsController,
+  getOrderRequestByIdController,
+  newClientOrderRequestController,
+};
