@@ -115,15 +115,13 @@ const createOrganizationMember = async ({
 
     return result[0];
   } catch (ex) {
-    if (ex?.code === '23503') throw new CustomError('La organización del nuevo miembro no existe.', 400);
+    if (ex?.code === '23503') { throw new CustomError('La organización del nuevo miembro no existe.', 400); }
     throw ex;
   }
 };
 
 const saveRegisterToken = async ({ idUser, token }) => {
-  const sqlQuery = `
-    INSERT INTO alter_user_token (id_user, token) VALUES ($1, $2);
-  `;
+  const sqlQuery = 'INSERT INTO alter_user_token (id_user, token) VALUES ($1, $2)';
 
   const { rowCount } = await query(sqlQuery, idUser, token);
 
@@ -132,6 +130,49 @@ const saveRegisterToken = async ({ idUser, token }) => {
   }
 };
 
+const validateAlterUserToken = async ({ idUser, token }) => {
+  const sqlQuery = 'SELECT 1 FROM alter_user_token WHERE id_user = $1 AND token = $2';
+
+  const { rowCount } = await query(sqlQuery, idUser, token);
+
+  if (rowCount !== 1) {
+    throw new CustomError('El token de autorización no es válido.', 401);
+  }
+};
+
+const updateUserPassword = async ({ idUser, passwordHash }) => {
+  const sqlQuery = 'UPDATE user_account SET password = $1 WHERE id_user = $2';
+  const { rowCount } = await query(sqlQuery, passwordHash, idUser);
+
+  if (rowCount !== 1) {
+    throw new CustomError('No se pudo actualizar la contraseña del usuario.', 500);
+  }
+};
+
+const deleteAlterUserToken = async ({ token }) => {
+  const sqlQuery = 'DELETE FROM alter_user_token WHERE token = $1';
+  const { rowCount } = await query(sqlQuery, token);
+
+  if (rowCount === 0) {
+    throw new CustomError('No se eliminó el token de usuario.', 404);
+  }
+};
+
+const deleteAllUserAlterTokens = async ({ idUser }) => {
+  const sqlQuery = 'DELETE FROM alter_user_token WHERE id_user = $1';
+  const { rowCount } = await query(sqlQuery, idUser);
+
+  if (rowCount === 0) {
+    throw new CustomError('No se eliminaron los token de usuario.', 404);
+  }
+};
+
 export {
-  createAdmin, createOrganizationMember, saveRegisterToken,
+  createAdmin,
+  createOrganizationMember,
+  saveRegisterToken,
+  validateAlterUserToken,
+  updateUserPassword,
+  deleteAllUserAlterTokens,
+  deleteAlterUserToken,
 };
