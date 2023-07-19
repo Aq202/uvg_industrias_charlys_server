@@ -1,12 +1,37 @@
 import query from '../../database/query.js';
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 
-const getClients = async ({ idOrganization, page }) => {
-  const rows = page * 10;
-  const sql = 'select * from user_account where id_client_organization = $1 LIMIT 11 OFFSET $2';
+const getClients = async ({ idOrganization, page = 0, search }) => {
+  const offset = page * consts.pagelength;
+  if (search === undefined) {
+    const sqlCount = 'select ceiling(count(*)/$1::numeric) from user_account where id_client_organization = $2;';
+    const sql = 'select * from user_account where id_client_organization = $1 LIMIT $2 OFFSET $3';
 
-  const { result, rowCount } = await query(sql, idOrganization, rows);
+    const pages = (await query(sqlCount, consts.pagelength, idOrganization)).result[0].ceiling;
+    const { result, rowCount } = await query(sql, idOrganization, consts.pagelength, offset);
+    result.push({ pages });
+    if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
+    return result.map((val) => ({
+      name: val.name,
+      lastname: val.lastname,
+      email: val.email,
+      phone: val.phone,
+      sex: val.sex,
+      pages: val.pages,
+    }));
+  }
+  const sqlCount = `select ceiling(count(*)/$1::numeric) from user_account where id_client_organization = $2
+  and ("name" ilike '%${search}%' or lastname ilike '%${search}%' or email ilike '%${search}%'
+  or phone ilike '%${search}%');`;
+  const sql = `select * from user_account where id_client_organization = $1
+  and ("name" ilike '%${search}%' or lastname ilike '%${search}%' or email ilike '%${search}%'
+  or phone ilike '%${search}%') LIMIT $2 OFFSET $3;`;
+
+  const pages = (await query(sqlCount, consts.pagelength, idOrganization)).result[0].ceiling;
+  const { result, rowCount } = await query(sql, idOrganization, consts.pagelength, offset);
+  result.push({ pages });
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
   return result.map((val) => ({
@@ -15,6 +40,7 @@ const getClients = async ({ idOrganization, page }) => {
     email: val.email,
     phone: val.phone,
     sex: val.sex,
+    pages: val.pages,
   }));
 };
 

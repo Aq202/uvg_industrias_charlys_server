@@ -20,4 +20,5 @@ export default {
     fabric: 'FABRIC',
     material: 'MATERIAL',
   },
+  pagelength: 10,
 };

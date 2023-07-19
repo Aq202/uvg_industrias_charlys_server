@@ -9,9 +9,9 @@ import {
 
 const getClientsController = async (req, res) => {
   const { idOrganization } = req.params;
-  const page = req.query.page || 0;
+  const { page, search } = req.query;
   try {
-    const result = await getClients({ idOrganization, page });
+    const result = await getClients({ idOrganization, page, search });
 
     res.send(result);
   } catch (ex) {
@@ -70,13 +70,11 @@ const updateOrganizationController = async (req, res) => {
 
 const deleteOrganizationController = async (req, res) => {
   const { id } = req.params;
-  console.log(id)
   try {
     await deleteOrganization({ id });
     res.send(id);
   } catch (ex) {
     let err = 'No se encontró el id de la organización';
-    console.log(ex);
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
