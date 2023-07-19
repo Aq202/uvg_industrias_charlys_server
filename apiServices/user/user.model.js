@@ -46,12 +46,7 @@ const createUser = async ({
 };
 
 const createAdmin = async ({
-  name,
-  lastName,
-  email,
-  phone,
-  sex,
-  passwordHash,
+  name, lastName, email, phone, sex, passwordHash,
 }) => {
   try {
     await query('BEGIN');
@@ -70,7 +65,13 @@ const createAdmin = async ({
 
     // insertar al usuario
     const userId = await createUser({
-      name, lastName, email, phone, sex, passwordHash, idEmployee,
+      name,
+      lastName,
+      email,
+      phone,
+      sex,
+      passwordHash,
+      idEmployee,
     });
 
     await query('COMMIT');
@@ -83,7 +84,95 @@ const createAdmin = async ({
   }
 };
 
+const createOrganizationMember = async ({
+  name,
+  lastName,
+  email,
+  phone,
+  sex,
+  idClientOrganization,
+}) => {
+  try {
+    const sqlQuery = `
+  INSERT INTO user_account (name, lastname, email, phone, sex, id_client_organization)
+  VALUES ($1, $2, $3, $4, $5, $6)
+  RETURNING id_user AS id
+  `;
+
+    const { rowCount, result } = await query(
+      sqlQuery,
+      name,
+      lastName,
+      email,
+      phone,
+      sex,
+      idClientOrganization,
+    );
+
+    if (rowCount !== 1) {
+      throw new CustomError('No se pudo registrar al nuevo miembro.', 500);
+    }
+
+    return result[0];
+  } catch (ex) {
+    if (ex?.code === '23503') { throw new CustomError('La organización del nuevo miembro no existe.', 400); }
+    throw ex;
+  }
+};
+
+const saveRegisterToken = async ({ idUser, token }) => {
+  const sqlQuery = 'INSERT INTO alter_user_token (id_user, token) VALUES ($1, $2)';
+
+  const { rowCount } = await query(sqlQuery, idUser, token);
+
+  if (rowCount !== 1) {
+    throw new CustomError('No se pudo almacenar el token de miembro.', 500);
+  }
+};
+
+const validateAlterUserToken = async ({ idUser, token }) => {
+  const sqlQuery = 'SELECT 1 FROM alter_user_token WHERE id_user = $1 AND token = $2';
+
+  const { rowCount } = await query(sqlQuery, idUser, token);
+
+  if (rowCount !== 1) {
+    throw new CustomError('El token de autorización no es válido.', 401);
+  }
+};
+
+const updateUserPassword = async ({ idUser, passwordHash }) => {
+  const sqlQuery = 'UPDATE user_account SET password = $1 WHERE id_user = $2';
+  const { rowCount } = await query(sqlQuery, passwordHash, idUser);
+
+  if (rowCount !== 1) {
+    throw new CustomError('No se pudo actualizar la contraseña del usuario.', 500);
+  }
+};
+
+const deleteAlterUserToken = async ({ token }) => {
+  const sqlQuery = 'DELETE FROM alter_user_token WHERE token = $1';
+  const { rowCount } = await query(sqlQuery, token);
+
+  if (rowCount === 0) {
+    throw new CustomError('No se eliminó el token de usuario.', 404);
+  }
+};
+
+const deleteAllUserAlterTokens = async ({ idUser }) => {
+  const sqlQuery = 'DELETE FROM alter_user_token WHERE id_user = $1';
+  const { rowCount } = await query(sqlQuery, idUser);
+
+  if (rowCount === 0) {
+    throw new CustomError('No se eliminaron los token de usuario.', 404);
+  }
+};
+
 export {
-  // eslint-disable-next-line import/prefer-default-export
   createAdmin,
+  createOrganizationMember,
+  saveRegisterToken,
+  validateAlterUserToken,
+  updateUserPassword,
+  deleteAllUserAlterTokens,
+  deleteAlterUserToken,
 };

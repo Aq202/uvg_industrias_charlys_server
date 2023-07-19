@@ -69,12 +69,14 @@ const updateOrganizationController = async (req, res) => {
 };
 
 const deleteOrganizationController = async (req, res) => {
-  const { id } = req.body;
+  const { id } = req.params;
+  console.log(id)
   try {
     await deleteOrganization({ id });
     res.send(id);
   } catch (ex) {
     let err = 'No se encontró el id de la organización';
+    console.log(ex);
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;

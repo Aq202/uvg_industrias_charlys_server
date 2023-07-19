@@ -67,3 +67,6 @@ ADD CONSTRAINT ord_media_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order);
 
 ALTER TABLE temporary_client 
 ADD CONSTRAINT temp_client_check_email CHECK (email ~ '^(([^<>()\[\]\\.,;:\s@”]+(\.[^<>()\[\]\\.,;:\s@”]+)*)|(“.+”))@((\[[0–9]{1,3}\.[0–9]{1,3}\.[0–9]{1,3}\.[0–9]{1,3}])|(([a-zA-Z\-0–9]+\.)+[a-zA-Z]{2,}))$');
+
+ALTER TABLE alter_user_token
+ADD CONSTRAINT alterUserTkn_user_fk FOREIGN KEY (id_user) REFERENCES user_account(id_user);
