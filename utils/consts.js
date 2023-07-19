@@ -10,6 +10,7 @@ export default {
     access: 'ACCESS',
   },
   apiPath: '/api',
+  rowsPerTable: '10',
   bucketRoutes: {
     orderRequest: 'order-request',
   },

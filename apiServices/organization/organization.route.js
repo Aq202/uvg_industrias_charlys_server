@@ -15,6 +15,6 @@ const organizationRouter = express.Router();
 organizationRouter.get('/', ensureAdminAuth, getOrganizationsController);
 organizationRouter.post('/newOrganization', ensureAdminAuth, validateBody(newOrganizationSchema), newOrganizationController);
 organizationRouter.put('/updateOrganization', ensureAdminAuth, validateBody(updateOrganizationSchema), updateOrganizationController);
-organizationRouter.delete('/deleteOrganization', ensureAdminAuth, deleteOrganizationController);
+organizationRouter.delete('/:id', ensureAdminAuth, deleteOrganizationController);
 
 export default organizationRouter;
