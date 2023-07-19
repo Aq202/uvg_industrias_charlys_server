@@ -38,22 +38,29 @@ const deleteOrganization = async ({ id }) => {
     const { rowCount } = await query(sql, id);
     if (rowCount !== 1) throw new CustomError('No se encontró la organización.', 400);
   } catch (ex) {
-    if (ex instanceof CustomError) throw ex;
-    throw ex;
+    if (ex?.code === '23503') {
+      const sqlDisable = 'UPDATE client_organization SET enabled = false WHERE id_client_organization = $1';
+      query(sqlDisable, id);
+    } else throw ex;
   }
 };
 
 const getOrganizations = async ({ page }) => {
-  const sql = `SELECT * FROM client_organization ORDER BY id_client_organization LIMIT 11 OFFSET ${(page - 1) * 10}`;
-  const { result, rowCount } = await query(sql);
-  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
-  return result.map((val) => ({
+  const sql1 = 'SELECT COUNT(*) FROM client_organization';
+  const { result: resultCount, rowCount: rowCount1 } = await query(sql1);
+  if (rowCount1 === 0) throw new CustomError('No se encontraron resultados.', 404);
+  const sql2 = `SELECT * FROM client_organization ORDER BY id_client_organization LIMIT 11 OFFSET ${(page - 1) * 10}`;
+  const { result, rowCount: rowCount2 } = await query(sql2);
+  if (rowCount2 === 0) throw new CustomError('No se encontraron resultados.', 404);
+  const response = result.map((val) => ({
     id: val.id_client_organization,
     name: val.name,
     email: val.email,
     phone: val.phone,
     address: val.address,
+    enabled: val.enabled,
   }));
+  return { result: response, count: resultCount[0].count };
 };
 
 export {
