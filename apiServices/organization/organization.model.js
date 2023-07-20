@@ -30,17 +30,16 @@ const getClients = async ({ idOrganization, page = 0, search }) => {
 
   const pages = (await query(sqlCount, consts.pageLength, idOrganization)).result[0].ceiling;
   const { result, rowCount } = await query(sql, idOrganization, consts.pageLength, offset);
-  result.push({ pages });
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  return result.map((val) => ({
+  const rows = result.map((val) => ({
     name: val.name,
     lastname: val.lastname,
     email: val.email,
     phone: val.phone,
     sex: val.sex,
-    pages: val.pages,
   }));
+  return { result: rows, count: pages };
 };
 
 const newOrganization = async ({
