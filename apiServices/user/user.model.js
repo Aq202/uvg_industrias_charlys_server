@@ -84,6 +84,12 @@ const createAdmin = async ({
   }
 };
 
+const removeOrganizationMember = async ({ idUser }) => {
+  const sql = 'delete from user_account where id_user = $1 and id_client_organization is not null;';
+  const { rowCount } = await query(sql, idUser);
+  if (rowCount !== 1) throw new CustomError('No se encontró el usuario.', 400);
+};
+
 const createOrganizationMember = async ({
   name,
   lastName,
@@ -175,4 +181,5 @@ export {
   updateUserPassword,
   deleteAllUserAlterTokens,
   deleteAlterUserToken,
+  removeOrganizationMember,
 };

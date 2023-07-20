@@ -6,6 +6,7 @@ import {
   createAdminController,
   createOrganizationMemberController,
   finishRegistrationController,
+  removeOrganizationMemberController,
   validateRegisterTokenController,
 } from './user.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
@@ -29,4 +30,5 @@ userRouter.post(
   finishRegistrationController,
 );
 userRouter.get('/validateRegisterToken', ensureRegisterAuth, validateRegisterTokenController);
+userRouter.delete('/client/:idUser', ensureAdminAuth, removeOrganizationMemberController);
 export default userRouter;
