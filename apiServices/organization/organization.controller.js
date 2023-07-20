@@ -34,7 +34,7 @@ const newOrganizationController = async (req, res) => {
     const organizationId = await newOrganization({
       name, email, phone, address,
     });
-    res.send(organizationId);
+    res.send({ id: organizationId });
   } catch (ex) {
     let err = 'La información ingresada no es válida al registrar la organización.';
     let status = 500;
@@ -55,7 +55,7 @@ const updateOrganizationController = async (req, res) => {
     await updateOrganization({
       id, name, email, phone, address,
     });
-    res.send(id);
+    res.send({ id });
   } catch (ex) {
     let err = 'La información ingresada no es válida al actualizar la organización.';
     let status = 500;

@@ -11,7 +11,7 @@ export default {
     register: 'REGISTER',
   },
   apiPath: '/api',
-  rowsPerTable: '10',
+  pageLength: 10,
   bucketRoutes: {
     orderRequest: 'order-request',
   },

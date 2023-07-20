@@ -1,6 +1,7 @@
 import query from '../../database/query.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
+import consts from '../../utils/consts.js';
 
 const getClients = async ({ idOrganization, page = 0, search }) => {
   const offset = page * consts.pageLength;
@@ -88,10 +89,11 @@ const deleteOrganization = async ({ id }) => {
 };
 
 const getOrganizations = async ({ page }) => {
+  const offset = page * consts.pageLength;
   const sql1 = 'SELECT COUNT(*) FROM client_organization';
   const { result: resultCount, rowCount: rowCount1 } = await query(sql1);
   if (rowCount1 === 0) throw new CustomError('No se encontraron resultados.', 404);
-  const sql2 = `SELECT * FROM client_organization ORDER BY id_client_organization LIMIT 11 OFFSET ${(page - 1) * 10}`;
+  const sql2 = `SELECT * FROM client_organization ORDER BY id_client_organization LIMIT ${consts.pageLength} OFFSET ${offset}`;
   const { result, rowCount: rowCount2 } = await query(sql2);
   if (rowCount2 === 0) throw new CustomError('No se encontraron resultados.', 404);
   const response = result.map((val) => ({
