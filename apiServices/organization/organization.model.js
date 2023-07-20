@@ -1,7 +1,6 @@
 import query from '../../database/query.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
-import consts from '../../utils/consts.js';
 
 const getClients = async ({ idOrganization, page = 0, search }) => {
   const offset = page * consts.pageLength;
