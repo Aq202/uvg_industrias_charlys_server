@@ -3,24 +3,23 @@ import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 
 const getClients = async ({ idOrganization, page = 0, search }) => {
-  const offset = page * consts.pagelength;
+  const offset = page * consts.pageLength;
   if (search === undefined) {
     const sqlCount = 'select ceiling(count(*)/$1::numeric) from user_account where id_client_organization = $2;';
     const sql = 'select * from user_account where id_client_organization = $1 LIMIT $2 OFFSET $3';
 
-    const pages = (await query(sqlCount, consts.pagelength, idOrganization)).result[0].ceiling;
-    const { result, rowCount } = await query(sql, idOrganization, consts.pagelength, offset);
-    result.push({ pages });
+    const pages = (await query(sqlCount, consts.pageLength, idOrganization)).result[0].ceiling;
+    const { result, rowCount } = await query(sql, idOrganization, consts.pageLength, offset);
     if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-    return result.map((val) => ({
+    const rows = result.map((val) => ({
       name: val.name,
       lastname: val.lastname,
       email: val.email,
       phone: val.phone,
       sex: val.sex,
-      pages: val.pages,
     }));
+    return { result: rows, count: pages };
   }
   const sqlCount = `select ceiling(count(*)/$1::numeric) from user_account where id_client_organization = $2
   and ("name" ilike '%${search}%' or lastname ilike '%${search}%' or email ilike '%${search}%'
@@ -29,8 +28,8 @@ const getClients = async ({ idOrganization, page = 0, search }) => {
   and ("name" ilike '%${search}%' or lastname ilike '%${search}%' or email ilike '%${search}%'
   or phone ilike '%${search}%') LIMIT $2 OFFSET $3;`;
 
-  const pages = (await query(sqlCount, consts.pagelength, idOrganization)).result[0].ceiling;
-  const { result, rowCount } = await query(sql, idOrganization, consts.pagelength, offset);
+  const pages = (await query(sqlCount, consts.pageLength, idOrganization)).result[0].ceiling;
+  const { result, rowCount } = await query(sql, idOrganization, consts.pageLength, offset);
   result.push({ pages });
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
