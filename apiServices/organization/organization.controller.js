@@ -5,7 +5,27 @@ import {
   deleteOrganization,
   getOrganizations,
   getClients,
+  getOrderRequests,
 } from './organization.model.js';
+
+const getOrderRequestsController = async (req, res) => {
+  const { idClient } = req.params;
+  const { page, search } = req.query;
+  try {
+    const result = await getOrderRequests({ idClient, page, search });
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener las solicitudes de orden de este cliente.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
 
 const getClientsController = async (req, res) => {
   const { idOrganization } = req.params;
@@ -105,6 +125,7 @@ const getOrganizationsController = async (req, res) => {
 export {
   // eslint-disable-next-line import/prefer-default-export
   getClientsController,
+  getOrderRequestsController,
   newOrganizationController,
   updateOrganizationController,
   deleteOrganizationController,
