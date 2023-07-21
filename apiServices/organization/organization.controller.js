@@ -13,7 +13,7 @@ const getOrganizationByIdController = async (req, res) => {
   const { idClient } = req.params;
   try {
     const result = await getOrganizationById({ idClient });
-    res.send(result);
+    res.send({ result });
   } catch (ex) {
     let err = 'Ocurrio un error al obtener la información del cliente.';
     let status = 500;
