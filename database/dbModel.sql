@@ -12,7 +12,8 @@ CREATE TABLE user_account(
 	sex CHAR NOT NULL,
 	id_client_organization VARCHAR(15),
 	id_employee VARCHAR(15),
-	UNIQUE(id_client_organization, id_employee)
+	UNIQUE(id_client_organization, id_employee),
+	enabled BOOLEAN DEFAULT true NOT NULL
 );
 
 CREATE TABLE client_organization(

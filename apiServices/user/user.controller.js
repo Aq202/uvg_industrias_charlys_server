@@ -19,7 +19,7 @@ const removeOrganizationMemberController = async (req, res) => {
     await removeOrganizationMember({ idUser });
     res.send(idUser);
   } catch (ex) {
-    let err = 'No se encontró el id del usuario.';
+    let err = 'Ocurrió un error al remover usuario de una organización.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;

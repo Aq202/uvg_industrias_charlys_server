@@ -85,9 +85,17 @@ const createAdmin = async ({
 };
 
 const removeOrganizationMember = async ({ idUser }) => {
-  const sql = 'delete from user_account where id_user = $1 and id_client_organization is not null;';
-  const { rowCount } = await query(sql, idUser);
-  if (rowCount !== 1) throw new CustomError('No se encontró el usuario.', 400);
+  try {
+    const sql = 'delete from user_account where id_user = $1 and id_client_organization is not null;';
+    const { rowCount } = await query(sql, idUser);
+    if (rowCount !== 1) throw new CustomError('No se encontró el usuario.', 400);
+  } catch (ex) {
+    if (ex?.code === '23503') {
+      const sqlQuery = 'UPDATE user_account SET enabled = false WHERE id_user = $1 and id_client_organization is not null;';
+      const { rowCount } = await query(sqlQuery, idUser);
+      if (rowCount !== 1) throw new CustomError('No se encontró el usuario.', 400);
+    } else throw ex;
+  }
 };
 
 const createOrganizationMember = async ({
