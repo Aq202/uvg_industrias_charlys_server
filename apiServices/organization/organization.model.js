@@ -112,7 +112,7 @@ const newOrganization = async ({
   name, email, phone, address,
 }) => {
   try {
-    const sql = `INSERT INTO client_organization(name, email, phone, address) VALUES ($1, $2, $3, $4)
+    const sql = `INSERT INTO client_organization(name, email, phone, address, enabled) VALUES ($1, $2, $3, $4, true)
                 RETURNING id_client_organization AS id`;
 
     const { result, rowCount } = await query(sql, name, email, phone, address);
@@ -141,12 +141,14 @@ const updateOrganization = async ({
 
 const deleteOrganization = async ({ id }) => {
   try {
-    const sql = 'UPDATE client_organization SET enabled = false WHERE id_client_organization = $1';
+    const sql = 'DELETE FROM client_organization WHERE id_client_organization = $1';
     const { rowCount } = await query(sql, id);
     if (rowCount !== 1) throw new CustomError('No se encontró la organización.', 400);
   } catch (ex) {
-    if (ex instanceof CustomError) throw ex;
-    throw ex;
+    if (ex?.code === '23503') {
+      const sqlDisable = 'UPDATE client_organization SET enabled = false WHERE id_client_organization = $1';
+      query(sqlDisable, id);
+    } else throw ex;
   }
 };
 
