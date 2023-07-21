@@ -4,7 +4,65 @@ import {
   updateOrganization,
   deleteOrganization,
   getOrganizations,
+  getClients,
+  getOrderRequests,
+  getOrganizationById,
 } from './organization.model.js';
+
+const getOrganizationByIdController = async (req, res) => {
+  const { idClient } = req.params;
+  try {
+    const result = await getOrganizationById({ idClient });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener la información del cliente.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getOrderRequestsController = async (req, res) => {
+  const { idClient } = req.params;
+  const { page, search } = req.query;
+  try {
+    const result = await getOrderRequests({ idClient, page, search });
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener las solicitudes de orden de este cliente.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getClientsController = async (req, res) => {
+  const { idOrganization } = req.params;
+  const { page, search } = req.query;
+  try {
+    const result = await getClients({ idOrganization, page, search });
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener los clientes para esta organización.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
 
 const newOrganizationController = async (req, res) => {
   const {
@@ -14,7 +72,7 @@ const newOrganizationController = async (req, res) => {
     const organizationId = await newOrganization({
       name, email, phone, address,
     });
-    res.send(organizationId);
+    res.send({ id: organizationId });
   } catch (ex) {
     let err = 'La información ingresada no es válida al registrar la organización.';
     let status = 500;
@@ -35,7 +93,7 @@ const updateOrganizationController = async (req, res) => {
     await updateOrganization({
       id, name, email, phone, address,
     });
-    res.send(id);
+    res.send({ id });
   } catch (ex) {
     let err = 'La información ingresada no es válida al actualizar la organización.';
     let status = 500;
@@ -50,13 +108,11 @@ const updateOrganizationController = async (req, res) => {
 
 const deleteOrganizationController = async (req, res) => {
   const { id } = req.params;
-  console.log(id)
   try {
     await deleteOrganization({ id });
-    res.send(id);
+    res.send({ id });
   } catch (ex) {
     let err = 'No se encontró el id de la organización';
-    console.log(ex);
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -85,8 +141,12 @@ const getOrganizationsController = async (req, res) => {
 };
 
 export {
+  // eslint-disable-next-line import/prefer-default-export
+  getClientsController,
+  getOrderRequestsController,
   newOrganizationController,
   updateOrganizationController,
   deleteOrganizationController,
   getOrganizationsController,
+  getOrganizationByIdController,
 };

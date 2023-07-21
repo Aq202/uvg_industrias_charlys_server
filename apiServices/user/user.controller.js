@@ -4,6 +4,7 @@ import {
   createAdmin,
   createOrganizationMember,
   deleteAllUserAlterTokens,
+  removeOrganizationMember,
   saveRegisterToken,
   updateUserPassword,
   validateAlterUserToken,
@@ -11,6 +12,23 @@ import {
 import { begin, rollback, commit } from '../../database/transactions.js';
 import { signRegisterToken } from '../../services/jwt.js';
 import NewUserEmail from '../../services/email/NewUserEmail.js';
+
+const removeOrganizationMemberController = async (req, res) => {
+  const { idUser } = req.params;
+  try {
+    await removeOrganizationMember({ idUser });
+    res.send(idUser);
+  } catch (ex) {
+    let err = 'No se encontró el id del usuario.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
 
 const createAdminController = async (req, res) => {
   const {
@@ -144,4 +162,5 @@ export {
   createOrganizationMemberController,
   finishRegistrationController,
   validateRegisterTokenController,
+  removeOrganizationMemberController,
 };
