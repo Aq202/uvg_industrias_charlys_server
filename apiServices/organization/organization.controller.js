@@ -6,7 +6,25 @@ import {
   getOrganizations,
   getClients,
   getOrderRequests,
+  getOrganizationById,
 } from './organization.model.js';
+
+const getOrganizationByIdController = async (req, res) => {
+  const { idClient } = req.params;
+  try {
+    const result = await getOrganizationById({ idClient });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener la información del cliente.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
 
 const getOrderRequestsController = async (req, res) => {
   const { idClient } = req.params;
@@ -130,4 +148,5 @@ export {
   updateOrganizationController,
   deleteOrganizationController,
   getOrganizationsController,
+  getOrganizationByIdController,
 };

@@ -2,6 +2,25 @@ import query from '../../database/query.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 
+const getOrganizationById = async ({ idClient }) => {
+  const sqlOrg = 'SELECT * FROM client_organization where id_client_organization = $1;';
+  const sqlTemp = 'SELECT * FROM temporary_client where id_temporary_client = $1;';
+
+  let { result, rowCount } = await query(sqlOrg, idClient);
+
+  if (rowCount === 0) {
+    ({ result, rowCount } = await query(sqlTemp, idClient));
+    if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+  }
+  return result.map((val) => ({
+    id: val.id_temporary_client || val.id_client_organization,
+    name: val.name,
+    email: val.email,
+    phone: val.phone,
+    address: val.address,
+  }));
+};
+
 const getOrderRequests = async ({ idClient, page = 0, search }) => {
   const offset = page * consts.pageLength;
   if (search === undefined) {
@@ -158,4 +177,5 @@ export {
   updateOrganization,
   deleteOrganization,
   getOrganizations,
+  getOrganizationById,
 };

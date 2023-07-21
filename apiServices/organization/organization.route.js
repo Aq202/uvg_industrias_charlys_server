@@ -7,6 +7,7 @@ import {
   deleteOrganizationController,
   getOrganizationsController,
   getOrderRequestsController,
+  getOrganizationByIdController,
 } from './organization.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import newOrganizationSchema from '../../utils/validationSchemas/newOrganizationSchema.js';
@@ -20,5 +21,5 @@ organizationRouter.get('/', ensureAdminAuth, getOrganizationsController);
 organizationRouter.post('/newOrganization', ensureAdminAuth, validateBody(newOrganizationSchema), newOrganizationController);
 organizationRouter.put('/updateOrganization', ensureAdminAuth, validateBody(updateOrganizationSchema), updateOrganizationController);
 organizationRouter.delete('/:id', ensureAdminAuth, deleteOrganizationController);
-
+organizationRouter.get('/:idClient', ensureAdminAuth, getOrganizationByIdController);
 export default organizationRouter;
