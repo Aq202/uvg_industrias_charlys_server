@@ -77,6 +77,7 @@ const getClients = async ({ idOrganization, page = 0, search }) => {
     if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
     const rows = result.map((val) => ({
+      id: val.id_user,
       name: val.name,
       lastname: val.lastname,
       email: val.email,
@@ -97,6 +98,7 @@ const getClients = async ({ idOrganization, page = 0, search }) => {
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
   const rows = result.map((val) => ({
+    id: val.id_user,
     name: val.name,
     lastname: val.lastname,
     email: val.email,
