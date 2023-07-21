@@ -18,7 +18,7 @@ const getOrganizationById = async ({ idClient }) => {
     email: val.email,
     phone: val.phone,
     address: val.address,
-  }));
+  }))[0];
 };
 
 const getOrderRequests = async ({ idClient, page = 0, search }) => {
