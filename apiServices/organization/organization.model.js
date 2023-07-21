@@ -2,6 +2,51 @@ import query from '../../database/query.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 
+const getOrderRequests = async ({ idClient, page = 0, search }) => {
+  const offset = page * consts.pageLength;
+  if (search === undefined) {
+    const sqlCount = 'select ceiling(count(*)/$1::numeric) from order_request where id_client_organization = $2 or id_temporary_client = $2;';
+    const sql = 'select * from order_request where id_client_organization = $1 or id_temporary_client = $1 LIMIT $2 OFFSET $3';
+
+    const pages = (await query(sqlCount, consts.pageLength, idClient)).result[0].ceiling;
+    const { result, rowCount } = await query(sql, idClient, consts.pageLength, offset);
+    if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+    const rows = result.map((val) => ({
+      id: val.id_order_request,
+      description: val.description,
+      date_placed: val.date_placed,
+      client: val.id_client_organization || val.id_temporary_client,
+      deadline: val.deadline,
+      cost: val.cost,
+      details: val.aditional_details,
+    }));
+    return { result: rows, count: pages };
+  }
+  const sqlCount = `select ceiling(count(*)/$1::numeric) from order_request
+  where (id_client_organization = $2 or id_temporary_client = $2)
+  and (description ilike'%${search}%' or aditional_details ilike '%${search}%');`;
+  const sql = `select * from order_request
+  where (id_client_organization = $1 or id_temporary_client = $1)
+  and (description ilike'%${search}%' or aditional_details ilike '%${search}%')
+  LIMIT $2 OFFSET $3;`;
+
+  const pages = (await query(sqlCount, consts.pageLength, idClient)).result[0].ceiling;
+  const { result, rowCount } = await query(sql, idClient, consts.pageLength, offset);
+  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  const rows = result.map((val) => ({
+    id: val.id_order_request,
+    description: val.description,
+    date_placed: val.date_placed,
+    client: val.id_client_organization || val.id_temporary_client,
+    deadline: val.deadline,
+    cost: val.cost,
+    details: val.aditional_details,
+  }));
+  return { result: rows, count: pages };
+};
+
 const getClients = async ({ idOrganization, page = 0, search }) => {
   const offset = page * consts.pageLength;
   if (search === undefined) {
@@ -108,6 +153,7 @@ const getOrganizations = async ({ page }) => {
 export {
   // eslint-disable-next-line import/prefer-default-export
   getClients,
+  getOrderRequests,
   newOrganization,
   updateOrganization,
   deleteOrganization,
