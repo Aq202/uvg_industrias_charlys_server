@@ -8,8 +8,10 @@ export default {
   token: {
     refresh: 'REFRESH',
     access: 'ACCESS',
+    register: 'REGISTER',
   },
   apiPath: '/api',
+  pageLength: 10,
   bucketRoutes: {
     orderRequest: 'order-request',
   },
