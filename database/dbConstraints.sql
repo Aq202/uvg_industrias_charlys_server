@@ -70,3 +70,17 @@ ADD CONSTRAINT temp_client_check_email CHECK (email ~ '^(([^<>()\[\]\\.,;:\s@”
 
 ALTER TABLE alter_user_token
 ADD CONSTRAINT alterUserTkn_user_fk FOREIGN KEY (id_user) REFERENCES user_account(id_user);
+
+ALTER TABLE color
+ADD CONSTRAINT color_values_check CHECK(red >= 0 AND red <= 255 AND green >= 0 AND green <= 255 AND blue >= 0 AND blue <= 255);
+
+ALTER TABLE product_model_color
+ADD CONSTRAINT pm_product_model_fk FOREIGN KEY (id_product_model) REFERENCES product_model(id_product_model),
+ADD CONSTRAINT pm_color_fk FOREIGN KEY (id_color) REFERENCES color(id_color);
+
+ALTER TABLE product_model_media
+ADD CONSTRAINT pm_media_fk FOREIGN KEY (id_product_model) REFERENCES product_model(id_product_model);
+
+ALTER TABLE product_model
+ADD CONSTRAINT product_model_type_fk FOREIGN KEY ("type") REFERENCES product_type(id_product_type),
+ADD CONSTRAINT product_model_client_fk FOREIGN KEY (id_client_organization) REFERENCES client_organization(id_client_organization);
