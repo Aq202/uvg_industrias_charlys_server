@@ -35,7 +35,7 @@ const validateRefreshToken = async (userId, token) => {
 const authenticate = async ({ email, passwordHash }) => {
   try {
     const { result: userData, rowCount } = await query(
-      'SELECT id_user, name, lastname, sex, id_client_organization AS clientOrganizationId, id_employee AS employeeId FROM user_account WHERE email = $1 AND password = $2 LIMIT 1',
+      'SELECT id_user, name, lastname, sex, id_client_organization, id_employee AS employeeId FROM user_account WHERE email = $1 AND password = $2 LIMIT 1',
       email,
       passwordHash,
     );
@@ -45,7 +45,7 @@ const authenticate = async ({ email, passwordHash }) => {
     // obtener rol
 
     const {
-      id_user: userId, name, lastname: lastName, sex, clientOrganizationId,
+      id_user: userId, name, lastname: lastName, sex, id_client_organization: clientOrganizationId,
     } = userData[0];
     let role;
 
