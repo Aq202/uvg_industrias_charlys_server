@@ -4,7 +4,7 @@
  $BODY$
  declare prev_id_number integer;
  begin
- 	SELECT CAST(SUBSTRING(id_product_model FROM 2) AS INTEGER) INTO prev_id_number FROM product_model ORDER BY id_product_model DESC LIMIT 1;
+ 	SELECT CAST(SUBSTRING(id_product_model FROM 3) AS INTEGER) INTO prev_id_number FROM product_model ORDER BY id_product_model DESC LIMIT 1;
 	IF (prev_id_number IS NULL) THEN
 		prev_id_number = 0;
 		END IF;

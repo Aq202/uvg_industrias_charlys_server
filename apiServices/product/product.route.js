@@ -8,13 +8,24 @@ import {
   getProductsController,
   getProuctTypesController,
   newProductController,
+  newProductModelController,
   newProductRequirementController,
   newProuctTypeController,
 } from './product.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
+import multerMiddleware from '../../middlewares/multerMiddleware.js';
+import uploadImage from '../../services/uploadFiles/uploadImage.js';
+import newProductModelSchema from './validationSchemas/newProductModelSchema.js';
 
 const productRouter = express.Router();
 
+productRouter.post(
+  '/model',
+  ensureAdminAuth,
+  multerMiddleware(uploadImage.any()),
+  validateBody(newProductModelSchema),
+  newProductModelController,
+);
 productRouter.post('/type', validateBody(newProductTypeSchema), newProuctTypeController);
 productRouter.get('/type', ensureAdminAuth, getProuctTypesController);
 productRouter.post('/requirement', validateBody(newProductRequirementSchema), newProductRequirementController);

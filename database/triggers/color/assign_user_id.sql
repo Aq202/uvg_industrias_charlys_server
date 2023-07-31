@@ -4,7 +4,7 @@
  $BODY$
  declare prev_id_number integer;
  begin
- 	SELECT CAST(SUBSTRING(id_color FROM 2) AS INTEGER) INTO prev_id_number FROM color ORDER BY id_color DESC LIMIT 1;
+ 	SELECT CAST(SUBSTRING(id_color FROM 4) AS INTEGER) INTO prev_id_number FROM color ORDER BY id_color DESC LIMIT 1;
 	IF (prev_id_number IS NULL) THEN
 		prev_id_number = 0;
 		END IF;
