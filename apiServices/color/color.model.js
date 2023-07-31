@@ -13,7 +13,6 @@ const newColor = async ({
 
     return result[0];
   } catch (err) {
-    console.log(err);
     if (err instanceof CustomError) throw err;
 
     if (err?.constraint === 'color_values_check') {

@@ -66,6 +66,47 @@ const getOrderRequests = async ({ idClient, page = 0, search }) => {
   return { result: rows, count: pages };
 };
 
+const getOrders = async ({ idClient, page = 0, search }) => {
+  const offset = page * consts.pageLength;
+  if (search === undefined) {
+    const sqlCount = 'select ceiling(count(*)/$1::numeric) from "order" where id_client_organization = $2;';
+    const sql = 'select * from "order" where id_client_organization = $1 LIMIT $2 OFFSET $3';
+
+    const pages = (await query(sqlCount, consts.pageLength, idClient)).result[0].ceiling;
+    const { result, rowCount } = await query(sql, idClient, consts.pageLength, offset);
+    if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+    const rows = result.map((val) => ({
+      id: val.id_order_request,
+      description: val.description,
+      client: val.id_client_organization,
+      deadline: val.deadline,
+      cost: val.cost,
+    }));
+    return { result: rows, count: pages };
+  }
+  const sqlCount = `select ceiling(count(*)/$1::numeric) from "order"
+  where (id_client_organization = $2)
+  and (description ilike'%${search}%');`;
+  const sql = `select * from "order"
+  where (id_client_organization = $1)
+  and (description ilike'%${search}%')
+  LIMIT $2 OFFSET $3;`;
+
+  const pages = (await query(sqlCount, consts.pageLength, idClient)).result[0].ceiling;
+  const { result, rowCount } = await query(sql, idClient, consts.pageLength, offset);
+  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  const rows = result.map((val) => ({
+    id: val.id_order_request,
+    description: val.description,
+    client: val.id_client_organization,
+    deadline: val.deadline,
+    cost: val.cost,
+  }));
+  return { result: rows, count: pages };
+};
+
 const getClients = async ({ idOrganization, page = 0, search }) => {
   const offset = page * consts.pageLength;
   if (search === undefined) {
@@ -182,4 +223,5 @@ export {
   deleteOrganization,
   getOrganizations,
   getOrganizationById,
+  getOrders,
 };
