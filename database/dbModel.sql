@@ -21,7 +21,8 @@ CREATE TABLE client_organization(
 	name VARCHAR(100) NOT NULL,
 	email VARCHAR(100),
 	phone VARCHAR(100),
-	address VARCHAR(300) NOT NULL
+	address VARCHAR(300) NOT NULL,
+	"enabled" BOOLEAN DEFAULT true
 );
 
 CREATE TABLE employee(
