@@ -1,4 +1,4 @@
-drop table if exists order_request, order_request_media user_account, client_organization, employee,
+drop table if exists order_request, order_request_media, user_account, client_organization, employee,
 "session", order_request, "order", order_detail, inventory, requirements, product, product_type, 
 "size", material, fabric CASCADE;
 
@@ -40,7 +40,7 @@ id_order_request varchar(15),
 deadline date,
 description text,
 id_client_organization VARCHAR(15),
-"cost" FLOAT,
+"cost" FLOAT
 );
 
 CREATE TABLE "size"(

@@ -20,7 +20,7 @@ ADD CONSTRAINT order_client_fk FOREIGN KEY (id_client_organization) REFERENCES c
 
 
 ALTER TABLE "order_detail" 
-ADD CONSTRAINT orderd_order_fk FOREIGN KEY (no_order) REFERENCES "order"(no_order),
+ADD CONSTRAINT orderd_order_fk FOREIGN KEY (no_order) REFERENCES "order"(id_order),
 ADD CONSTRAINT orderd_product_fk FOREIGN KEY (product) REFERENCES product(id_product),
 ADD CONSTRAINT orderd_size_fk FOREIGN KEY ("size") REFERENCES size(id_size);
 
@@ -37,7 +37,6 @@ ADD CONSTRAINT check_element CHECK (
 
 ALTER TABLE requirements
 ADD CONSTRAINT requirement_material_fk FOREIGN KEY (material) REFERENCES material(id_material),
-ADD CONSTRAINT requirement_fabric_fk FOREIGN KEY (fabric) REFERENCES fabric(id_fabric),
 ADD CONSTRAINT requirement_product_fk FOREIGN KEY (product) REFERENCES product(id_product),
 ADD CONSTRAINT requirement_size_fk FOREIGN KEY ("size") REFERENCES size(id_size),
 ADD CONSTRAINT requirement_unique_material UNIQUE(product, "size", material),
@@ -53,7 +52,7 @@ ADD CONSTRAINT product_client_fk FOREIGN KEY (client) REFERENCES client_organiza
 
 ALTER TABLE order_request
 ADD CONSTRAINT client_organization_fk FOREIGN KEY (id_client_organization) REFERENCES client_organization(id_client_organization),
-ADD CONSTRAINT temporary_client_fk FOREIGN KEY (id_temporary_client) REFERENCES temporary_client(id_temporary_client);
+ADD CONSTRAINT temporary_client_fk FOREIGN KEY (id_temporary_client) REFERENCES temporary_client(id_temporary_client),
 ADD CONSTRAINT client_or_temporary_check CHECK ((id_client_organization IS NULL AND id_temporary_client IS NOT NULL) 
 	OR (id_client_organization IS NOT NULL AND id_temporary_client IS NULL) 
 	OR (id_client_organization IS NULL AND id_temporary_client IS NULL));
