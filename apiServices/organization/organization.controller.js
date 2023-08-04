@@ -7,6 +7,7 @@ import {
   getClients,
   getOrderRequests,
   getOrganizationById,
+  getOrders,
 } from './organization.model.js';
 
 const getOrganizationByIdController = async (req, res) => {
@@ -35,6 +36,25 @@ const getOrderRequestsController = async (req, res) => {
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener las solicitudes de orden de este cliente.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getOrdersController = async (req, res) => {
+  const { idClient } = req.params;
+  const { page, search } = req.query;
+  try {
+    const result = await getOrders({ idClient, page, search });
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener los pedidos de este cliente.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -149,4 +169,5 @@ export {
   deleteOrganizationController,
   getOrganizationsController,
   getOrganizationByIdController,
+  getOrdersController,
 };
