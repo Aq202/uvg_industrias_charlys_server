@@ -7,6 +7,6 @@ import { getColorsController, newColorController } from './color.controller.js';
 const colorRouter = express.Router();
 
 colorRouter.post('/', ensureAdminAuth, validateBody(newColorSchema), newColorController);
-colorRouter.get('/', getColorsController);
+colorRouter.get('/', ensureAdminAuth, getColorsController);
 
 export default colorRouter;
