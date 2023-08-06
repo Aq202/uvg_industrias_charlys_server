@@ -1,4 +1,4 @@
-drop table if exists order_request, order_request_media user_account, client_organization, employee,
+drop table if exists order_request, order_request_media, user_account, client_organization, employee,
 "session", order_request, "order", order_detail, inventory, requirements, product, product_type, 
 "size", material, fabric CASCADE;
 
@@ -40,7 +40,7 @@ id_order_request varchar(15),
 deadline date,
 description text,
 id_client_organization VARCHAR(15),
-"cost" FLOAT,
+"cost" FLOAT
 );
 
 CREATE TABLE "size"(
@@ -131,5 +131,32 @@ CREATE TABLE order_media(
 CREATE TABLE alter_user_token(
 	id_user VARCHAR(15) NOT NULL,
 	token TEXT NOT NULL
+);
+
+CREATE TABLE color(
+	id_color VARCHAR(15) PRIMARY KEY,
+	"name" VARCHAR(100)	NOT NULL,
+	red SMALLINT NOT NULL,
+	green SMALLINT NOT NULL,
+	blue SMALLINT NOT NULL
+);
+
+CREATE TABLE product_model(
+	id_product_model VARCHAR(15) PRIMARY KEY,
+	"type" VARCHAR(15) NOT NULL,
+	id_client_organization VARCHAR(15) NOT NULL,
+	name VARCHAR(200) NOT NULL,
+	details TEXT
+);
+
+CREATE TABLE product_model_color(
+	id_product_model VARCHAR(15) NOT NULL,
+	id_color VARCHAR(15) NOT NULL,
+	UNIQUE(id_product_model, id_color)
+);
+
+CREATE TABLE product_model_media(
+  id_product_model varchar(15) NOT NULL,
+  name varchar(1000) NOT NULL
 );
 
