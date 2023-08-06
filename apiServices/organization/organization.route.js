@@ -1,5 +1,6 @@
 import express from 'express';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
+import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';
 import {
   getClientsController,
   newOrganizationController,
@@ -18,7 +19,7 @@ const organizationRouter = express.Router();
 
 organizationRouter.get('/clients/:idOrganization', ensureAdminAuth, getClientsController);
 organizationRouter.get('/orderRequests/:idClient', ensureAdminAuth, getOrderRequestsController);
-organizationRouter.get('/orders/:idClient', ensureAdminAuth, getOrdersController);
+organizationRouter.get('/orders/:idClient', ensureAdminOrClientAuth, getOrdersController);
 organizationRouter.get('/', ensureAdminAuth, getOrganizationsController);
 organizationRouter.post('/newOrganization', ensureAdminAuth, validateBody(newOrganizationSchema), newOrganizationController);
 organizationRouter.put('/updateOrganization', ensureAdminAuth, validateBody(updateOrganizationSchema), updateOrganizationController);
