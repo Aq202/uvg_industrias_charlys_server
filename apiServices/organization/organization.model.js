@@ -66,7 +66,18 @@ const getOrderRequests = async ({ idClient, page = 0, search }) => {
   return { result: rows, count: pages };
 };
 
-const getOrders = async ({ idClient, page = 0, search }) => {
+const isMember = async ({ userId, idClient }) => {
+  const sql = `select $1 in (
+    select id_user from user_account where id_client_organization = $2
+    ) exists`;
+
+  const { result } = await query(sql, userId, idClient);
+  return result[0].exists;
+};
+
+const getOrders = async ({
+  idClient, page = 0, search,
+}) => {
   const offset = page * consts.pageLength;
   if (search === undefined) {
     const sqlCount = 'select ceiling(count(*)/$1::numeric) from "order" where id_client_organization = $2;';
@@ -195,12 +206,12 @@ const deleteOrganization = async ({ id }) => {
   }
 };
 
-const getOrganizations = async ({ page }) => {
+const getOrganizations = async ({ page = null }) => {
   const offset = page * consts.pageLength;
-  const sql1 = 'SELECT COUNT(*) FROM client_organization';
+  const sql1 = 'SELECT COUNT(1) FROM client_organization WHERE enabled = true';
   const { result: resultCount, rowCount: rowCount1 } = await query(sql1);
   if (rowCount1 === 0) throw new CustomError('No se encontraron resultados.', 404);
-  const sql2 = `SELECT * FROM client_organization WHERE enabled = true ORDER BY id_client_organization LIMIT ${consts.pageLength} OFFSET ${offset}`;
+  const sql2 = `SELECT * FROM client_organization WHERE enabled = true ORDER BY id_client_organization ${page !== null ? `LIMIT ${consts.pageLength} OFFSET ${offset}` : ''}`;
   const { result, rowCount: rowCount2 } = await query(sql2);
   if (rowCount2 === 0) throw new CustomError('No se encontraron resultados.', 404);
   const response = result.map((val) => ({
@@ -224,4 +235,5 @@ export {
   getOrganizations,
   getOrganizationById,
   getOrders,
+  isMember,
 };

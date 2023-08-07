@@ -1,12 +1,22 @@
+import fs from 'fs';
+import uploadFileToBucket from '../../services/cloudStorage/uploadFileToBucket.js';
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
+import randomString from '../../utils/randomString.js';
 import {
+  addProductModelColor,
+  addProductModelMedia,
   getProductTypes,
+  getProductTypesByOrganization,
   getProducts,
   getRequirements,
   newProduct,
+  newProductModel,
   newProductType,
   newRequeriment,
 } from './product.model.js';
+import { begin, commit, rollback } from '../../database/transactions.js';
+import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 
 const newProuctTypeController = async (req, res) => {
   const { name } = req.body;
@@ -33,6 +43,24 @@ const getProuctTypesController = async (req, res) => {
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener los tipos de producto disponibles.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getProuctTypesByOrganizationController = async (req, res) => {
+  const { idOrganization } = req.params;
+  try {
+    const result = await getProductTypesByOrganization({ idOrganization });
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener los tipos de producto disponibles por organización.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -121,6 +149,89 @@ const getProductRequirementsController = async (req, res) => {
   }
 };
 
+const saveProductModelMedia = async ({ files, idProductModel }) => {
+  let uploadError = false;
+  const filesUploadedToBucket = [];
+
+  for (const file of files) {
+    const filePath = `${global.dirname}/files/${file.fileName}`;
+
+    // subir archivos
+    if (!uploadError) {
+      const fileId = `${idProductModel}-${randomString(15)}-${Date.now()}.${file.type}`;
+      const fileKey = `${consts.bucketRoutes.product}/${fileId}`;
+
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await uploadFileToBucket(fileKey, filePath, file.type);
+
+        // save file url in db
+        // eslint-disable-next-line no-await-in-loop
+        await addProductModelMedia({ idProductModel, name: fileId });
+        filesUploadedToBucket.push(fileKey);
+      } catch (ex) {
+        uploadError = true;
+      }
+    }
+
+    // eliminar archivos temporales
+
+    fs.unlink(filePath, () => {});
+  }
+
+  if (uploadError) {
+    await rollback();
+
+    // eliminar archivos cargados al bucket
+    filesUploadedToBucket.forEach((key) => deleteFileInBucket(key).catch(() => {
+      // eslint-disable-next-line no-console
+      console.log('Ocurrió un error al eliminar archivos de modelo de producto en el bucket.');
+    }));
+
+    throw new CustomError('No se pudieron guardar imagenes en el servidor.', 500);
+  }
+};
+
+const newProductModelController = async (req, res) => {
+  const {
+    type, idClientOrganization, name, details, color,
+  } = req.body;
+  try {
+    await begin();
+
+    // crear modelo del producto
+    const idProductModel = await newProductModel({
+      type, idClientOrganization, name, details,
+    });
+
+    // guardar colores
+    if (Array.isArray(color)) {
+      for (const idColor of color) {
+        // eslint-disable-next-line no-await-in-loop
+        await addProductModelColor({ idProductModel, idColor });
+      }
+    }
+
+    // subir multimedia
+    if (req.uploadedFiles) {
+      await saveProductModelMedia({ files: req.uploadedFiles, idProductModel });
+    }
+
+    await commit();
+
+    res.send({ id: idProductModel });
+  } catch (ex) {
+    let err = 'Ocurrió un error al crear modelo de producto.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newProuctTypeController,
   getProuctTypesController,
@@ -128,4 +239,6 @@ export {
   getProductsController,
   newProductRequirementController,
   getProductRequirementsController,
+  newProductModelController,
+  getProuctTypesByOrganizationController,
 };

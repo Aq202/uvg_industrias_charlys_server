@@ -29,6 +29,21 @@ const getProductTypes = async () => {
   }));
 };
 
+const getProductTypesByOrganization = async ({ idOrganization }) => {
+  const sql = `SELECT DISTINCT T.name AS name, T.id_product_type AS id FROM product_type T
+  INNER JOIN product_model M ON T.id_product_type = M.type
+  INNER JOIN client_organization O ON M.id_client_organization = O.id_client_organization
+  WHERE O.id_client_organization = $1
+  `;
+  const queryResult = await query(sql, idOrganization);
+
+  const { result, rowCount } = queryResult;
+
+  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  return result;
+};
+
 const newProduct = async ({ type, client, color }) => {
   const sql = 'INSERT INTO product("type", client, color) VALUES($1, $2, $3) RETURNING id_product as id;';
 
@@ -145,6 +160,55 @@ const getRequirements = async (product, searchQuery) => {
   }));
 };
 
+const newProductModel = async ({
+  type, idClientOrganization, name, details,
+}) => {
+  try {
+    const sql = 'INSERT INTO product_model("type", id_client_organization, "name", details) VALUES($1, $2, $3, $4) RETURNING id_product_model as id;';
+
+    const { result, rowCount } = await query(sql, type, idClientOrganization, name, details);
+
+    if (rowCount !== 1) throw new CustomError('No se pudo registrar el modelo del producto.', 500);
+
+    return result[0].id;
+  } catch (ex) {
+    if (ex?.code === '23503') {
+      if (ex?.detail.includes('type')) throw new CustomError('El tipo de producto no existe.', 400);
+      if (ex?.detail.includes('id_client_organization')) throw new CustomError('La organización del cliente no existe.', 400);
+    }
+    throw ex;
+  }
+};
+
+const addProductModelColor = async ({ idProductModel, idColor }) => {
+  try {
+    const sql = 'INSERT INTO product_model_color(id_product_model, id_color) VALUES($1, $2);';
+
+    const { rowCount } = await query(sql, idProductModel, idColor);
+
+    if (rowCount !== 1) throw new CustomError('No se pudo agregar el color al modelo del producto.', 500);
+  } catch (ex) {
+    if (ex?.code === '23503') {
+      if (ex?.detail.includes('id_product_model')) throw new CustomError('El modelo de producto proporcionado no existe.', 400);
+      if (ex?.detail.includes('id_color')) throw new CustomError('El color proporcionado no existe.', 400);
+    }
+    throw ex;
+  }
+};
+
+const addProductModelMedia = async ({ idProductModel, name }) => {
+  try {
+    const sql = 'INSERT INTO product_model_media(id_product_model, name) VALUES($1, $2);';
+
+    const { rowCount } = await query(sql, idProductModel, name);
+
+    if (rowCount !== 1) throw new CustomError('No se pudo guardar el recurso multimedia para el modelo de producto.', 500);
+  } catch (ex) {
+    if (ex?.code === '23503') throw new CustomError('El modelo de producto proporcionado no existe.', 400);
+    throw ex;
+  }
+};
+
 export {
   getProductTypes,
   newProductType,
@@ -152,4 +216,8 @@ export {
   newProduct,
   getRequirements,
   newRequeriment,
+  newProductModel,
+  addProductModelColor,
+  addProductModelMedia,
+  getProductTypesByOrganization,
 };

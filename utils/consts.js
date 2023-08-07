@@ -14,6 +14,7 @@ export default {
   pageLength: 10,
   bucketRoutes: {
     orderRequest: 'order-request',
+    product: 'product',
   },
   inventoryType: {
     product: 'PRODUCT',
