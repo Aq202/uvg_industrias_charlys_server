@@ -66,16 +66,13 @@ const getOrderRequests = async ({ idClient, page = 0, search }) => {
   return { result: rows, count: pages };
 };
 
-const checkPermission = async ({ userId, idClient }) => {
+const isMember = async ({ userId, idClient }) => {
   const sql = `select $1 in (
     select id_user from user_account where id_client_organization = $2
     ) exists`;
 
   const { result } = await query(sql, userId, idClient);
-  const validClient = result[0].exists;
-
-  if (!validClient) throw new CustomError('Acceso denegado.', 403);
-  return null;
+  return result[0].exists;
 };
 
 const getOrders = async ({
@@ -238,5 +235,5 @@ export {
   getOrganizations,
   getOrganizationById,
   getOrders,
-  checkPermission,
+  isMember,
 };

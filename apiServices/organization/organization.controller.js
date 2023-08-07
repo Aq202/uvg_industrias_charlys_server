@@ -8,7 +8,7 @@ import {
   getOrderRequests,
   getOrganizationById,
   getOrders,
-  checkPermission,
+  isMember,
 } from './organization.model.js';
 
 const getOrganizationByIdController = async (req, res) => {
@@ -28,32 +28,18 @@ const getOrganizationByIdController = async (req, res) => {
   }
 };
 
-const checkPermissionController = async (req, res, next) => {
-  const { idClient } = req.params;
-  const { userId } = req.session.role === 'CLIENT' ? req.session : undefined;
-
-  if (userId) {
-    try {
-      await checkPermission({ userId, idClient });
-      next();
-    } catch (ex) {
-      let err = 'Ocurrio un error al verificar el acceso.';
-      let status = 500;
-      if (ex instanceof CustomError) {
-        err = ex.message;
-        status = ex.status;
-      }
-      res.statusMessage = err;
-      res.status(status).send({ err, status });
-    }
-  }
+const isMemberController = async ({ userId, idClient }) => {
+  const result = await isMember({ userId, idClient });
+  if (!result) throw new CustomError('Acceso denegado.', 403);
   return null;
 };
 
 const getOrderRequestsController = async (req, res) => {
+  const { userId } = req.session.role === 'CLIENT' ? req.session : undefined;
   const { idClient } = req.params;
   const { page, search } = req.query;
   try {
+    if (userId) await isMemberController({ userId, idClient });
     const result = await getOrderRequests({ idClient, page, search });
 
     res.send(result);
@@ -74,6 +60,7 @@ const getOrdersController = async (req, res) => {
   const { idClient } = req.params;
   const { page, search } = req.query;
   try {
+    if (userId) await isMemberController({ userId, idClient });
     const result = await getOrders({
       idClient, page, search, userId,
     });
@@ -196,5 +183,4 @@ export {
   getOrganizationsController,
   getOrganizationByIdController,
   getOrdersController,
-  checkPermissionController,
 };

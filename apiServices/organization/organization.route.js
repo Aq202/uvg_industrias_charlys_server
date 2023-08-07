@@ -10,7 +10,6 @@ import {
   getOrderRequestsController,
   getOrganizationByIdController,
   getOrdersController,
-  checkPermissionController,
 } from './organization.controller.js';
 import validateBody from '../../middlewares/validateBody.js';
 import newOrganizationSchema from '../../utils/validationSchemas/newOrganizationSchema.js';
@@ -23,14 +22,12 @@ organizationRouter.get('/clients/:idOrganization', ensureAdminAuth, getClientsCo
 organizationRouter.get(
   '/orderRequests/:idClient',
   ensureAdminOrClientAuth,
-  checkPermissionController,
   getOrderRequestsController,
 );
 
 organizationRouter.get(
   '/orders/:idClient',
   ensureAdminOrClientAuth,
-  checkPermissionController,
   getOrdersController,
 );
 
