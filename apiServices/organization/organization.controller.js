@@ -44,6 +44,7 @@ const getOrderRequestsController = async (req, res) => {
 
     res.send(result);
   } catch (ex) {
+    console.log(ex);
     let err = 'Ocurrio un error al obtener las solicitudes de orden de este cliente.';
     let status = 500;
     if (ex instanceof CustomError) {
