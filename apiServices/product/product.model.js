@@ -29,6 +29,21 @@ const getProductTypes = async () => {
   }));
 };
 
+const getProductTypesByOrganization = async ({ idOrganization }) => {
+  const sql = `SELECT DISTINCT T.name AS name, T.id_product_type AS id FROM product_type T
+  INNER JOIN product_model M ON T.id_product_type = M.type
+  INNER JOIN client_organization O ON M.id_client_organization = O.id_client_organization
+  WHERE O.id_client_organization = $1
+  `;
+  const queryResult = await query(sql, idOrganization);
+
+  const { result, rowCount } = queryResult;
+
+  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  return result;
+};
+
 const newProduct = async ({ type, client, color }) => {
   const sql = 'INSERT INTO product("type", client, color) VALUES($1, $2, $3) RETURNING id_product as id;';
 
@@ -204,4 +219,5 @@ export {
   newProductModel,
   addProductModelColor,
   addProductModelMedia,
+  getProductTypesByOrganization,
 };

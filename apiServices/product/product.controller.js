@@ -7,6 +7,7 @@ import {
   addProductModelColor,
   addProductModelMedia,
   getProductTypes,
+  getProductTypesByOrganization,
   getProducts,
   getRequirements,
   newProduct,
@@ -42,6 +43,24 @@ const getProuctTypesController = async (req, res) => {
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener los tipos de producto disponibles.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getProuctTypesByOrganizationController = async (req, res) => {
+  const { idOrganization } = req.params;
+  try {
+    const result = await getProductTypesByOrganization({ idOrganization });
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener los tipos de producto disponibles por organización.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -221,4 +240,5 @@ export {
   newProductRequirementController,
   getProductRequirementsController,
   newProductModelController,
+  getProuctTypesByOrganizationController,
 };
