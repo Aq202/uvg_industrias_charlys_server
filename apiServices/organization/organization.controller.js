@@ -35,7 +35,7 @@ const isMemberController = async ({ userId, idClient }) => {
 };
 
 const getOrderRequestsController = async (req, res) => {
-  const { userId } = req.session.role === 'CLIENT' ? req.session : undefined;
+  const userId = req.session.role === 'CLIENT' ? req.session.userId : undefined;
   const { idClient } = req.params;
   const { page, search } = req.query;
   try {
@@ -56,7 +56,7 @@ const getOrderRequestsController = async (req, res) => {
 };
 
 const getOrdersController = async (req, res) => {
-  const { userId } = req.session.role === 'CLIENT' ? req.session : undefined;
+  const userId = req.session.role === 'CLIENT' ? req.session.userId : undefined;
   const { idClient } = req.params;
   const { page, search } = req.query;
   try {
