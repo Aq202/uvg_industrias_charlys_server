@@ -22,22 +22,21 @@ const getOrganizationById = async ({ idClient }) => {
 };
 
 const getOrderRequests = async ({ idClient, page, search = '' }) => {
-  let offset = 0;
   const sqlCount = `select ceiling(count(*) / $1:: numeric) from order_request
     where(id_client_organization = $2 or id_temporary_client = $2)
-    and(description ilike'%${search}%' or aditional_details ilike '%${search}%'); `;
-  const pages = (await query(sqlCount, consts.pageLength, idClient)).result[0].ceiling;
+    and(description ilike $3 or aditional_details ilike $3); `;
+  const pages = (await query(sqlCount, consts.pageLength, idClient, `%${search}%`)).result[0].ceiling;
 
   let sql = `select * from order_request
       where id_client_organization = $1 or id_temporary_client = $1
-      and (description ilike'%${search}%' or aditional_details ilike '%${search}%')`;
+      and (description ilike $2 or aditional_details ilike $2)`;
 
-  let { result, rowCount } = await query(sql, idClient);
+  let { result, rowCount } = await query(sql, idClient, `%${search}%`);
 
   if (page !== undefined) {
-    sql += ' LIMIT $2 OFFSET $3;';
-    offset = page * consts.pageLength;
-    ({ result, rowCount } = await query(sql, idClient, consts.pageLength, offset));
+    sql += ' LIMIT $3 OFFSET $4;';
+    const offset = page * consts.pageLength;
+    ({ result, rowCount } = await query(sql, idClient, `%${search}%`, consts.pageLength, offset));
   }
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
