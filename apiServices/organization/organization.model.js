@@ -66,7 +66,21 @@ const getOrderRequests = async ({ idClient, page = 0, search }) => {
   return { result: rows, count: pages };
 };
 
-const getOrders = async ({ idClient, page = 0, search }) => {
+const checkPermission = async ({ userId, idClient }) => {
+  const sql = `select $1 in (
+    select id_user from user_account where id_client_organization = $2
+    ) exists`;
+
+  const { result } = await query(sql, userId, idClient);
+  const validClient = result[0].exists;
+
+  if (!validClient) throw new CustomError('Acceso denegado.', 403);
+  return null;
+};
+
+const getOrders = async ({
+  idClient, page = 0, search,
+}) => {
   const offset = page * consts.pageLength;
   if (search === undefined) {
     const sqlCount = 'select ceiling(count(*)/$1::numeric) from "order" where id_client_organization = $2;';
@@ -200,9 +214,7 @@ const getOrganizations = async ({ page = null }) => {
   const sql1 = 'SELECT COUNT(1) FROM client_organization WHERE enabled = true';
   const { result: resultCount, rowCount: rowCount1 } = await query(sql1);
   if (rowCount1 === 0) throw new CustomError('No se encontraron resultados.', 404);
-  const sql2 = `SELECT * FROM client_organization WHERE enabled = true ORDER BY id_client_organization ${
-    page !== null ? `LIMIT ${consts.pageLength} OFFSET ${offset}` : ''
-  }`;
+  const sql2 = `SELECT * FROM client_organization WHERE enabled = true ORDER BY id_client_organization ${page !== null ? `LIMIT ${consts.pageLength} OFFSET ${offset}` : ''}`;
   const { result, rowCount: rowCount2 } = await query(sql2);
   if (rowCount2 === 0) throw new CustomError('No se encontraron resultados.', 404);
   const response = result.map((val) => ({
@@ -226,4 +238,5 @@ export {
   getOrganizations,
   getOrganizationById,
   getOrders,
+  checkPermission,
 };
