@@ -1,5 +1,5 @@
 import CustomError from '../../utils/customError.js';
-import { getColors, newColor } from './color.model.js';
+import { getColors, getColorsByOrganization, newColor } from './color.model.js';
 
 const newColorController = async (req, res) => {
   const {
@@ -41,7 +41,26 @@ const getColorsController = async (req, res) => {
   }
 };
 
+const getColorsByOrganizationController = async (req, res) => {
+  const { idOrganization } = req.params;
+  try {
+    const result = await getColorsByOrganization({ idOrganization });
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener los colores utilizados por una organización.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newColorController,
   getColorsController,
+  getColorsByOrganizationController,
 };

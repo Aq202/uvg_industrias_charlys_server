@@ -48,7 +48,24 @@ const getColors = async ({ search }) => {
   }));
 };
 
+const getColorsByOrganization = async ({ idOrganization }) => {
+  const sqlQuery = `SELECT DISTINCT C.id_color as id, C.name, C.red, C.green, C.blue FROM color C
+  INNER JOIN product_model_color CM ON CM.id_color = C.id_color
+  INNER JOIN product_model M ON M.id_product_model = CM.id_product_model
+  INNER JOIN client_organization O ON M.id_client_organization = O.id_client_organization
+  WHERE O.id_client_organization = $1`;
+
+  const queryResult = await query(sqlQuery, idOrganization);
+
+  const { result, rowCount } = queryResult;
+
+  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  return result;
+};
+
 export {
   getColors,
   newColor,
+  getColorsByOrganization,
 };

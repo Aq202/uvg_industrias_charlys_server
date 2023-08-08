@@ -44,8 +44,8 @@ id_client_organization VARCHAR(15),
 );
 
 CREATE TABLE "size"(
-	"id_size" VARCHAR(15) PRIMARY KEY,
-	"size" VARCHAR(10)
+	"size" VARCHAR(10) PRIMARY KEY,
+	"sequence" SMALLINT UNIQUE
 );
 
 CREATE TABLE product_type(
@@ -63,7 +63,7 @@ CREATE TABLE product(
 CREATE TABLE order_detail(
 	no_order VARCHAR(15),
 	product VARCHAR(15),
-	"size" VARCHAR(15),
+	"size" VARCHAR(10),
 	quantity INT,
 	PRIMARY KEY(no_order, product, "size")
 );
@@ -93,7 +93,7 @@ CREATE TABLE inventory(
 
 CREATE TABLE requirements(
 	product VARCHAR(15),
-	"size" VARCHAR(15),
+	"size" VARCHAR(10),
 	material VARCHAR(15),
 	fabric VARCHAR(15),
 	quantity_per_unit FLOAT
@@ -160,3 +160,10 @@ CREATE TABLE product_model_media(
   name varchar(1000) NOT NULL
 );
 
+CREATE TABLE order_request_requirement(
+	id_order_request VARCHAR(15) NOT NULL,
+	id_product_model VARCHAR(15) NOT NULL,
+	"size" VARCHAR(10) NOT NULL,
+	quantity INTEGER NOT NULL,
+	UNIQUE(id_order_request, id_product_model, "size")
+);
