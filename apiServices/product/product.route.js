@@ -20,7 +20,6 @@ import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.j
 import multerMiddleware from '../../middlewares/multerMiddleware.js';
 import uploadImage from '../../services/uploadFiles/uploadImage.js';
 import newProductModelSchema from './validationSchemas/newProductModelSchema.js';
-import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';
 
 const productRouter = express.Router();
 
