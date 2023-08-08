@@ -160,3 +160,10 @@ CREATE TABLE product_model_media(
   name varchar(1000) NOT NULL
 );
 
+CREATE TABLE order_request_requirement(
+	id_order_request VARCHAR(15) NOT NULL,
+	id_product_model VARCHAR(15) NOT NULL,
+	"size" VARCHAR(10) NOT NULL,
+	quantity INTEGER NOT NULL,
+	UNIQUE(id_order_request, id_product_model, "size")
+);

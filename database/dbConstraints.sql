@@ -83,3 +83,9 @@ ADD CONSTRAINT pm_media_fk FOREIGN KEY (id_product_model) REFERENCES product_mod
 ALTER TABLE product_model
 ADD CONSTRAINT product_model_type_fk FOREIGN KEY ("type") REFERENCES product_type(id_product_type),
 ADD CONSTRAINT product_model_client_fk FOREIGN KEY (id_client_organization) REFERENCES client_organization(id_client_organization);
+
+ALTER TABLE order_request_requirement
+ADD CONSTRAINT orr_min_quantity_check CHECK (quantity > 0),
+ADD CONSTRAINT orr_order_request_fk FOREIGN KEY (id_order_request) REFERENCES order_request (id_order_request),
+ADD CONSTRAINT orr_product_model_fk FOREIGN KEY (id_product_model) REFERENCES product_model (id_product_model),
+ADD CONSTRAINT orr_size_fk FOREIGN KEY ("size") REFERENCES "size"("size");
