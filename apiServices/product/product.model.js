@@ -90,6 +90,39 @@ const getProducts = async (searchQuery) => {
   }));
 };
 
+const getProductsbyOrganization = async ({ idClient, colors = null, types = null }) => {
+  try {
+    let sql = 'SELECT id_product, pt.name as type, c.name as color FROM product p INNER JOIN product_type pt ON p.type = pt.id_product_type INNER JOIN color c ON p.color = c.id_color WHERE p.client = $1';
+    if (colors instanceof Array && colors.length > 0) {
+      sql += ' AND (';
+      colors.forEach((color, index) => {
+        sql += `c.name ILIKE '${color}'`;
+        if (index < colors.length - 1) {
+          sql += ' OR ';
+        }
+      });
+      sql += ')';
+    }
+    if (types instanceof Array && types.length > 0) {
+      sql += ' AND (';
+      types.forEach((type, index) => {
+        sql += `pt.name ILIKE '${type}'`;
+        if (index < types.length - 1) {
+          sql += ' OR ';
+        }
+      });
+      sql += ')';
+    }
+    sql += ';';
+    const { result, rowCount } = await query(sql, idClient);
+    if (rowCount === 0) throw new CustomError('No se encontraron productos.', 404);
+    return result;
+  } catch (ex) {
+    if (ex instanceof CustomError) throw ex;
+    throw ex;
+  }
+};
+
 const newRequeriment = async ({
   product, size, material, fabric, quantityPerUnit,
 }) => {
@@ -259,6 +292,7 @@ export {
   getProductTypes,
   newProductType,
   getProducts,
+  getProductsbyOrganization,
   newProduct,
   getRequirements,
   newRequeriment,

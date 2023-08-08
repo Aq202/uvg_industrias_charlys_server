@@ -8,6 +8,7 @@ import {
   getProductRequirementsController,
   getProductsController,
   getProuctTypesByOrganizationController,
+  getProductsbyOrganizationController,
   getProuctTypesController,
   newProductController,
   newProductModelController,
@@ -15,6 +16,7 @@ import {
   newProuctTypeController,
 } from './product.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
+import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';
 import multerMiddleware from '../../middlewares/multerMiddleware.js';
 import uploadImage from '../../services/uploadFiles/uploadImage.js';
 import newProductModelSchema from './validationSchemas/newProductModelSchema.js';
@@ -37,5 +39,6 @@ productRouter.get('/requirement', ensureAdminAuth, getProductRequirementsControl
 productRouter.post('/', validateBody(newProductSchema), newProductController);
 productRouter.get('/', ensureAdminAuth, getProductsController);
 productRouter.get('/model/:idProductModel', ensureAdminAuth, getProductModelByIdController);
+productRouter.post('/:idClient', ensureAdminOrClientAuth, getProductsbyOrganizationController);
 
 export default productRouter;
