@@ -21,40 +21,25 @@ const getOrganizationById = async ({ idClient }) => {
   }))[0];
 };
 
-const getOrderRequests = async ({ idClient, page = 0, search }) => {
+const getOrderRequests = async ({ idClient, page, search = '' }) => {
   const offset = page * consts.pageLength;
-  if (search === undefined) {
-    const sqlCount = 'select ceiling(count(*)/$1::numeric) from order_request where id_client_organization = $2 or id_temporary_client = $2;';
-    const sql = 'select * from order_request where id_client_organization = $1 or id_temporary_client = $1 LIMIT $2 OFFSET $3';
+  const sqlCount = `select ceiling(count(*) / $1:: numeric) from order_request
+    where(id_client_organization = $2 or id_temporary_client = $2)
+    and(description ilike $3 or aditional_details ilike $3); `;
+  const pages = (await query(sqlCount, consts.pageLength, idClient, `%${search}%`)).result[0].ceiling;
 
-    const pages = (await query(sqlCount, consts.pageLength, idClient)).result[0].ceiling;
-    const { result, rowCount } = await query(sql, idClient, consts.pageLength, offset);
-    if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
-
-    const rows = result.map((val) => ({
-      id: val.id_order_request,
-      description: val.description,
-      date_placed: val.date_placed,
-      client: val.id_client_organization || val.id_temporary_client,
-      deadline: val.deadline,
-      cost: val.cost,
-      details: val.aditional_details,
-    }));
-    return { result: rows, count: pages };
-  }
-  const sqlCount = `select ceiling(count(*)/$1::numeric) from order_request
-  where (id_client_organization = $2 or id_temporary_client = $2)
-  and (description ilike'%${search}%' or aditional_details ilike '%${search}%');`;
   const sql = `select * from order_request
-  where (id_client_organization = $1 or id_temporary_client = $1)
-  and (description ilike'%${search}%' or aditional_details ilike '%${search}%')
-  LIMIT $2 OFFSET $3;`;
+      where (id_client_organization = $1 or id_temporary_client = $1)
+      and (description ilike $2 or aditional_details ilike $2)
+      ${page !== undefined ? 'LIMIT $3 OFFSET $4' : ''}`;
 
-  const pages = (await query(sqlCount, consts.pageLength, idClient)).result[0].ceiling;
-  const { result, rowCount } = await query(sql, idClient, consts.pageLength, offset);
+  const { result, rowCount } = page === undefined
+    ? await query(sql, idClient, `%${search}%`)
+    : await query(sql, idClient, `%${search}%`, consts.pageLength, offset);
+
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  const rows = result.map((val) => ({
+  const response = result.map((val) => ({
     id: val.id_order_request,
     description: val.description,
     date_placed: val.date_placed,
@@ -63,83 +48,64 @@ const getOrderRequests = async ({ idClient, page = 0, search }) => {
     cost: val.cost,
     details: val.aditional_details,
   }));
-  return { result: rows, count: pages };
+  return { result: response, count: pages };
 };
 
-const getOrders = async ({ idClient, page = 0, search }) => {
+const isMember = async ({ userId, idClient }) => {
+  const sql = `select $1 in (
+      select id_user from user_account where id_client_organization = $2
+    ) exists`;
+
+  const { result } = await query(sql, userId, idClient);
+  return result[0].exists;
+};
+
+const getOrders = async ({ idClient, page, search = '' }) => {
   const offset = page * consts.pageLength;
-  if (search === undefined) {
-    const sqlCount = 'select ceiling(count(*)/$1::numeric) from "order" where id_client_organization = $2;';
-    const sql = 'select * from "order" where id_client_organization = $1 LIMIT $2 OFFSET $3';
+  const sqlCount = `select ceiling(count(*) / $1:: numeric) from "order"
+    where(id_client_organization = $2)
+    and(description ilike $3); `;
+  const pages = (await query(sqlCount, consts.pageLength, idClient, `%${search}%`)).result[0].ceiling;
 
-    const pages = (await query(sqlCount, consts.pageLength, idClient)).result[0].ceiling;
-    const { result, rowCount } = await query(sql, idClient, consts.pageLength, offset);
-    if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
-
-    const rows = result.map((val) => ({
-      id: val.id_order_request,
-      description: val.description,
-      client: val.id_client_organization,
-      deadline: val.deadline,
-      cost: val.cost,
-    }));
-    return { result: rows, count: pages };
-  }
-  const sqlCount = `select ceiling(count(*)/$1::numeric) from "order"
-  where (id_client_organization = $2)
-  and (description ilike'%${search}%');`;
   const sql = `select * from "order"
-  where (id_client_organization = $1)
-  and (description ilike'%${search}%')
-  LIMIT $2 OFFSET $3;`;
+    where(id_client_organization = $1)
+    and(description ilike $2) ${page !== undefined ? 'LIMIT $3 OFFSET $4;' : ''}`;
 
-  const pages = (await query(sqlCount, consts.pageLength, idClient)).result[0].ceiling;
-  const { result, rowCount } = await query(sql, idClient, consts.pageLength, offset);
+  const { result, rowCount } = page === undefined
+    ? await query(sql, idClient, `%${search}%`)
+    : await query(sql, idClient, `%${search}%`, consts.pageLength, offset);
+
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  const rows = result.map((val) => ({
+  const response = result.map((val) => ({
     id: val.id_order_request,
     description: val.description,
     client: val.id_client_organization,
     deadline: val.deadline,
     cost: val.cost,
   }));
-  return { result: rows, count: pages };
+  return { result: response, count: pages };
 };
 
-const getClients = async ({ idOrganization, page = 0, search }) => {
+const getClients = async ({ idOrganization, page, search = '' }) => {
   const offset = page * consts.pageLength;
-  if (search === undefined) {
-    const sqlCount = 'select ceiling(count(*)/$1::numeric) from user_account where id_client_organization = $2 AND enabled = true';
-    const sql = 'select * from user_account where id_client_organization = $1 AND enabled = true LIMIT $2 OFFSET $3';
+  const sqlCount = `select ceiling(count(*) / $1::numeric) from user_account
+    where id_client_organization = $2 and enabled = true
+    and("name" ilike $3 or lastname ilike $3 or email ilike $3
+    or phone ilike $3); `;
 
-    const pages = (await query(sqlCount, consts.pageLength, idOrganization)).result[0].ceiling;
-    const { result, rowCount } = await query(sql, idOrganization, consts.pageLength, offset);
-    if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
-
-    const rows = result.map((val) => ({
-      id: val.id_user,
-      name: val.name,
-      lastname: val.lastname,
-      email: val.email,
-      phone: val.phone,
-      sex: val.sex,
-    }));
-    return { result: rows, count: pages };
-  }
-  const sqlCount = `select ceiling(count(*)/$1::numeric) from user_account where id_client_organization = $2
-  AND enabled = true
-  and ("name" ilike '%${search}%' or lastname ilike '%${search}%' or email ilike '%${search}%'
-  or phone ilike '%${search}%');`;
+  const pages = (await query(sqlCount, consts.pageLength, idOrganization, `%${search}%`)).result[0].ceiling;
   const sql = `select * from user_account where id_client_organization = $1 AND enabled = true
-  and ("name" ilike '%${search}%' or lastname ilike '%${search}%' or email ilike '%${search}%'
-  or phone ilike '%${search}%') LIMIT $2 OFFSET $3;`;
+    and("name" ilike $2 or lastname ilike $2 or email ilike $2
+    or phone ilike $2) ${page !== undefined ? 'LIMIT $3 OFFSET $4;' : ''}`;
 
-  const pages = (await query(sqlCount, consts.pageLength, idOrganization)).result[0].ceiling;
-  const { result, rowCount } = await query(sql, idOrganization, consts.pageLength, offset);
+  const { result, rowCount } = page === undefined
+    ? await query(sql, idOrganization, `%${search}%`)
+    : await query(sql, idOrganization, `%${search}%`, consts.pageLength, offset);
+
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  const rows = result.map((val) => ({
+  const response = result.map((val) => ({
     id: val.id_user,
     name: val.name,
     lastname: val.lastname,
@@ -147,14 +113,14 @@ const getClients = async ({ idOrganization, page = 0, search }) => {
     phone: val.phone,
     sex: val.sex,
   }));
-  return { result: rows, count: pages };
+  return { result: response, count: pages };
 };
 
 const newOrganization = async ({
   name, email, phone, address,
 }) => {
   try {
-    const sql = `INSERT INTO client_organization(name, email, phone, address, enabled) VALUES ($1, $2, $3, $4, true)
+    const sql = `INSERT INTO client_organization(name, email, phone, address, enabled) VALUES($1, $2, $3, $4, true)
                 RETURNING id_client_organization AS id`;
 
     const { result, rowCount } = await query(sql, name, email, phone, address);
@@ -195,16 +161,24 @@ const deleteOrganization = async ({ id }) => {
   }
 };
 
-const getOrganizations = async ({ page = null }) => {
+const getOrganizations = async ({ page, search = '' }) => {
   const offset = page * consts.pageLength;
-  const sql1 = 'SELECT COUNT(1) FROM client_organization WHERE enabled = true';
-  const { result: resultCount, rowCount: rowCount1 } = await query(sql1);
-  if (rowCount1 === 0) throw new CustomError('No se encontraron resultados.', 404);
-  const sql2 = `SELECT * FROM client_organization WHERE enabled = true ORDER BY id_client_organization ${
-    page !== null ? `LIMIT ${consts.pageLength} OFFSET ${offset}` : ''
-  }`;
-  const { result, rowCount: rowCount2 } = await query(sql2);
-  if (rowCount2 === 0) throw new CustomError('No se encontraron resultados.', 404);
+  const sqlCount = `SELECT ceiling(count(*)/$1::numeric) FROM client_organization
+    WHERE enabled = true and (
+    name ilike $2 or email ilike $2 or phone ilike $2 or
+    address ilike $2)`;
+  const pages = (await query(sqlCount, consts.pageLength, `%${search}%`)).result[0].ceiling;
+
+  const sql = `SELECT * FROM client_organization WHERE enabled = true and (
+    name ilike $1 or email ilike $1 or phone ilike $1 or address ilike $1) ORDER BY id_client_organization
+    ${page !== undefined ? 'LIMIT $2 OFFSET $3' : ''} `;
+
+  const { result, rowCount } = page === undefined
+    ? await query(sql, `%${search}%`)
+    : await query(sql, `%${search}%`, consts.pageLength, offset);
+
+  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
   const response = result.map((val) => ({
     id: val.id_client_organization,
     name: val.name,
@@ -213,7 +187,19 @@ const getOrganizations = async ({ page = null }) => {
     address: val.address,
     enabled: val.enabled,
   }));
-  return { result: response, count: resultCount[0].count };
+  return { result: response, count: pages };
+};
+
+const verifyUser = async ({ userId, idClient }) => {
+  try {
+    const sql = 'SELECT id_client_organization FROM user_account WHERE id_user = $1';
+    const { result, rowCount } = await query(sql, userId);
+    if (rowCount === 0) throw new CustomError('No se encontró el usuario.', 404);
+    return result[0].id_client_organization === idClient;
+  } catch (ex) {
+    if (ex instanceof CustomError) throw ex;
+    throw ex;
+  }
 };
 
 export {
@@ -226,4 +212,6 @@ export {
   getOrganizations,
   getOrganizationById,
   getOrders,
+  isMember,
+  verifyUser,
 };

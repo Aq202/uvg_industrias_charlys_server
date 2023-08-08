@@ -90,6 +90,39 @@ const getProducts = async (searchQuery) => {
   }));
 };
 
+const getProductsbyOrganization = async ({ idClient, colors = null, types = null }) => {
+  try {
+    let sql = 'SELECT id_product, pt.name as type, c.name as color FROM product p INNER JOIN product_type pt ON p.type = pt.id_product_type INNER JOIN color c ON p.color = c.id_color WHERE p.client = $1';
+    if (colors instanceof Array && colors.length > 0) {
+      sql += ' AND (';
+      colors.forEach((color, index) => {
+        sql += `c.name ILIKE '${color}'`;
+        if (index < colors.length - 1) {
+          sql += ' OR ';
+        }
+      });
+      sql += ')';
+    }
+    if (types instanceof Array && types.length > 0) {
+      sql += ' AND (';
+      types.forEach((type, index) => {
+        sql += `pt.name ILIKE '${type}'`;
+        if (index < types.length - 1) {
+          sql += ' OR ';
+        }
+      });
+      sql += ')';
+    }
+    sql += ';';
+    const { result, rowCount } = await query(sql, idClient);
+    if (rowCount === 0) throw new CustomError('No se encontraron productos.', 404);
+    return result;
+  } catch (ex) {
+    if (ex instanceof CustomError) throw ex;
+    throw ex;
+  }
+};
+
 const newRequeriment = async ({
   product, size, material, fabric, quantityPerUnit,
 }) => {
@@ -209,10 +242,57 @@ const addProductModelMedia = async ({ idProductModel, name }) => {
   }
 };
 
+const getProductModelById = async ({ idProductModel }) => {
+  const infoSql = `select id_product_model, pt.name "type", id_client_organization, pm.name description, details from product_model pm
+  inner join product_type pt on pm.type = pt.id_product_type
+  where id_product_model = $1;`;
+
+  const { result: infoResult, rowCount: infoRowCount } = await query(infoSql, idProductModel);
+
+  if (infoRowCount === 0) throw new CustomError('No se encontraron resultados para el ID proporcionado.', 404);
+
+  const mediaSql = `select * from product_model_media
+    where id_product_model = $1;`;
+
+  const { result: mediaResult } = await query(mediaSql, idProductModel);
+
+  const colorSql = `select * from product_model_color
+    natural join color
+    where id_product_model = $1;`;
+
+  const response = infoResult.map((val) => ({
+    id: val.id_product_model,
+    type: val.type,
+    client: val.id_client_organization,
+    description: val.description,
+    details: val.details,
+  }));
+
+  const { result: colorResult } = await query(colorSql, idProductModel);
+
+  const colors = colorResult.map((val) => ({
+    id: val.id_color,
+    color: val.name,
+    red: val.red,
+    green: val.green,
+    blue: val.blue,
+  }));
+
+  const media = mediaResult.map((val) => ({
+    name: val.name,
+  }));
+
+  response[0].media = media;
+  response[0].colors = colors;
+
+  return response[0];
+};
+
 export {
   getProductTypes,
   newProductType,
   getProducts,
+  getProductsbyOrganization,
   newProduct,
   getRequirements,
   newRequeriment,
@@ -220,4 +300,5 @@ export {
   addProductModelColor,
   addProductModelMedia,
   getProductTypesByOrganization,
+  getProductModelById,
 };

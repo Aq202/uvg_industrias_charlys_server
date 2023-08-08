@@ -18,8 +18,19 @@ import updateOrganizationSchema from '../../utils/validationSchemas/updateOrgani
 const organizationRouter = express.Router();
 
 organizationRouter.get('/clients/:idOrganization', ensureAdminAuth, getClientsController);
-organizationRouter.get('/orderRequests/:idClient', ensureAdminAuth, getOrderRequestsController);
-organizationRouter.get('/orders/:idClient', ensureAdminOrClientAuth, getOrdersController);
+
+organizationRouter.get(
+  '/orderRequests/:idClient',
+  ensureAdminOrClientAuth,
+  getOrderRequestsController,
+);
+
+organizationRouter.get(
+  '/orders/:idClient',
+  ensureAdminOrClientAuth,
+  getOrdersController,
+);
+
 organizationRouter.get('/', ensureAdminAuth, getOrganizationsController);
 organizationRouter.post('/newOrganization', ensureAdminAuth, validateBody(newOrganizationSchema), newOrganizationController);
 organizationRouter.put('/updateOrganization', ensureAdminAuth, validateBody(updateOrganizationSchema), updateOrganizationController);

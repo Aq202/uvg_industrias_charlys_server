@@ -130,6 +130,7 @@ const createOrganizationMember = async ({
     return result[0];
   } catch (ex) {
     if (ex?.code === '23503') { throw new CustomError('La organización del nuevo miembro no existe.', 400); }
+    if (ex?.code === '23505') { throw new CustomError('El correo ingresado ya existe', 400); }
     throw ex;
   }
 };

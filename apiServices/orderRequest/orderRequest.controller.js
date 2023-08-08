@@ -9,6 +9,7 @@ import {
   getOrderRequestById,
   getOrderRequests,
   newOrderRequest,
+  updateOrderRequest,
 } from './orderRequest.model.js';
 import { createTemporaryClient } from '../temporaryClient/temporaryClient.model.js';
 
@@ -37,7 +38,7 @@ const saveOrderRequestMedia = async ({ files, id }) => {
 
     // eliminar archivos temporales
 
-    fs.unlink(filePath, () => {});
+    fs.unlink(filePath, () => { });
   }
 
   await Promise.all(promises);
@@ -78,6 +79,40 @@ const newOrderRequestController = async (req, res) => {
   } catch (ex) {
     await rollback();
     let err = 'Ocurrio un error al registrar intención de compra.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const updateOrderRequestController = async (req, res) => {
+  const {
+    description, deadline, cost, details,
+  } = req.body;
+  const { idOrderRequest } = req.params;
+
+  try {
+    begin(); // begin transaction
+
+    await updateOrderRequest({
+      idOrderRequest, description, deadline, cost, details,
+    });
+
+    // save files
+    if (Array.isArray(req.uploadedFiles)) {
+      await saveOrderRequestMedia({ files: req.uploadedFiles, idOrderRequest });
+    }
+
+    await commit();
+
+    res.send({ idOrderRequest });
+  } catch (ex) {
+    await rollback();
+    let err = 'Ocurrio un error al actualizar la solicitud de pedido.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -162,4 +197,5 @@ export {
   getOrderRequestsController,
   getOrderRequestByIdController,
   newClientOrderRequestController,
+  updateOrderRequestController,
 };

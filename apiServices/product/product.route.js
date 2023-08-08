@@ -4,9 +4,11 @@ import newProductTypeSchema from '../../utils/validationSchemas/newProductTypeSc
 import newProductRequirementSchema from '../../utils/validationSchemas/newProductRequirementSchema.js';
 import newProductSchema from '../../utils/validationSchemas/newProductSchema.js';
 import {
+  getProductModelByIdController,
   getProductRequirementsController,
   getProductsController,
   getProuctTypesByOrganizationController,
+  getProductsbyOrganizationController,
   getProuctTypesController,
   newProductController,
   newProductModelController,
@@ -14,16 +16,16 @@ import {
   newProuctTypeController,
 } from './product.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
+import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';
 import multerMiddleware from '../../middlewares/multerMiddleware.js';
 import uploadImage from '../../services/uploadFiles/uploadImage.js';
 import newProductModelSchema from './validationSchemas/newProductModelSchema.js';
-import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';
 
 const productRouter = express.Router();
 
 productRouter.post(
   '/model',
-  ensureAdminAuth,
+  ensureAdminOrClientAuth,
   multerMiddleware(uploadImage.any()),
   validateBody(newProductModelSchema),
   newProductModelController,
@@ -35,5 +37,7 @@ productRouter.post('/requirement', validateBody(newProductRequirementSchema), ne
 productRouter.get('/requirement', ensureAdminAuth, getProductRequirementsController);
 productRouter.post('/', validateBody(newProductSchema), newProductController);
 productRouter.get('/', ensureAdminAuth, getProductsController);
+productRouter.get('/model/:idProductModel', ensureAdminAuth, getProductModelByIdController);
+productRouter.post('/:idClient', ensureAdminOrClientAuth, getProductsbyOrganizationController);
 
 export default productRouter;

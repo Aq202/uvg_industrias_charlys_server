@@ -6,17 +6,23 @@ import randomString from '../../utils/randomString.js';
 import {
   addProductModelColor,
   addProductModelMedia,
+  getProductModelById,
   getProductTypes,
   getProductTypesByOrganization,
   getProducts,
+  getProductsbyOrganization,
   getRequirements,
   newProduct,
   newProductModel,
   newProductType,
   newRequeriment,
 } from './product.model.js';
+import {
+  verifyUser,
+} from '../organization/organization.model.js';
 import { begin, commit, rollback } from '../../database/transactions.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
+import { isMemberController } from '../organization/organization.controller.js';
 
 const newProuctTypeController = async (req, res) => {
   const { name } = req.body;
@@ -108,6 +114,42 @@ const getProductsController = async (req, res) => {
   }
 };
 
+const getProductsbyOrganizationController = async (req, res) => {
+  const { idClient } = req.params;
+  const { role, userId } = req.session;
+  const { colors = null, types = null } = req.body;
+
+  if (role === consts.role.client) {
+    try {
+      const registeredUser = await verifyUser({ userId, idClient });
+      if (!registeredUser) {
+        const err = 'El usuario no pertenece a la organización.';
+        const status = 500;
+        res.statusMessage = err;
+        res.status(status).send({ err, status });
+        return;
+      }
+    } catch (ex) {
+      if (ex instanceof CustomError) throw ex;
+      throw ex;
+    }
+  }
+
+  try {
+    const result = await getProductsbyOrganization({ idClient, colors, types });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener los productos de la organización.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 const newProductRequirementController = async (req, res) => {
   const {
     product, size, material, fabric, quantityPerUnit,
@@ -176,7 +218,7 @@ const saveProductModelMedia = async ({ files, idProductModel }) => {
 
     // eliminar archivos temporales
 
-    fs.unlink(filePath, () => {});
+    fs.unlink(filePath, () => { });
   }
 
   if (uploadError) {
@@ -193,10 +235,13 @@ const saveProductModelMedia = async ({ files, idProductModel }) => {
 };
 
 const newProductModelController = async (req, res) => {
+  const { role } = req.session;
+  const userId = role === 'CLIENT' ? req.session.userId : undefined;
   const {
     type, idClientOrganization, name, details, color,
   } = req.body;
   try {
+    if (userId) await isMemberController({ userId, idClientOrganization });
     await begin();
 
     // crear modelo del producto
@@ -205,7 +250,7 @@ const newProductModelController = async (req, res) => {
     });
 
     // guardar colores
-    if (Array.isArray(color)) {
+    if (Array.isArray(color) && role === 'ADMIN') {
       for (const idColor of color) {
         // eslint-disable-next-line no-await-in-loop
         await addProductModelColor({ idProductModel, idColor });
@@ -232,13 +277,32 @@ const newProductModelController = async (req, res) => {
   }
 };
 
+const getProductModelByIdController = async (req, res) => {
+  const { idProductModel } = req.params;
+  try {
+    const result = await getProductModelById({ idProductModel });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener la información del product model.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newProuctTypeController,
   getProuctTypesController,
   newProductController,
   getProductsController,
+  getProductsbyOrganizationController,
   newProductRequirementController,
   getProductRequirementsController,
   newProductModelController,
   getProuctTypesByOrganizationController,
+  getProductModelByIdController,
 };
