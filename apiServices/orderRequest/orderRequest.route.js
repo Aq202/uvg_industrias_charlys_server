@@ -6,12 +6,14 @@ import {
   getOrderRequestsController,
   newClientOrderRequestController,
   newOrderRequestController,
+  updateOrderRequestController,
 } from './orderRequest.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import multerMiddleware from '../../middlewares/multerMiddleware.js';
 import uploadImage from '../../services/uploadFiles/uploadImage.js';
 import newClientOrderRequestSchema from './validationSchemas/newClientOrderRequestSchema.js';
 import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';
+import updateOrderRequestSchema from './validationSchemas/updateOrderRequestSchema.js';
 
 const orderRequestRouter = express.Router();
 
@@ -21,6 +23,15 @@ orderRequestRouter.post(
   validateBody(newOrderRequestSchema),
   newOrderRequestController,
 );
+
+orderRequestRouter.put(
+  '/:idOrderRequest',
+  ensureAdminAuth,
+  multerMiddleware(uploadImage.any()),
+  validateBody(updateOrderRequestSchema),
+  updateOrderRequestController,
+);
+
 orderRequestRouter.post(
   '/client',
   ensureAdminOrClientAuth,

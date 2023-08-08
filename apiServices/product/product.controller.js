@@ -6,6 +6,7 @@ import randomString from '../../utils/randomString.js';
 import {
   addProductModelColor,
   addProductModelMedia,
+  getProductModelById,
   getProductTypes,
   getProductTypesByOrganization,
   getProducts,
@@ -17,6 +18,7 @@ import {
 } from './product.model.js';
 import { begin, commit, rollback } from '../../database/transactions.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
+import { isMemberController } from '../organization/organization.controller.js';
 
 const newProuctTypeController = async (req, res) => {
   const { name } = req.body;
@@ -176,7 +178,7 @@ const saveProductModelMedia = async ({ files, idProductModel }) => {
 
     // eliminar archivos temporales
 
-    fs.unlink(filePath, () => {});
+    fs.unlink(filePath, () => { });
   }
 
   if (uploadError) {
@@ -193,10 +195,13 @@ const saveProductModelMedia = async ({ files, idProductModel }) => {
 };
 
 const newProductModelController = async (req, res) => {
+  const { role } = req.session;
+  const userId = role === 'CLIENT' ? req.session.userId : undefined;
   const {
     type, idClientOrganization, name, details, color,
   } = req.body;
   try {
+    if (userId) await isMemberController({ userId, idClientOrganization });
     await begin();
 
     // crear modelo del producto
@@ -205,7 +210,7 @@ const newProductModelController = async (req, res) => {
     });
 
     // guardar colores
-    if (Array.isArray(color)) {
+    if (Array.isArray(color) && role === 'ADMIN') {
       for (const idColor of color) {
         // eslint-disable-next-line no-await-in-loop
         await addProductModelColor({ idProductModel, idColor });
@@ -232,6 +237,23 @@ const newProductModelController = async (req, res) => {
   }
 };
 
+const getProductModelByIdController = async (req, res) => {
+  const { idProductModel } = req.params;
+  try {
+    const result = await getProductModelById({ idProductModel });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener la información del product model.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newProuctTypeController,
   getProuctTypesController,
@@ -241,4 +263,5 @@ export {
   getProductRequirementsController,
   newProductModelController,
   getProuctTypesByOrganizationController,
+  getProductModelByIdController,
 };

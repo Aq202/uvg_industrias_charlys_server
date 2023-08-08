@@ -28,6 +28,26 @@ const newOrderRequest = async ({
   }
 };
 
+const updateOrderRequest = async ({
+  idOrderRequest, description, deadline, cost, details,
+}) => {
+  const sqlGet = 'select * from order_request where id_order_request = $1;';
+  const { result: resultGet, rowCount: rowCountGet } = await query(sqlGet, idOrderRequest);
+
+  if (rowCountGet === 0) throw new CustomError('No se han encontrado registros con el id proporcionado.', 404);
+
+  const sqlUpdate = `update order_request set description = $1, deadline = $2,
+    cost = $3, aditional_details = $4 where id_order_request = $5`;
+  await query(
+    sqlUpdate,
+    description || resultGet[0].description,
+    deadline || resultGet[0].deadline,
+    cost || resultGet[0].cost,
+    details || resultGet[0].aditional_details,
+    idOrderRequest,
+  );
+};
+
 const getOrderRequests = async (searchQuery) => {
   let queryResult;
   if (searchQuery) {
@@ -108,5 +128,5 @@ const getOrderRequestById = async (orderRequestId) => {
 };
 
 export {
-  newOrderRequest, getOrderRequests, addOrderRequestMedia, getOrderRequestById,
+  newOrderRequest, getOrderRequests, addOrderRequestMedia, getOrderRequestById, updateOrderRequest,
 };
