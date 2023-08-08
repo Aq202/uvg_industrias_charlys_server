@@ -216,6 +216,18 @@ const getOrganizations = async ({ page = null }) => {
   return { result: response, count: resultCount[0].count };
 };
 
+const verifyUser = async ({ userId, idClient }) => {
+  try {
+    const sql = 'SELECT id_client_organization FROM user_account WHERE id_user = $1';
+    const { result, rowCount } = await query(sql, userId);
+    if (rowCount === 0) throw new CustomError('No se encontró el usuario.', 404);
+    return result[0].id_client_organization === idClient;
+  } catch (ex) {
+    if (ex instanceof CustomError) throw ex;
+    throw ex;
+  }
+};
+
 export {
   // eslint-disable-next-line import/prefer-default-export
   getClients,
@@ -226,4 +238,5 @@ export {
   getOrganizations,
   getOrganizationById,
   getOrders,
+  verifyUser,
 };

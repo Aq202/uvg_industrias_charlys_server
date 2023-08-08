@@ -8,12 +8,16 @@ import {
   addProductModelMedia,
   getProductTypes,
   getProducts,
+  getProductsbyOrganization,
   getRequirements,
   newProduct,
   newProductModel,
   newProductType,
   newRequeriment,
 } from './product.model.js';
+import {
+  verifyUser,
+} from '../organization/organization.model.js';
 import { begin, commit, rollback } from '../../database/transactions.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 
@@ -79,6 +83,42 @@ const getProductsController = async (req, res) => {
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener los productos disponibles.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getProductsbyOrganizationController = async (req, res) => {
+  const { idClient } = req.params;
+  const { role, userId } = req.session;
+  const { colors = null, types = null } = req.body;
+
+  if (role === consts.role.client) {
+    try {
+      const registeredUser = await verifyUser({ userId, idClient });
+      if (!registeredUser) {
+        const err = 'El usuario no pertenece a la organización.';
+        const status = 500;
+        res.statusMessage = err;
+        res.status(status).send({ err, status });
+        return;
+      }
+    } catch (ex) {
+      if (ex instanceof CustomError) throw ex;
+      throw ex;
+    }
+  }
+
+  try {
+    const result = await getProductsbyOrganization({ idClient, colors, types });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener los productos de la organización.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -218,6 +258,7 @@ export {
   getProuctTypesController,
   newProductController,
   getProductsController,
+  getProductsbyOrganizationController,
   newProductRequirementController,
   getProductRequirementsController,
   newProductModelController,
