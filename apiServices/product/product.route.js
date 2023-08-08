@@ -4,6 +4,7 @@ import newProductTypeSchema from '../../utils/validationSchemas/newProductTypeSc
 import newProductRequirementSchema from '../../utils/validationSchemas/newProductRequirementSchema.js';
 import newProductSchema from '../../utils/validationSchemas/newProductSchema.js';
 import {
+  getProductModelByIdController,
   getProductRequirementsController,
   getProductsController,
   getProuctTypesByOrganizationController,
@@ -23,7 +24,7 @@ const productRouter = express.Router();
 
 productRouter.post(
   '/model',
-  ensureAdminAuth,
+  ensureAdminOrClientAuth,
   multerMiddleware(uploadImage.any()),
   validateBody(newProductModelSchema),
   newProductModelController,
@@ -35,5 +36,6 @@ productRouter.post('/requirement', validateBody(newProductRequirementSchema), ne
 productRouter.get('/requirement', ensureAdminAuth, getProductRequirementsController);
 productRouter.post('/', validateBody(newProductSchema), newProductController);
 productRouter.get('/', ensureAdminAuth, getProductsController);
+productRouter.get('/model/:idProductModel', ensureAdminAuth, getProductModelByIdController);
 
 export default productRouter;

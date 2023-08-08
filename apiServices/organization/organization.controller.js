@@ -157,9 +157,9 @@ const deleteOrganizationController = async (req, res) => {
 };
 
 const getOrganizationsController = async (req, res) => {
-  const { page } = req.query;
+  const { page, search } = req.query;
   try {
-    const result = await getOrganizations({ page });
+    const result = await getOrganizations({ page, search });
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener las organizaciones.';
@@ -183,4 +183,5 @@ export {
   getOrganizationsController,
   getOrganizationByIdController,
   getOrdersController,
+  isMemberController,
 };
