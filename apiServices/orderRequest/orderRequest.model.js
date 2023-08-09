@@ -130,7 +130,7 @@ const getOrderRequestMedia = async (orderRequestId) => {
   const { result, rowCount } = await query(sql, orderRequestId);
 
   return rowCount > 0
-    ? result.map((val) => `${consts.apiPath}/image/orderRequest/${val.name}`)
+    ? result.map((val) => `${consts.imagePath.orderRequest}/${val.name}`)
     : null;
 };
 
