@@ -1,4 +1,5 @@
 import CustomError from '../../utils/customError.js';
+import consts from '../../utils/consts.js';
 import {
   newOrganization,
   updateOrganization,
@@ -35,7 +36,7 @@ const isMemberController = async ({ userId, idClient }) => {
 };
 
 const getOrderRequestsController = async (req, res) => {
-  const userId = req.session.role === 'CLIENT' ? req.session.userId : undefined;
+  const userId = req.session.role === consts.role.client ? req.session.userId : undefined;
   const { idClient } = req.params;
   const { page, search } = req.query;
   try {
@@ -56,7 +57,7 @@ const getOrderRequestsController = async (req, res) => {
 };
 
 const getOrdersController = async (req, res) => {
-  const userId = req.session.role === 'CLIENT' ? req.session.userId : undefined;
+  const userId = req.session.role === consts.role.client ? req.session.userId : undefined;
   const { idClient } = req.params;
   const { page, search } = req.query;
   try {
