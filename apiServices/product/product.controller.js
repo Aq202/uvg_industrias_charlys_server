@@ -10,16 +10,13 @@ import {
   getProductTypes,
   getProductTypesByOrganization,
   getProducts,
-  getProductsbyOrganization,
+  getProductModelsbyOrganization,
   getRequirements,
   newProduct,
   newProductModel,
   newProductType,
   newRequeriment,
 } from './product.model.js';
-import {
-  verifyUser,
-} from '../organization/organization.model.js';
 import { begin, commit, rollback } from '../../database/transactions.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 import { isMemberController } from '../organization/organization.controller.js';
@@ -116,30 +113,17 @@ const getProductsController = async (req, res) => {
 
 const getProductsbyOrganizationController = async (req, res) => {
   const { idClient } = req.params;
-  const { role, userId } = req.session;
-  const { colors = null, types = null } = req.body;
-
-  if (role === consts.role.client) {
-    try {
-      const registeredUser = await verifyUser({ userId, idClient });
-      if (!registeredUser) {
-        const err = 'El usuario no pertenece a la organización.';
-        const status = 500;
-        res.statusMessage = err;
-        res.status(status).send({ err, status });
-        return;
-      }
-    } catch (ex) {
-      if (ex instanceof CustomError) throw ex;
-      throw ex;
-    }
-  }
-
+  const { search } = req.query;
+  const userId = req.session.role === consts.role.client ? req.session.userId : undefined;
+  const { colors, types } = req.body;
   try {
-    const result = await getProductsbyOrganization({ idClient, colors, types });
+    if (userId) await isMemberController({ userId, idClient });
+    const result = await getProductModelsbyOrganization({
+      idClient, colors, types, search,
+    });
     res.send(result);
   } catch (ex) {
-    let err = 'Ocurrio un error al obtener los productos de la organización.';
+    let err = 'Ocurrio un error al obtener los modelos de producto de esta organización.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -236,7 +220,7 @@ const saveProductModelMedia = async ({ files, idProductModel }) => {
 
 const newProductModelController = async (req, res) => {
   const { role } = req.session;
-  const userId = role === 'CLIENT' ? req.session.userId : undefined;
+  const userId = role === consts.role.client ? req.session.userId : undefined;
   const {
     type, idClientOrganization, name, details, color,
   } = req.body;
