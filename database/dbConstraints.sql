@@ -71,7 +71,8 @@ ALTER TABLE alter_user_token
 ADD CONSTRAINT alterUserTkn_user_fk FOREIGN KEY (id_user) REFERENCES user_account(id_user);
 
 ALTER TABLE color
-ADD CONSTRAINT color_values_check CHECK(red >= 0 AND red <= 255 AND green >= 0 AND green <= 255 AND blue >= 0 AND blue <= 255);
+ADD CONSTRAINT color_values_check CHECK(red >= 0 AND red <= 255 AND green >= 0 AND green <= 255 AND blue >= 0 AND blue <= 255),
+ADD CONSTRAINT color_unique_name UNIQUE("name");
 
 ALTER TABLE product_model_color
 ADD CONSTRAINT pm_product_model_fk FOREIGN KEY (id_product_model) REFERENCES product_model(id_product_model),
