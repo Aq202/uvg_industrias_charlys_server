@@ -20,7 +20,7 @@ export default class OrderAcceptedEmail extends Email {
     Número de Pedido Resultante: #${idOrder}
     <br>
     <br>
-    ${detail.map((product) => (`${product.name} | Talla: ${product.size} - ${product.quantity} unidades. (Q${product.unit_cost.toFixed(2)})`)).join('<br>')}
+    ${detail.map((product) => (`${product.name} | Talla: ${product.size} - ${product.quantity} ${product.quantity > 1 ? 'unidades' : 'unidad'}. (Q${product.unit_cost.toFixed(2)})`)).join('<br>')}
     <br>
     Total del Pedido: Q${total.toFixed(2)}
     <br>
