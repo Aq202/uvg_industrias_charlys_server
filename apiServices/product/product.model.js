@@ -101,9 +101,9 @@ const getProductModelsbyOrganization = async ({
   const infoSql = `select id_product_model, pt.id_product_type "id_product_type", pt.name "type", id_client_organization, pm.name description, details from product_model pm
   inner join product_type pt on pm.type = pt.id_product_type
   where id_client_organization = $1 and pm.name ilike $2
-  ${types !== undefined ? `and pt.id_product_type in (${placeholders})` : ''};`;
+  ${types !== undefined && types.length > 0 ? `and pt.id_product_type in (${placeholders})` : ''};`;
 
-  const { result: infoResult, rowCount: infoRowCount } = types !== undefined
+  const { result: infoResult, rowCount: infoRowCount } = types !== undefined && types.length > 0
     ? await query(infoSql, idClient, `%${search}%`, ...types)
     : await query(infoSql, idClient, `%${search}%`);
 
@@ -166,7 +166,7 @@ const getProductModelsbyOrganization = async ({
     };
   });
 
-  const response = colors !== undefined ? infoMaped.filter((r) => (
+  const response = colors !== undefined && colors.length > 0 ? infoMaped.filter((r) => (
     colors.every((targetColorId) => (r.colors.some((color) => (color.id === targetColorId))))
   )) : infoMaped;
 
