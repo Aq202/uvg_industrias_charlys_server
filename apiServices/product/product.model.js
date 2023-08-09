@@ -340,6 +340,30 @@ const getProductModelById = async ({ idProductModel }) => {
   return response[0];
 };
 
+const updateProductModel = async ({
+  idProductModel, type, idClientOrganization, name, details,
+}) => {
+  const sqlGet = 'select * from product_model where id_product_model = $1;';
+  const { result: resultGet, rowCount: rowCountGet } = await query(sqlGet, idProductModel);
+
+  if (rowCountGet === 0) { throw new CustomError('No se han encontrado registros con el id proporcionado.', 404); }
+
+  const sqlUpdate = `update product_model
+    set "type" = $1,
+      id_client_organization = $2,
+      "name" = $3,
+      details = $4
+    where id_product_model = $5`;
+  await query(
+    sqlUpdate,
+    type || resultGet[0].type,
+    idClientOrganization || resultGet[0].id_client_organization,
+    name || resultGet[0].name,
+    details || resultGet[0].details,
+    idProductModel,
+  );
+};
+
 export {
   getProductTypes,
   newProductType,
@@ -353,4 +377,5 @@ export {
   addProductModelMedia,
   getProductTypesByOrganization,
   getProductModelById,
+  updateProductModel,
 };

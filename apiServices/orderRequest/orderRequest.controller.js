@@ -92,15 +92,14 @@ const newOrderRequestController = async (req, res) => {
 
 const updateOrderRequestController = async (req, res) => {
   const {
-    description, deadline, cost, details,
+    description, deadline, details, idOrderRequest,
   } = req.body;
-  const { idOrderRequest } = req.params;
 
   try {
     begin(); // begin transaction
 
     await updateOrderRequest({
-      idOrderRequest, description, deadline, cost, details,
+      idOrderRequest, description, deadline, details,
     });
 
     // save files

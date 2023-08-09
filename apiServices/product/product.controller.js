@@ -16,6 +16,7 @@ import {
   newProductModel,
   newProductType,
   newRequeriment,
+  updateProductModel,
 } from './product.model.js';
 import { begin, commit, rollback } from '../../database/transactions.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
@@ -261,6 +262,39 @@ const newProductModelController = async (req, res) => {
   }
 };
 
+const updateProductModelController = async (req, res) => {
+  const {
+    idProductModel, type, idClientOrganization, name, details,
+  } = req.body;
+
+  try {
+    begin(); // begin transaction
+
+    await updateProductModel({
+      idProductModel, type, idClientOrganization, name, details,
+    });
+
+    // save files
+    if (Array.isArray(req.uploadedFiles)) {
+      await saveProductModelMedia({ files: req.uploadedFiles, idProductModel });
+    }
+
+    await commit();
+
+    res.send({ idProductModel });
+  } catch (ex) {
+    await rollback();
+    let err = 'Ocurrio un error al actualizar el modelo de producto.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 const getProductModelByIdController = async (req, res) => {
   const { idProductModel } = req.params;
   try {
@@ -289,4 +323,5 @@ export {
   newProductModelController,
   getProuctTypesByOrganizationController,
   getProductModelByIdController,
+  updateProductModelController,
 };
