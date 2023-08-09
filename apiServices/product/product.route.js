@@ -38,6 +38,6 @@ productRouter.get('/requirement', ensureAdminAuth, getProductRequirementsControl
 productRouter.post('/', validateBody(newProductSchema), newProductController);
 productRouter.get('/', ensureAdminAuth, getProductsController);
 productRouter.get('/model/:idProductModel', ensureAdminAuth, getProductModelByIdController);
-productRouter.post('/:idClient', ensureAdminOrClientAuth, getProductsbyOrganizationController);
+productRouter.post('/model/by-organization/:idClient', ensureAdminOrClientAuth, getProductsbyOrganizationController);
 
 export default productRouter;

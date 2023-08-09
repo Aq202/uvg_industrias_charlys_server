@@ -1,4 +1,5 @@
 import query from '../../database/query.js';
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 
 const newProductType = async ({ name }) => {
@@ -149,9 +150,9 @@ const getProductModelsbyOrganization = async ({
       blue: c.blue,
     }));
 
-    const media = val.media.map((m) => ({
-      name: m.name,
-    }));
+    const media = val.media.map((m) => (
+      `${consts.imagePath.product}/${m.name}`
+    ));
 
     return {
       id: val.id_product_model,
