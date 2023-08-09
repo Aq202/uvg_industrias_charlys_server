@@ -16,8 +16,8 @@ const newOrder = async ({ idOrderRequest }) => {
     where o.id_order_request = $1;`;
 
   try {
-    const { result, rowCount } = await query(sql, idOrderRequest);
     const { result: users } = await query(sql2, idOrderRequest);
+    const { result, rowCount } = await query(sql, idOrderRequest);
     const { result: detail } = await query(sql3, idOrderRequest);
     const { result: total } = await query(sql4, idOrderRequest);
 
@@ -30,6 +30,7 @@ const newOrder = async ({ idOrderRequest }) => {
     return result[0];
   } catch (ex) {
     if (ex?.code === '23503') { throw new CustomError('La solicitud de pedido no existe.', 400); }
+    if (ex?.code === '42P02') { throw new CustomError(ex.message, 400); }
     throw ex;
   }
 };

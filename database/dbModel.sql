@@ -36,11 +36,11 @@ CREATE TABLE session(
 );
 
 create table "order"(
-id_order varchar(15) primary key,
-id_order_request varchar(15),
-deadline date,
-description text,
-id_client_organization VARCHAR(15),
+	id_order varchar(15) primary key,
+	id_order_request VARCHAR(15),
+	deadline date,
+	description text,
+	id_client_organization VARCHAR(15),
 );
 
 CREATE TABLE "size"(

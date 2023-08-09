@@ -3,7 +3,7 @@ import CustomError from '../../utils/customError.js';
 import OrderAcceptedEmail from '../../services/email/OrderAcceptedEmail.js';
 
 const newOrderController = async (req, res) => {
-  const { idOrderRequest } = req.params;
+  const { idOrderRequest } = req.body;
 
   try {
     const {

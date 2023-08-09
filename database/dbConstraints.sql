@@ -15,7 +15,6 @@ ALTER TABLE "session"
 ADD CONSTRAINT session_user_fk FOREIGN KEY (id_user) REFERENCES user_account(id_user);
 
 ALTER TABLE "order"
-ADD CONSTRAINT order_fk FOREIGN KEY (id_order_request) REFERENCES order_request(id_order_request),
 ADD CONSTRAINT order_client_fk FOREIGN KEY (id_client_organization) REFERENCES client_organization(id_client_organization);
 
 

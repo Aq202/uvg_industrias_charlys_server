@@ -14,6 +14,11 @@
 	NEW.deadline = deadline;
 	NEW.id_client_organization = id_client_organization;
 	
+	IF NEW.id_client_organization is null and NEW.description is null and NEW.deadline is null then
+		RAISE EXCEPTION 'La solicitud de pedido indicada no existe.'
+			USING ERRCODE = '23503';
+	end if;
+	
 	IF NEW.id_client_organization is null then
         RAISE EXCEPTION 'Primero debe crear un cliente asociado a este pedido.'
 			USING ERRCODE = '42P02';
