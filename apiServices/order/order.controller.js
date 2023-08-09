@@ -1,16 +1,25 @@
 import { newOrder } from './order.model.js';
 import CustomError from '../../utils/customError.js';
+import OrderAcceptedEmail from '../../services/email/OrderAcceptedEmail.js';
 
 const newOrderController = async (req, res) => {
   const { idOrderRequest } = req.params;
 
   try {
-    const result = await newOrder({ idOrderRequest });
+    const {
+      id, users, detail, total,
+    } = await newOrder({ idOrderRequest });
 
-    // const emailSender = new NewUserEmail({ addresseeEmail: email, name, registerToken: token });
-    // await emailSender.sendEmail();
+    const emailPromises = users.map(async (user) => {
+      const emailSender = new OrderAcceptedEmail({
+        addresseeEmail: user.email, name: user.name, idOrderRequest, idOrder: id, detail, total,
+      });
+      await emailSender.sendEmail();
+    });
 
-    res.send(result);
+    await Promise.all(emailPromises);
+
+    res.send({ id });
   } catch (ex) {
     let err = 'Ocurrio un error al generar el pedido.';
     let status = 500;

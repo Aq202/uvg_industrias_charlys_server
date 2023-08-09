@@ -14,11 +14,11 @@
   	END LOOP;
 	
 	FOR row IN (
-		select id_order_request, p.id_product_model, "size", quantity, id_product
+		select id_order_request, p.id_product_model, "size", quantity, id_product, unit_cost
 			from order_request_requirement natural join product p
 			where id_order_request = NEW.id_order_request
 	  ) LOOP
-		INSERT INTO order_detail values(NEW.id_order, row.id_product, row."size", row.quantity);
+		INSERT INTO order_detail values(NEW.id_order, row.id_product, row."size", row.quantity, row.unit_cost);
   	END LOOP;
 	RETURN NEW;
  END;

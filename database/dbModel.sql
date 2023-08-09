@@ -21,7 +21,8 @@ CREATE TABLE client_organization(
 	name VARCHAR(100) NOT NULL,
 	email VARCHAR(100),
 	phone VARCHAR(100),
-	address VARCHAR(300) NOT NULL
+	address VARCHAR(300) NOT NULL,
+	enabled BOOLEAN DEFAULT true NOT NULL
 );
 
 CREATE TABLE employee(
@@ -40,7 +41,6 @@ id_order_request varchar(15),
 deadline date,
 description text,
 id_client_organization VARCHAR(15),
-"cost" FLOAT
 );
 
 CREATE TABLE "size"(
@@ -67,6 +67,7 @@ CREATE TABLE order_detail(
 	id_product VARCHAR(15),
 	"size" VARCHAR(10),
 	quantity INT,
+	unit_cost FLOAT,
 	PRIMARY KEY(no_order, product, "size")
 );
 
@@ -116,7 +117,6 @@ create table order_request(
 	id_client_organization VARCHAR(15),
 	id_temporary_client VARCHAR(15),
 	deadline DATE,
-	"cost" FLOAT,
 	aditional_details TEXT
 );
 
@@ -167,6 +167,7 @@ CREATE TABLE order_request_requirement(
 	id_product_model VARCHAR(15) NOT NULL,
 	"size" VARCHAR(10) NOT NULL,
 	quantity INTEGER NOT NULL,
+	unit_cost FLOAT,
 	UNIQUE(id_order_request, id_product_model, "size")
 );
 

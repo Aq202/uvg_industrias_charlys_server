@@ -5,16 +5,14 @@
  declare description text;
  declare deadline date;
  declare id_client_organization text;
- declare "cost" float;
  begin
- 	SELECT oreq.description, oreq.deadline, oreq.id_client_organization, oreq."cost"
-	INTO description, deadline, id_client_organization, "cost"
+ 	SELECT oreq.description, oreq.deadline, oreq.id_client_organization
+	INTO description, deadline, id_client_organization
 	FROM order_request oreq where id_order_request = NEW.id_order_request;
 	
 	NEW.description = description;
 	NEW.deadline = deadline;
 	NEW.id_client_organization = id_client_organization;
-	NEW."cost" = "cost";
 	
 	IF NEW.id_client_organization is null then
         RAISE EXCEPTION 'Primero debe crear un cliente asociado a este pedido.'

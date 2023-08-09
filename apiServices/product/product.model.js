@@ -106,7 +106,7 @@ const getProductModelsbyOrganization = async ({
     ? await query(infoSql, idClient, `%${search}%`, ...types)
     : await query(infoSql, idClient, `%${search}%`);
 
-  if (infoRowCount === 0) throw new CustomError('No se encontraron resultados para el cliente proporcionado.', 404);
+  if (infoRowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
   const mediaSql = `select pmed.id_product_model, pmed."name"
   from product_model pm
@@ -140,7 +140,7 @@ const getProductModelsbyOrganization = async ({
     product.media = mediaList;
   });
 
-  const response = infoResult.map((val) => {
+  const infoMaped = infoResult.map((val) => {
     const colorList = val.colors.map((c) => ({
       id: c.id_color,
       color: c.name,
@@ -165,11 +165,12 @@ const getProductModelsbyOrganization = async ({
     };
   });
 
-  const result = colors !== undefined ? response.filter((r) => (
+  const response = colors !== undefined ? infoMaped.filter((r) => (
     colors.every((targetColorId) => (r.colors.some((color) => (color.id === targetColorId))))
-  )) : response;
+  )) : infoMaped;
 
-  return result;
+  if (response.length < 1) throw new CustomError('No se encontraron resultados.', 404);
+  return response;
 };
 
 const newRequeriment = async ({
