@@ -15,14 +15,13 @@ ALTER TABLE "session"
 ADD CONSTRAINT session_user_fk FOREIGN KEY (id_user) REFERENCES user_account(id_user);
 
 ALTER TABLE "order"
-ADD CONSTRAINT order_fk FOREIGN KEY (id_order_request) REFERENCES order_request(id_order_request),
 ADD CONSTRAINT order_client_fk FOREIGN KEY (id_client_organization) REFERENCES client_organization(id_client_organization);
 
 
 ALTER TABLE "order_detail" 
-ADD CONSTRAINT orderd_order_fk FOREIGN KEY (no_order) REFERENCES "order"(id_order),
-ADD CONSTRAINT orderd_product_fk FOREIGN KEY (product) REFERENCES product(id_product),
-ADD CONSTRAINT orderd_size_fk FOREIGN KEY ("size") REFERENCES "size"("size");
+ADD CONSTRAINT od_order_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order),
+ADD CONSTRAINT od_product_fk FOREIGN KEY (id_product) REFERENCES product(id_product),
+ADD CONSTRAINT od_size_fk FOREIGN KEY ("size") REFERENCES "size"("size");
 
 ALTER TABLE material
 ADD CONSTRAINT material_type_fk FOREIGN KEY (type) REFERENCES material_type(id_material_type);
@@ -71,7 +70,8 @@ ALTER TABLE alter_user_token
 ADD CONSTRAINT alterUserTkn_user_fk FOREIGN KEY (id_user) REFERENCES user_account(id_user);
 
 ALTER TABLE color
-ADD CONSTRAINT color_values_check CHECK(red >= 0 AND red <= 255 AND green >= 0 AND green <= 255 AND blue >= 0 AND blue <= 255);
+ADD CONSTRAINT color_values_check CHECK(red >= 0 AND red <= 255 AND green >= 0 AND green <= 255 AND blue >= 0 AND blue <= 255),
+ADD CONSTRAINT color_unique_name UNIQUE("name");
 
 ALTER TABLE product_model_color
 ADD CONSTRAINT pm_product_model_fk FOREIGN KEY (id_product_model) REFERENCES product_model(id_product_model),
@@ -89,3 +89,10 @@ ADD CONSTRAINT orr_min_quantity_check CHECK (quantity > 0),
 ADD CONSTRAINT orr_order_request_fk FOREIGN KEY (id_order_request) REFERENCES order_request (id_order_request),
 ADD CONSTRAINT orr_product_model_fk FOREIGN KEY (id_product_model) REFERENCES product_model (id_product_model),
 ADD CONSTRAINT orr_size_fk FOREIGN KEY ("size") REFERENCES "size"("size");
+
+ALTER TABLE product_color
+ADD CONSTRAINT p_product_fk FOREIGN KEY (id_product) REFERENCES product(id_product),
+ADD CONSTRAINT p_color_fk FOREIGN KEY (id_color) REFERENCES color(id_color);
+
+ALTER TABLE product_media
+ADD CONSTRAINT p_media_fk FOREIGN KEY (id_product) REFERENCES product(id_product);

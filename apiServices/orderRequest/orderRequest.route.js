@@ -25,7 +25,7 @@ orderRequestRouter.post(
 );
 
 orderRequestRouter.put(
-  '/:idOrderRequest',
+  '/',
   ensureAdminAuth,
   multerMiddleware(uploadImage.any()),
   validateBody(updateOrderRequestSchema),

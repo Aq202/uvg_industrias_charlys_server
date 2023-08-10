@@ -9,6 +9,7 @@ import {
   getOrderRequestById,
   getOrderRequests,
   newOrderRequest,
+  newOrderRequestRequirement,
   updateOrderRequest,
 } from './orderRequest.model.js';
 import { createTemporaryClient } from '../temporaryClient/temporaryClient.model.js';
@@ -91,15 +92,14 @@ const newOrderRequestController = async (req, res) => {
 
 const updateOrderRequestController = async (req, res) => {
   const {
-    description, deadline, cost, details,
+    description, deadline, details, idOrderRequest,
   } = req.body;
-  const { idOrderRequest } = req.params;
 
   try {
     begin(); // begin transaction
 
     await updateOrderRequest({
-      idOrderRequest, description, deadline, cost, details,
+      idOrderRequest, description, deadline, details,
     });
 
     // save files
@@ -124,7 +124,7 @@ const updateOrderRequestController = async (req, res) => {
 };
 
 const newClientOrderRequestController = async (req, res) => {
-  const { description, idClientOrganization } = req.body;
+  const { description, idClientOrganization, products } = req.body;
 
   try {
     begin(); // begin transaction
@@ -133,6 +133,15 @@ const newClientOrderRequestController = async (req, res) => {
       description,
       idClientOrganization,
     });
+
+    // guardar requerimientos de productos de la orden
+    for (const product of products) {
+      const { idProductModel, size, quantity } = product;
+      // eslint-disable-next-line no-await-in-loop
+      await newOrderRequestRequirement({
+        idOrderRequest: id, idProductModel, size, quantity,
+      });
+    }
 
     // save files
     if (Array.isArray(req.uploadedFiles)) {

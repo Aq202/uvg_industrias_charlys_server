@@ -1,6 +1,6 @@
 import express from 'express';
 import validateBody from '../../middlewares/validateBody.js';
-import newColorSchema from '../../utils/validationSchemas/newColorSchema.js';
+import newColorSchema from './validationSchema/newColorSchema.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import { getColorsByOrganizationController, getColorsController, newColorController } from './color.controller.js';
 import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';

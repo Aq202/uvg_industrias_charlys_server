@@ -14,12 +14,14 @@ import {
   newProductModelController,
   newProductRequirementController,
   newProuctTypeController,
+  updateProductModelController,
 } from './product.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';
 import multerMiddleware from '../../middlewares/multerMiddleware.js';
 import uploadImage from '../../services/uploadFiles/uploadImage.js';
 import newProductModelSchema from './validationSchemas/newProductModelSchema.js';
+import updateProductModelSchema from './validationSchemas/updateProductModelSchema.js';
 
 const productRouter = express.Router();
 
@@ -38,6 +40,13 @@ productRouter.get('/requirement', ensureAdminAuth, getProductRequirementsControl
 productRouter.post('/', validateBody(newProductSchema), newProductController);
 productRouter.get('/', ensureAdminAuth, getProductsController);
 productRouter.get('/model/:idProductModel', ensureAdminAuth, getProductModelByIdController);
-productRouter.post('/:idClient', ensureAdminOrClientAuth, getProductsbyOrganizationController);
+productRouter.post('/model/by-organization/:idClient', ensureAdminOrClientAuth, getProductsbyOrganizationController);
+productRouter.put(
+  '/model',
+  ensureAdminAuth,
+  multerMiddleware(uploadImage.any()),
+  validateBody(updateProductModelSchema),
+  updateProductModelController,
+);
 
 export default productRouter;

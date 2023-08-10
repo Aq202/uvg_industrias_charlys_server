@@ -18,9 +18,8 @@ const newColor = async ({
     if (err?.constraint === 'color_values_check') {
       throw new CustomError('El valor para cada color debe ser un número entre 0 y 255.', 400);
     }
-    const error = 'Datos no válidos.';
-
-    throw new CustomError(error, 400);
+    if (err?.code === '23505') throw new CustomError('El nombre del color ya existe.', 400);
+    throw err;
   }
 };
 
