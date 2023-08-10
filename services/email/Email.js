@@ -47,7 +47,7 @@ export default class Email {
                 </center>
 
                 <div style="text-align: justify; font-size:16px;">
-                    Hola ${this.name},
+                    Estimado/a ${this.name},
                     <br>
                     <br>
                     ${this._message}

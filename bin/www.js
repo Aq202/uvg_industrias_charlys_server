@@ -1,7 +1,7 @@
-import app from '../app.js';
 import config from 'config';
+import app from '../app.js';
 
-const port = config.get("port");
+const port = config.get('port');
 
 app.listen(port, () => {
   // eslint-disable-next-line no-console

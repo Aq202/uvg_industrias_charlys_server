@@ -3,7 +3,9 @@ import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 
 const newOrderRequest = async ({
-  description, idClientOrganization = null, idTemporaryClient = null,
+  description,
+  idClientOrganization = null,
+  idTemporaryClient = null,
 }) => {
   const sql = `INSERT INTO order_request(description, date_placed, id_client_organization, id_temporary_client)
                 VALUES ($1, now(), $2, $3) RETURNING id_order_request as id;`;
@@ -21,11 +23,59 @@ const newOrderRequest = async ({
     return result[0];
   } catch (ex) {
     if (ex?.code === '23503') {
-      if (ex.detail?.includes('id_client_organization')) throw new CustomError('La organización cliente no existe.', 400);
-      if (ex.detail?.includes('id_temporary_client')) throw new CustomError('El cliente temporal no existe.', 400);
+      if (ex.detail?.includes('id_client_organization')) { throw new CustomError('La organización cliente no existe.', 400); }
+      if (ex.detail?.includes('id_temporary_client')) { throw new CustomError('El cliente temporal no existe.', 400); }
     }
     throw ex;
   }
+};
+
+const newOrderRequestRequirement = async ({
+  idOrderRequest, idProductModel, size, quantity,
+}) => {
+  const sql = `INSERT INTO order_request_requirement(id_order_request, id_product_model, "size", quantity)
+                VALUES ($1, $2, $3, $4)`;
+
+  try {
+    const { result, rowCount } = await query(sql, idOrderRequest, idProductModel, size, quantity);
+
+    if (rowCount !== 1) {
+      throw new CustomError(
+        'No se pudo registrar el requerimiento para la solicitud de orden.',
+        500,
+      );
+    }
+
+    return result[0];
+  } catch (ex) {
+    if (ex?.code === '23514') throw new CustomError('El modelo del producto no pertenece a esta organización.', 400);
+    if (ex?.code === '23505') throw new CustomError('No se permiten requerimientos duplicados con el mismo modelo de producto y talla.', 400);
+    if (ex?.code === '23503') {
+      if (ex.detail?.includes('id_order_request')) { throw new CustomError('La solicitud de orden no existe.', 400); }
+      if (ex.detail?.includes('id_product_model')) { throw new CustomError('El modelo de producto no existe.', 400); }
+      if (ex.detail?.includes('size')) { throw new CustomError('La talla proporcionada no existe.', 400); }
+    }
+    throw ex;
+  }
+};
+
+const updateOrderRequest = async ({
+  idOrderRequest, description, deadline, details,
+}) => {
+  const sqlGet = 'select * from order_request where id_order_request = $1;';
+  const { result: resultGet, rowCount: rowCountGet } = await query(sqlGet, idOrderRequest);
+
+  if (rowCountGet === 0) { throw new CustomError('No se han encontrado registros con el id proporcionado.', 404); }
+
+  const sqlUpdate = `update order_request set description = $1, deadline = $2,
+    aditional_details = $3 where id_order_request = $4`;
+  await query(
+    sqlUpdate,
+    description || resultGet[0].description,
+    deadline || resultGet[0].deadline,
+    details || resultGet[0].aditional_details,
+    idOrderRequest,
+  );
 };
 
 const getOrderRequests = async (searchQuery) => {
@@ -69,20 +119,18 @@ const getOrderRequests = async (searchQuery) => {
 const addOrderRequestMedia = async (orderRequestId, name) => {
   const sql = 'INSERT INTO order_request_media(id_order_request, name) VALUES ($1, $2) ;';
 
-  const { rowCount } = await query(
-    sql,
-    orderRequestId,
-    name,
-  );
+  const { rowCount } = await query(sql, orderRequestId, name);
 
-  if (rowCount !== 1) throw new CustomError('No se pudo guardar el recurso para la solicitud de orden.', 500);
+  if (rowCount !== 1) { throw new CustomError('No se pudo guardar el recurso para la solicitud de orden.', 500); }
 };
 
 const getOrderRequestMedia = async (orderRequestId) => {
   const sql = 'SELECT name FROM order_request_media WHERE id_order_request = $1';
   const { result, rowCount } = await query(sql, orderRequestId);
 
-  return rowCount > 0 ? result.map((val) => `${consts.apiPath}/image/orderRequest/${val.name}`) : null;
+  return rowCount > 0
+    ? result.map((val) => `${consts.imagePath.orderRequest}/${val.name}`)
+    : null;
 };
 
 const getOrderRequestById = async (orderRequestId) => {
@@ -108,5 +156,10 @@ const getOrderRequestById = async (orderRequestId) => {
 };
 
 export {
-  newOrderRequest, getOrderRequests, addOrderRequestMedia, getOrderRequestById,
+  newOrderRequest,
+  getOrderRequests,
+  addOrderRequestMedia,
+  getOrderRequestById,
+  updateOrderRequest,
+  newOrderRequestRequirement,
 };

@@ -1,4 +1,4 @@
-export default {
+const consts = {
   role: {
     admin: 'ADMIN',
     production: 'PRODUCTION',
@@ -21,4 +21,11 @@ export default {
     fabric: 'FABRIC',
     material: 'MATERIAL',
   },
+  imagePath: {
+  },
 };
+
+consts.imagePath.orderRequest = `${consts.apiPath}/image/orderRequest`;
+consts.imagePath.product = `${consts.apiPath}/image/product`;
+
+export default consts;

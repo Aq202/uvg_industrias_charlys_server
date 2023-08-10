@@ -9,6 +9,8 @@ import {
   getOrderRequestById,
   getOrderRequests,
   newOrderRequest,
+  newOrderRequestRequirement,
+  updateOrderRequest,
 } from './orderRequest.model.js';
 import { createTemporaryClient } from '../temporaryClient/temporaryClient.model.js';
 
@@ -37,7 +39,7 @@ const saveOrderRequestMedia = async ({ files, id }) => {
 
     // eliminar archivos temporales
 
-    fs.unlink(filePath, () => {});
+    fs.unlink(filePath, () => { });
   }
 
   await Promise.all(promises);
@@ -88,8 +90,41 @@ const newOrderRequestController = async (req, res) => {
   }
 };
 
+const updateOrderRequestController = async (req, res) => {
+  const {
+    description, deadline, details, idOrderRequest,
+  } = req.body;
+
+  try {
+    begin(); // begin transaction
+
+    await updateOrderRequest({
+      idOrderRequest, description, deadline, details,
+    });
+
+    // save files
+    if (Array.isArray(req.uploadedFiles)) {
+      await saveOrderRequestMedia({ files: req.uploadedFiles, idOrderRequest });
+    }
+
+    await commit();
+
+    res.send({ idOrderRequest });
+  } catch (ex) {
+    await rollback();
+    let err = 'Ocurrio un error al actualizar la solicitud de pedido.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 const newClientOrderRequestController = async (req, res) => {
-  const { description, idClientOrganization } = req.body;
+  const { description, idClientOrganization, products } = req.body;
 
   try {
     begin(); // begin transaction
@@ -98,6 +133,15 @@ const newClientOrderRequestController = async (req, res) => {
       description,
       idClientOrganization,
     });
+
+    // guardar requerimientos de productos de la orden
+    for (const product of products) {
+      const { idProductModel, size, quantity } = product;
+      // eslint-disable-next-line no-await-in-loop
+      await newOrderRequestRequirement({
+        idOrderRequest: id, idProductModel, size, quantity,
+      });
+    }
 
     // save files
     if (Array.isArray(req.uploadedFiles)) {
@@ -162,4 +206,5 @@ export {
   getOrderRequestsController,
   getOrderRequestByIdController,
   newClientOrderRequestController,
+  updateOrderRequestController,
 };

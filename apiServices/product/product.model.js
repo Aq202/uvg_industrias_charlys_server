@@ -1,4 +1,5 @@
 import query from '../../database/query.js';
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 
 const newProductType = async ({ name }) => {
@@ -27,6 +28,21 @@ const getProductTypes = async () => {
     id: val.id_product_type,
     name: val.name,
   }));
+};
+
+const getProductTypesByOrganization = async ({ idOrganization }) => {
+  const sql = `SELECT DISTINCT T.name AS name, T.id_product_type AS id FROM product_type T
+  INNER JOIN product_model M ON T.id_product_type = M.type
+  INNER JOIN client_organization O ON M.id_client_organization = O.id_client_organization
+  WHERE O.id_client_organization = $1
+  `;
+  const queryResult = await query(sql, idOrganization);
+
+  const { result, rowCount } = queryResult;
+
+  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  return result;
 };
 
 const newProduct = async ({ type, client, color }) => {
@@ -75,11 +91,94 @@ const getProducts = async (searchQuery) => {
   }));
 };
 
+const getProductModelsbyOrganization = async ({
+  idClient, colors, types, search = '',
+}) => {
+  const placeholders = types !== undefined
+    ? types.map((_, index) => `$${index + 3}`).join(',')
+    : undefined;
+
+  const infoSql = `select id_product_model, pt.id_product_type "id_product_type", pt.name "type", id_client_organization, pm.name description, details from product_model pm
+  inner join product_type pt on pm.type = pt.id_product_type
+  where id_client_organization = $1 and pm.name ilike $2
+  ${types !== undefined && types.length > 0 ? `and pt.id_product_type in (${placeholders})` : ''};`;
+
+  const { result: infoResult, rowCount: infoRowCount } = types !== undefined && types.length > 0
+    ? await query(infoSql, idClient, `%${search}%`, ...types)
+    : await query(infoSql, idClient, `%${search}%`);
+
+  if (infoRowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  const mediaSql = `select pmed.id_product_model, pmed."name"
+  from product_model pm
+  inner join product_type pt on pm.type = pt.id_product_type
+  inner join product_model_media pmed on pmed.id_product_model = pm.id_product_model
+  where id_client_organization = $1; `;
+
+  const { result: mediaResult } = await query(mediaSql, idClient);
+
+  const colorSql = `select *
+  from product_model pm
+  inner join product_type pt on pm.type = pt.id_product_type
+  inner join product_model_color pc on pc.id_product_model = pm.id_product_model
+  inner join color "c" on pc.id_color = "c".id_color
+  where id_client_organization = $1; `;
+
+  const { result: colorResult } = await query(colorSql, idClient);
+
+  infoResult.forEach((product) => {
+    const colorList = [];
+    const mediaList = [];
+    colorResult.forEach((c) => {
+      if (c.id_product_model === product.id_product_model) colorList.push(c);
+    });
+    mediaResult.forEach((m) => {
+      if (m.id_product_model === product.id_product_model) mediaList.push(m);
+    });
+    // eslint-disable-next-line no-param-reassign
+    product.colors = colorList;
+    // eslint-disable-next-line no-param-reassign
+    product.media = mediaList;
+  });
+
+  const infoMaped = infoResult.map((val) => {
+    const colorList = val.colors.map((c) => ({
+      id: c.id_color,
+      color: c.name,
+      red: c.red,
+      green: c.green,
+      blue: c.blue,
+    }));
+
+    const media = val.media.map((m) => (
+      `${consts.imagePath.product}/${m.name}`
+    ));
+
+    return {
+      id: val.id_product_model,
+      id_product_type: val.id_product_type,
+      type: val.type,
+      client: val.id_client_organization,
+      description: val.description,
+      details: val.details,
+      colors: colorList,
+      media,
+    };
+  });
+
+  const response = colors !== undefined && colors.length > 0 ? infoMaped.filter((r) => (
+    colors.every((targetColorId) => (r.colors.some((color) => (color.id === targetColorId))))
+  )) : infoMaped;
+
+  if (response.length < 1) throw new CustomError('No se encontraron resultados.', 404);
+  return response;
+};
+
 const newRequeriment = async ({
   product, size, material, fabric, quantityPerUnit,
 }) => {
-  const sql = `INSERT INTO requirements VALUES($1,$2,$3,$4,$5)
-    RETURNING product as id;`;
+  const sql = `INSERT INTO requirements VALUES($1, $2, $3, $4, $5)
+    RETURNING product as id; `;
 
   try {
     const { result, rowCount } = await query(
@@ -110,7 +209,7 @@ const getRequirements = async (product, searchQuery) => {
   let queryResult;
   if (searchQuery) {
     const sql = `select r.product id_product, s.size, COALESCE(mat.description, f.fabric) material,
-                r.quantity_per_unit from requirements r
+  r.quantity_per_unit from requirements r
                 inner join product prod on r.product = prod.id_product
                 inner join product_type pt on prod.type = pt.id_product_type
                 inner join client_organization co on prod.client = co.id_client_organization
@@ -118,11 +217,11 @@ const getRequirements = async (product, searchQuery) => {
                 left join material mat on r.material = mat.id_material
                 left join fabric f on r.fabric = f.id_fabric
                 where r.product = $1
-                AND (s.size ilike $2 or mat.description ilike $2 or f.fabric ilike $2);`;
-    queryResult = await query(sql, product, `%${searchQuery}%`);
+AND(s.size ilike $2 or mat.description ilike $2 or f.fabric ilike $2); `;
+    queryResult = await query(sql, product, `% ${searchQuery}% `);
   } else {
     const sql = `select r.product id_product, s.size, COALESCE(mat.description, f.fabric) material,
-                r.quantity_per_unit from requirements r
+  r.quantity_per_unit from requirements r
                 inner join product prod on r.product = prod.id_product
                 inner join product_type pt on prod.type = pt.id_product_type
                 inner join client_organization co on prod.client = co.id_client_organization
@@ -194,14 +293,89 @@ const addProductModelMedia = async ({ idProductModel, name }) => {
   }
 };
 
+const getProductModelById = async ({ idProductModel }) => {
+  const infoSql = `select id_product_model, pt.id_product_type "id_product_type", pt.name "type", id_client_organization, pm.name description, details from product_model pm
+  inner join product_type pt on pm.type = pt.id_product_type
+  where id_product_model = $1; `;
+
+  const { result: infoResult, rowCount: infoRowCount } = await query(infoSql, idProductModel);
+
+  if (infoRowCount === 0) throw new CustomError('No se encontraron resultados para el ID proporcionado.', 404);
+
+  const mediaSql = `select * from product_model_media
+    where id_product_model = $1; `;
+
+  const { result: mediaResult } = await query(mediaSql, idProductModel);
+
+  const colorSql = `select * from product_model_color
+    natural join color
+    where id_product_model = $1; `;
+
+  const response = infoResult.map((val) => ({
+    id: val.id_product_model,
+    id_product_type: val.id_product_type,
+    type: val.type,
+    client: val.id_client_organization,
+    description: val.description,
+    details: val.details,
+  }));
+
+  const { result: colorResult } = await query(colorSql, idProductModel);
+
+  const colors = colorResult.map((val) => ({
+    id: val.id_color,
+    color: val.name,
+    red: val.red,
+    green: val.green,
+    blue: val.blue,
+  }));
+
+  const media = mediaResult.map((val) => ({
+    name: val.name,
+  }));
+
+  response[0].media = media;
+  response[0].colors = colors;
+
+  return response[0];
+};
+
+const updateProductModel = async ({
+  idProductModel, type, idClientOrganization, name, details,
+}) => {
+  const sqlGet = 'select * from product_model where id_product_model = $1;';
+  const { result: resultGet, rowCount: rowCountGet } = await query(sqlGet, idProductModel);
+
+  if (rowCountGet === 0) { throw new CustomError('No se han encontrado registros con el id proporcionado.', 404); }
+
+  const sqlUpdate = `update product_model
+    set "type" = $1,
+      id_client_organization = $2,
+      "name" = $3,
+      details = $4
+    where id_product_model = $5`;
+  await query(
+    sqlUpdate,
+    type || resultGet[0].type,
+    idClientOrganization || resultGet[0].id_client_organization,
+    name || resultGet[0].name,
+    details || resultGet[0].details,
+    idProductModel,
+  );
+};
+
 export {
   getProductTypes,
   newProductType,
   getProducts,
+  getProductModelsbyOrganization,
   newProduct,
   getRequirements,
   newRequeriment,
   newProductModel,
   addProductModelColor,
   addProductModelMedia,
+  getProductTypesByOrganization,
+  getProductModelById,
+  updateProductModel,
 };

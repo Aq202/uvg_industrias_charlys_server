@@ -1,4 +1,5 @@
 import CustomError from '../../utils/customError.js';
+import consts from '../../utils/consts.js';
 import {
   newOrganization,
   updateOrganization,
@@ -7,6 +8,8 @@ import {
   getClients,
   getOrderRequests,
   getOrganizationById,
+  getOrders,
+  isMember,
 } from './organization.model.js';
 
 const getOrganizationByIdController = async (req, res) => {
@@ -26,15 +29,46 @@ const getOrganizationByIdController = async (req, res) => {
   }
 };
 
+const isMemberController = async ({ userId, idClient }) => {
+  const result = await isMember({ userId, idClient });
+  if (!result) throw new CustomError('Acceso denegado.', 403);
+  return null;
+};
+
 const getOrderRequestsController = async (req, res) => {
+  const userId = req.session.role === consts.role.client ? req.session.userId : undefined;
   const { idClient } = req.params;
   const { page, search } = req.query;
   try {
+    if (userId) await isMemberController({ userId, idClient });
     const result = await getOrderRequests({ idClient, page, search });
 
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener las solicitudes de orden de este cliente.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getOrdersController = async (req, res) => {
+  const userId = req.session.role === consts.role.client ? req.session.userId : undefined;
+  const { idClient } = req.params;
+  const { page, search } = req.query;
+  try {
+    if (userId) await isMemberController({ userId, idClient });
+    const result = await getOrders({
+      idClient, page, search, userId,
+    });
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener los pedidos de este cliente.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -124,9 +158,9 @@ const deleteOrganizationController = async (req, res) => {
 };
 
 const getOrganizationsController = async (req, res) => {
-  const { page } = req.query;
+  const { page, search } = req.query;
   try {
-    const result = await getOrganizations({ page });
+    const result = await getOrganizations({ page, search });
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener las organizaciones.';
@@ -149,4 +183,6 @@ export {
   deleteOrganizationController,
   getOrganizationsController,
   getOrganizationByIdController,
+  getOrdersController,
+  isMemberController,
 };

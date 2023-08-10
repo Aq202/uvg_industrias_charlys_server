@@ -22,7 +22,7 @@ CREATE TABLE client_organization(
 	email VARCHAR(100),
 	phone VARCHAR(100),
 	address VARCHAR(300) NOT NULL,
-	"enabled" BOOLEAN DEFAULT true
+	enabled BOOLEAN DEFAULT true NOT NULL
 );
 
 CREATE TABLE employee(
@@ -36,17 +36,16 @@ CREATE TABLE session(
 );
 
 create table "order"(
-id_order varchar(15) primary key,
-id_order_request varchar(15),
-deadline date,
-description text,
-id_client_organization VARCHAR(15),
-"cost" FLOAT
+	id_order varchar(15) primary key,
+	id_order_request VARCHAR(15),
+	deadline date,
+	description text,
+	id_client_organization VARCHAR(15),
 );
 
 CREATE TABLE "size"(
-	"id_size" VARCHAR(15) PRIMARY KEY,
-	"size" VARCHAR(10)
+	"size" VARCHAR(10) PRIMARY KEY,
+	"sequence" SMALLINT UNIQUE
 );
 
 CREATE TABLE product_type(
@@ -56,16 +55,19 @@ CREATE TABLE product_type(
 
 CREATE TABLE product(
 	id_product VARCHAR(15) PRIMARY KEY,
-	"type" VARCHAR(15),
-	client VARCHAR(15),
-	color VARCHAR(100)
+	id_product_model VARCHAR(15),
+	"type" VARCHAR(15) NOT NULL,
+	id_client_organization VARCHAR(15) NOT NULL,
+	"name" VARCHAR(200) NOT NULL,
+	details TEXT,
 );
 
 CREATE TABLE order_detail(
-	no_order VARCHAR(15),
-	product VARCHAR(15),
-	"size" VARCHAR(15),
+	id_order VARCHAR(15),
+	id_product VARCHAR(15),
+	"size" VARCHAR(10),
 	quantity INT,
+	unit_cost FLOAT,
 	PRIMARY KEY(no_order, product, "size")
 );
 
@@ -94,7 +96,7 @@ CREATE TABLE inventory(
 
 CREATE TABLE requirements(
 	product VARCHAR(15),
-	"size" VARCHAR(15),
+	"size" VARCHAR(10),
 	material VARCHAR(15),
 	fabric VARCHAR(15),
 	quantity_per_unit FLOAT
@@ -115,7 +117,6 @@ create table order_request(
 	id_client_organization VARCHAR(15),
 	id_temporary_client VARCHAR(15),
 	deadline DATE,
-	"cost" FLOAT,
 	aditional_details TEXT
 );
 
@@ -161,3 +162,22 @@ CREATE TABLE product_model_media(
   name varchar(1000) NOT NULL
 );
 
+CREATE TABLE order_request_requirement(
+	id_order_request VARCHAR(15) NOT NULL,
+	id_product_model VARCHAR(15) NOT NULL,
+	"size" VARCHAR(10) NOT NULL,
+	quantity INTEGER NOT NULL,
+	unit_cost FLOAT,
+	UNIQUE(id_order_request, id_product_model, "size")
+);
+
+CREATE TABLE product_color(
+	id_product VARCHAR(15) NOT NULL,
+	id_color VARCHAR(15) NOT NULL,
+	UNIQUE(id_product, id_color)
+);
+
+CREATE TABLE product_media(
+  id_product varchar(15) NOT NULL,
+  name varchar(1000) NOT NULL
+);

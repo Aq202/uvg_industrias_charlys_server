@@ -6,16 +6,21 @@ import randomString from '../../utils/randomString.js';
 import {
   addProductModelColor,
   addProductModelMedia,
+  getProductModelById,
   getProductTypes,
+  getProductTypesByOrganization,
   getProducts,
+  getProductModelsbyOrganization,
   getRequirements,
   newProduct,
   newProductModel,
   newProductType,
   newRequeriment,
+  updateProductModel,
 } from './product.model.js';
 import { begin, commit, rollback } from '../../database/transactions.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
+import { isMemberController } from '../organization/organization.controller.js';
 
 const newProuctTypeController = async (req, res) => {
   const { name } = req.body;
@@ -42,6 +47,24 @@ const getProuctTypesController = async (req, res) => {
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener los tipos de producto disponibles.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getProuctTypesByOrganizationController = async (req, res) => {
+  const { idOrganization } = req.params;
+  try {
+    const result = await getProductTypesByOrganization({ idOrganization });
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener los tipos de producto disponibles por organización.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -79,6 +102,29 @@ const getProductsController = async (req, res) => {
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener los productos disponibles.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getProductsbyOrganizationController = async (req, res) => {
+  const { idClient } = req.params;
+  const { search } = req.query;
+  const userId = req.session.role === consts.role.client ? req.session.userId : undefined;
+  const { colors, types } = req.body;
+  try {
+    if (userId) await isMemberController({ userId, idClient });
+    const result = await getProductModelsbyOrganization({
+      idClient, colors, types, search,
+    });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener los modelos de producto de esta organización.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -157,7 +203,7 @@ const saveProductModelMedia = async ({ files, idProductModel }) => {
 
     // eliminar archivos temporales
 
-    fs.unlink(filePath, () => {});
+    fs.unlink(filePath, () => { });
   }
 
   if (uploadError) {
@@ -174,10 +220,13 @@ const saveProductModelMedia = async ({ files, idProductModel }) => {
 };
 
 const newProductModelController = async (req, res) => {
+  const { role } = req.session;
+  const userId = role === consts.role.client ? req.session.userId : undefined;
   const {
     type, idClientOrganization, name, details, color,
   } = req.body;
   try {
+    if (userId) await isMemberController({ userId, idClientOrganization });
     await begin();
 
     // crear modelo del producto
@@ -186,7 +235,7 @@ const newProductModelController = async (req, res) => {
     });
 
     // guardar colores
-    if (Array.isArray(color)) {
+    if (Array.isArray(color) && role === 'ADMIN') {
       for (const idColor of color) {
         // eslint-disable-next-line no-await-in-loop
         await addProductModelColor({ idProductModel, idColor });
@@ -213,12 +262,66 @@ const newProductModelController = async (req, res) => {
   }
 };
 
+const updateProductModelController = async (req, res) => {
+  const {
+    idProductModel, type, idClientOrganization, name, details,
+  } = req.body;
+
+  try {
+    begin(); // begin transaction
+
+    await updateProductModel({
+      idProductModel, type, idClientOrganization, name, details,
+    });
+
+    // save files
+    if (Array.isArray(req.uploadedFiles)) {
+      await saveProductModelMedia({ files: req.uploadedFiles, idProductModel });
+    }
+
+    await commit();
+
+    res.send({ idProductModel });
+  } catch (ex) {
+    await rollback();
+    let err = 'Ocurrio un error al actualizar el modelo de producto.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getProductModelByIdController = async (req, res) => {
+  const { idProductModel } = req.params;
+  try {
+    const result = await getProductModelById({ idProductModel });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener la información del product model.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newProuctTypeController,
   getProuctTypesController,
   newProductController,
   getProductsController,
+  getProductsbyOrganizationController,
   newProductRequirementController,
   getProductRequirementsController,
   newProductModelController,
+  getProuctTypesByOrganizationController,
+  getProductModelByIdController,
+  updateProductModelController,
 };
