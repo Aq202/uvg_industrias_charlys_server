@@ -1,4 +1,4 @@
-import { newOrder } from './order.model.js';
+import { getOrders, newOrder } from './order.model.js';
 import CustomError from '../../utils/customError.js';
 import OrderAcceptedEmail from '../../services/email/OrderAcceptedEmail.js';
 
@@ -32,7 +32,28 @@ const newOrderController = async (req, res) => {
   }
 };
 
+const getOrdersController = async (req, res) => {
+  const {
+    page, search, startDeadline, endDeadline, idProduct,
+  } = req.query;
+  try {
+    const result = await getOrders({
+      idProduct, startDeadline, endDeadline, page, search,
+    });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener las ordenes aprobadas.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
-  // eslint-disable-next-line import/prefer-default-export
   newOrderController,
+  getOrdersController,
 };

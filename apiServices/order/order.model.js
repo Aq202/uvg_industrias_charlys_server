@@ -1,5 +1,7 @@
+/* eslint-disable no-nested-ternary */
 import query from '../../database/query.js';
 import CustomError from '../../utils/customError.js';
+import consts from '../../utils/consts.js';
 
 const newOrder = async ({ idOrderRequest }) => {
   const sql = 'insert into "order"(id_order, id_order_request) values(default, $1) RETURNING id_order as id';
@@ -35,7 +37,67 @@ const newOrder = async ({ idOrderRequest }) => {
   }
 };
 
+const getOrders = async ({
+  idProduct, startDeadline, endDeadline, page, search = '',
+}) => {
+  const offset = page * consts.pageLength;
+  const conditions = {
+    count: [],
+    query: [],
+  };
+  const params = [consts.pageLength, `%${search}%`];
+
+  if (idProduct !== undefined) {
+    conditions.count.push(`"p".id_product = $${params.length + 1}`);
+    conditions.query.push(`"p".id_product = $${params.length}`);
+    params.push(idProduct);
+  }
+  if (startDeadline !== undefined) {
+    conditions.count.push(`o.deadline >= $${params.length + 1}`);
+    conditions.query.push(`o.deadline >= $${params.length}`);
+    params.push(startDeadline);
+  }
+  if (endDeadline !== undefined) {
+    conditions.count.push(`o.deadline <= $${params.length + 1}`);
+    conditions.query.push(`o.deadline <= $${params.length}`);
+    params.push(endDeadline);
+  }
+  if (page !== undefined) params.push(consts.pageLength, offset);
+
+  const sqlCount = `select ceiling(count(*) / $1:: numeric) from(
+    select distinct o.id_order, o.deadline, o.description, co.name client from "order" o
+    inner join client_organization co on co.id_client_organization = o.id_client_organization
+    left join order_detail od on o.id_order = od.id_order
+    left join product "p" on od.id_product = "p".id_product
+    where (o.description ilike $2 or "p".name ilike $2 or co.name ilike $2)
+      ${conditions.count.length > 0 ? `AND ${conditions.count.join(' and ')}` : ''}
+    ) subquery`;
+
+  const pages = (await query(sqlCount, ...params)).result[0].ceiling;
+  if (pages === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  const sql = `select distinct o.id_order, o.deadline, o.description, co.name client from "order" o
+  inner join client_organization co on co.id_client_organization = o.id_client_organization
+  left join order_detail od on o.id_order = od.id_order
+  left join product "p" on od.id_product = "p".id_product
+  where (o.description ilike $1 or "p".name ilike $1 or co.name ilike $1)
+  ${conditions.query.length > 0 ? `AND ${conditions.query.join(' and ')}` : ''}
+  ${page !== undefined ? `LIMIT $${params.length - 2} OFFSET $${params.length - 1}` : ''}`;
+
+  const { result, rowCount } = await query(sql, ...params.slice(1));
+
+  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  const response = result.map((val) => ({
+    id: val.id_order,
+    description: val.description,
+    client: val.client,
+    deadline: val.deadline,
+  }));
+  return { result: response, count: pages };
+};
+
 export {
-  // eslint-disable-next-line import/prefer-default-export
   newOrder,
+  getOrders,
 };
