@@ -10,11 +10,12 @@ import {
   getFabricsController,
 } from './generalInfo.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
+import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';
 
 const generalInfoRouter = express.Router();
 
 generalInfoRouter.post('/size', validateBody(newSizeSchema), newSizeController);
-generalInfoRouter.get('/size', ensureAdminAuth, getSizesController);
+generalInfoRouter.get('/size', ensureAdminOrClientAuth, getSizesController);
 generalInfoRouter.get('/material', ensureAdminAuth, getMaterialsController);
 generalInfoRouter.post('/fabric', validateBody(newFabricSchema), newFabricController);
 generalInfoRouter.get('/fabric', ensureAdminAuth, getFabricsController);
