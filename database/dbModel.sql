@@ -32,7 +32,8 @@ CREATE TABLE employee(
 
 CREATE TABLE session(
 	id_user VARCHAR(15) NOT NULL,
-	token TEXT NOT NULL
+	token TEXT NOT NULL,
+	"type" VARCHAR(20) NOT NULL;
 );
 
 create table "order"(

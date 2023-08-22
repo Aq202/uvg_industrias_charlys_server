@@ -1,3 +1,4 @@
+import { validateSessionToken } from '../apiServices/session/session.model.js';
 import { validateToken } from '../services/jwt.js';
 import consts from '../utils/consts.js';
 
@@ -10,7 +11,13 @@ const ensureClientAuth = async (req, res, next) => {
   }
 
   try {
-    const userData = await validateToken(authToken);
+    const userData = validateToken(authToken);
+
+    await validateSessionToken({
+      userId: userData.userId,
+      token: authToken,
+      type: consts.token.access,
+    });
 
     if (userData.type !== consts.token.access) {
       res.statusMessage = 'El token de autorización no es de tipo access.';

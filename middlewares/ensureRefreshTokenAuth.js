@@ -1,4 +1,4 @@
-import { deleteRefreshToken } from '../apiServices/session/session.model.js';
+import { deleteSessionToken } from '../apiServices/session/session.model.js';
 import { validateToken } from '../services/jwt.js';
 import consts from '../utils/consts.js';
 
@@ -11,7 +11,7 @@ const ensureRefreshTokenAuth = async (req, res, next) => {
   }
 
   try {
-    const userData = await validateToken(authToken);
+    const userData = validateToken(authToken);
 
     if (userData.type !== consts.token.refresh) {
       res.clearCookie('refreshToken');
@@ -23,7 +23,7 @@ const ensureRefreshTokenAuth = async (req, res, next) => {
   } catch (ex) {
     // Token invalido, retirarlo de la bd si existe
     res.clearCookie('refreshToken');
-    deleteRefreshToken(authToken).catch(() => {});
+    deleteSessionToken(authToken).catch(() => {});
     res.statusMessage = 'El token de autorización no es válido o ha expirado.';
     res.sendStatus(401);
   }

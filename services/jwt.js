@@ -47,7 +47,7 @@ const signRegisterToken = ({
   key,
 );
 
-const validateToken = async (token) => jwt.verify(token, key);
+const validateToken = (token) => jwt.verify(token, key);
 
 export {
   signAccessToken, signRefreshToken, validateToken, signRegisterToken,
