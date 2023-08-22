@@ -1,13 +1,13 @@
 import sha256 from 'js-sha256';
 import moment from 'moment';
+import config from 'config';
 import CustomError from '../../utils/customError.js';
 import {
   authenticate, deleteRefreshToken, storeRefreshToken, validateRefreshToken,
 } from './session.model.js';
 import { signAccessToken, signRefreshToken } from '../../services/jwt.js';
-import config  from 'config';
 
-const allowInsecureConnections = config.get("allowInsecureConnections");
+const allowInsecureConnections = config.get('allowInsecureConnections');
 
 const saveRefreshTokenInCookies = (res, token) => {
   res.cookie('refreshToken', token, {
@@ -23,11 +23,11 @@ const loginController = async (req, res) => {
   try {
     const passwordHash = sha256(password);
     const {
-      userId, name, lastName, sex, role,
+      userId, name, lastName, sex, role, organization,
     } = await authenticate({ email, passwordHash });
 
     const refreshToken = await signRefreshToken({
-      userId, name, lastName, sex, role,
+      userId, name, lastName, sex, role, organization,
     });
 
     // guardar refresh token en bd
@@ -38,7 +38,7 @@ const loginController = async (req, res) => {
 
     // crea un access token
     const accessToken = await signAccessToken({
-      userId, name, lastName, sex, role,
+      userId, name, lastName, sex, role, organization,
     });
 
     res.send({ accessToken });
@@ -56,7 +56,7 @@ const loginController = async (req, res) => {
 
 const refreshAccessTokenController = async (req, res) => {
   const {
-    userId, name, lastName, sex, role,
+    userId, name, lastName, sex, role, organization,
   } = req.session;
 
   const { refreshToken } = req.cookies;
@@ -67,7 +67,7 @@ const refreshAccessTokenController = async (req, res) => {
 
     // create access token
     const accessToken = await signAccessToken({
-      userId, name, lastName, sex, role,
+      userId, name, lastName, sex, role, organization,
     });
 
     res.send({ accessToken });
