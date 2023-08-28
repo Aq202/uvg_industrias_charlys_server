@@ -145,12 +145,11 @@ const getOrderRequestById = async (orderRequestId) => {
 
   return {
     id: val.id_order_request,
-    customerName: val.customer_name,
-    customerEmail: val.customer_email,
-    customerPhone: val.customer_phone,
-    customerAddress: val.customer_address,
+    client: val.client,
     description: val.description,
     datePlaced: val.date_placed,
+    clientOrganization: val.id_client_organization ?? undefined,
+    temporaryClient: val.id_temporary_client ?? undefined,
     media,
   };
 };
