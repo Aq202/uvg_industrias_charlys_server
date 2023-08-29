@@ -294,9 +294,12 @@ const addProductModelMedia = async ({ idProductModel, name }) => {
 };
 
 const getProductModelById = async ({ idProductModel }) => {
-  const infoSql = `select id_product_model, pt.id_product_type "id_product_type", pt.name "type", id_client_organization, pm.name description, details from product_model pm
+  const infoSql = `select id_product_model, pt.id_product_type "id_product_type", pt.name "type", pm.id_client_organization,
+  c.name as client, pm.name description, details 
+  from product_model pm
   inner join product_type pt on pm.type = pt.id_product_type
-  where id_product_model = $1; `;
+  inner join client_organization c on pm.id_client_organization = c.id_client_organization
+  where id_product_model = $1`;
 
   const { result: infoResult, rowCount: infoRowCount } = await query(infoSql, idProductModel);
 
@@ -315,7 +318,8 @@ const getProductModelById = async ({ idProductModel }) => {
     id: val.id_product_model,
     id_product_type: val.id_product_type,
     type: val.type,
-    client: val.id_client_organization,
+    id_client_organization: val.id_client_organization,
+    client: val.client,
     description: val.description,
     details: val.details,
   }));
@@ -330,9 +334,7 @@ const getProductModelById = async ({ idProductModel }) => {
     blue: val.blue,
   }));
 
-  const media = mediaResult.map((val) => ({
-    name: val.name,
-  }));
+  const media = mediaResult.map((val) => (`${consts.imagePath.product}/${val.name}`));
 
   response[0].media = media;
   response[0].colors = colors;
