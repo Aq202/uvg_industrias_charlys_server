@@ -62,7 +62,6 @@ const getOrders = async ({
     conditions.query.push(`o.deadline <= $${params.length}`);
     params.push(endDeadline);
   }
-  if (page !== undefined) params.push(consts.pageLength, offset);
 
   const sqlCount = `select ceiling(count(*) / $1:: numeric) from(
     select distinct o.id_order, o.deadline, o.description, co.name client from "order" o
@@ -70,11 +69,13 @@ const getOrders = async ({
     left join order_detail od on o.id_order = od.id_order
     left join product "p" on od.id_product = "p".id_product
     where (o.description ilike $2 or "p".name ilike $2 or co.name ilike $2)
-      ${conditions.count.length > 0 ? `AND ${conditions.count.join(' and ')}` : ''}
+    ${conditions.count.length > 0 ? `AND ${conditions.count.join(' and ')}` : ''}
     ) subquery`;
 
   const pages = (await query(sqlCount, ...params)).result[0].ceiling;
   if (pages === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  if (page !== undefined) params.push(consts.pageLength, offset);
 
   const sql = `select distinct o.id_order, o.deadline, o.description, co.name client from "order" o
   inner join client_organization co on co.id_client_organization = o.id_client_organization

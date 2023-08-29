@@ -13,6 +13,7 @@ import {
   updateOrderRequest,
 } from './orderRequest.model.js';
 import { createTemporaryClient } from '../temporaryClient/temporaryClient.model.js';
+import { isMemberController } from '../organization/organization.controller.js';
 
 const saveOrderRequestMedia = async ({ files, id }) => {
   let uploadError = false;
@@ -123,15 +124,23 @@ const updateOrderRequestController = async (req, res) => {
   }
 };
 
-const newClientOrderRequestController = async (req, res) => {
-  const { description, idClientOrganization, products } = req.body;
+const newLoggedOrderRequestController = async (req, res) => {
+  const userId = req.session.role === consts.role.client ? req.session.userId : undefined;
+  const idClientOrganization = req.session.role === consts.role.client
+    ? req.session.clientOrganizationId : req.body.idClientOrganization;
+  const {
+    description, products, deadline, details,
+  } = req.body;
 
   try {
+    if (userId) await isMemberController({ userId, idClient: idClientOrganization });
     begin(); // begin transaction
 
     const { id } = await newOrderRequest({
       description,
       idClientOrganization,
+      deadline,
+      details,
     });
 
     // guardar requerimientos de productos de la orden
@@ -205,6 +214,6 @@ export {
   newOrderRequestController,
   getOrderRequestsController,
   getOrderRequestByIdController,
-  newClientOrderRequestController,
+  newLoggedOrderRequestController,
   updateOrderRequestController,
 };
