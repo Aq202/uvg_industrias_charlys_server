@@ -366,6 +366,14 @@ const updateProductModel = async ({
   );
 };
 
+const verifyProductModelOwner = async ({ idClientOrganization, idProductModel }) => {
+  const sqlQuery = 'SELECT 1 FROM product_model WHERE id_product_model = $1 AND id_client_organization = $2';
+
+  const { rowCount } = await query(sqlQuery, idProductModel, idClientOrganization);
+
+  if (rowCount === 0) throw new CustomError('Acceso denegado a datos del modelo de producto.', 403);
+};
+
 export {
   getProductTypes,
   newProductType,
@@ -380,4 +388,5 @@ export {
   getProductTypesByOrganization,
   getProductModelById,
   updateProductModel,
+  verifyProductModelOwner,
 };
