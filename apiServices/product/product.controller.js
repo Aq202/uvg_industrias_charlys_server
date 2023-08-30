@@ -226,7 +226,7 @@ const newProductModelController = async (req, res) => {
     type, idClientOrganization, name, details, color,
   } = req.body;
   try {
-    if (userId) await isMemberController({ userId, idClientOrganization });
+    if (userId) await isMemberController({ userId, idClient: idClientOrganization });
     await begin();
 
     // crear modelo del producto
