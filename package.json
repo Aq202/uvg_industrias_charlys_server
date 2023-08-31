@@ -10,6 +10,7 @@
     "dev": "cross-env NODE_ENV=develop nodemon ./bin/www.js",
     "lint": "eslint ./*/*.js",
     "production": "export NODE_ENV= && pm2 start ./bin/www.js --name charlysApp",
+    "qa": "export NODE_ENV=qa && pm2 start ./bin/www.js --name charlysApp",
     "test": "jest ./tests"
   },
   "author": "Diego Aquino, Erick Guerra, Pablo Zamora, Jose Kiesling, Elias Alvarado",
