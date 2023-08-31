@@ -21,21 +21,66 @@ const getOrganizationById = async ({ idClient }) => {
   }))[0];
 };
 
-const getOrderRequests = async ({ idClient, page, search = '' }) => {
+const getOrderRequests = async ({
+  idClient, page, idProduct, startDatePlaced, endDatePlaced, startDeadline, endDeadline, search = '',
+}) => {
   const offset = page * consts.pageLength;
-  const sqlCount = `select ceiling(count(*) / $1:: numeric) from order_request
-    where(id_client_organization = $2 or id_temporary_client = $2)
-    and(description ilike $3 or aditional_details ilike $3); `;
-  const pages = (await query(sqlCount, consts.pageLength, idClient, `%${search}%`)).result[0].ceiling;
+  const conditions = {
+    count: [],
+    query: [],
+  };
+  const params = [consts.pageLength, idClient, `%${search}%`];
 
-  const sql = `select * from order_request
-      where (id_client_organization = $1 or id_temporary_client = $1)
-      and (description ilike $2 or aditional_details ilike $2)
-      ${page !== undefined ? 'LIMIT $3 OFFSET $4' : ''}`;
+  if (idProduct !== undefined) {
+    conditions.count.push(`pm.id_product_model = $${params.length + 1}`);
+    conditions.query.push(`pm.id_product_model = $${params.length}`);
+    params.push(idProduct);
+  }
+  if (startDeadline !== undefined) {
+    conditions.count.push(`"or".deadline >= $${params.length + 1}`);
+    conditions.query.push(`"or".deadline >= $${params.length}`);
+    params.push(startDeadline);
+  }
+  if (endDeadline !== undefined) {
+    conditions.count.push(`"or".deadline <= $${params.length + 1}`);
+    conditions.query.push(`"or".deadline <= $${params.length}`);
+    params.push(endDeadline);
+  }
+  if (startDatePlaced !== undefined) {
+    conditions.count.push(`"or".date_placed >= $${params.length + 1}`);
+    conditions.query.push(`"or".date_placed >= $${params.length}`);
+    params.push(startDatePlaced);
+  }
+  if (endDatePlaced !== undefined) {
+    conditions.count.push(`"or".date_placed <= $${params.length + 1}`);
+    conditions.query.push(`"or".date_placed <= $${params.length}`);
+    params.push(endDatePlaced);
+  }
 
-  const { result, rowCount } = page === undefined
-    ? await query(sql, idClient, `%${search}%`)
-    : await query(sql, idClient, `%${search}%`, consts.pageLength, offset);
+  const sqlCount = `select ceiling(count(*) / $1::numeric) from(
+    select distinct "or".id_order_request, "or".description, "or".date_placed, "or".deadline from order_request "or"
+      left join order_request_requirement orq on "or".id_order_request = orq.id_order_request
+      left join product_model pm on orq.id_product_model = pm.id_product_model
+      where ("or".id_client_organization = $2 or "or".id_temporary_client = $2)
+        and ("or".description ilike $3 or "or".aditional_details ilike $3 or pm.name ilike $3)
+        ${conditions.count.length > 0 ? `AND ${conditions.count.join(' and ')}` : ''}
+  ) as subquery;`;
+
+  const pages = (await query(sqlCount, ...params)).result[0].ceiling;
+
+  if (pages === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  if (page !== undefined) params.push(consts.pageLength, offset);
+
+  const sql = `select distinct "or".id_order_request, "or".description, "or".date_placed, "or".deadline from order_request "or"
+  left join order_request_requirement orq on "or".id_order_request = orq.id_order_request
+  left join product_model pm on orq.id_product_model = pm.id_product_model
+  where ("or".id_client_organization = $1 or "or".id_temporary_client = $1)
+    and ("or".description ilike $2 or "or".aditional_details ilike $2 or pm.name ilike $2)
+    ${conditions.query.length > 0 ? `AND ${conditions.query.join(' and ')}` : ''}
+    ${page !== undefined ? `LIMIT $${params.length - 2} OFFSET $${params.length - 1}` : ''}`;
+
+  const { result, rowCount } = await query(sql, ...params.slice(1));
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
@@ -43,10 +88,7 @@ const getOrderRequests = async ({ idClient, page, search = '' }) => {
     id: val.id_order_request,
     description: val.description,
     date_placed: val.date_placed,
-    client: val.id_client_organization || val.id_temporary_client,
     deadline: val.deadline,
-    cost: val.cost,
-    details: val.aditional_details,
   }));
   return { result: response, count: pages };
 };

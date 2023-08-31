@@ -1,13 +1,14 @@
 import sha256 from 'js-sha256';
 import moment from 'moment';
+import config from 'config';
 import CustomError from '../../utils/customError.js';
 import {
-  authenticate, deleteRefreshToken, storeRefreshToken, validateRefreshToken,
+  authenticate, deleteSessionTokenByUserId, storeSessionToken, validateSessionToken,
 } from './session.model.js';
-import { signAccessToken, signRefreshToken } from '../../services/jwt.js';
-import config  from 'config';
+import { signAccessToken, signRefreshToken, validateToken } from '../../services/jwt.js';
+import consts from '../../utils/consts.js';
 
-const allowInsecureConnections = config.get("allowInsecureConnections");
+const allowInsecureConnections = config.get('allowInsecureConnections');
 
 const saveRefreshTokenInCookies = (res, token) => {
   res.cookie('refreshToken', token, {
@@ -23,23 +24,25 @@ const loginController = async (req, res) => {
   try {
     const passwordHash = sha256(password);
     const {
-      userId, name, lastName, sex, role,
+      userId, name, lastName, sex, role, clientOrganizationId,
     } = await authenticate({ email, passwordHash });
 
     const refreshToken = await signRefreshToken({
-      userId, name, lastName, sex, role,
+      userId, name, lastName, sex, role, clientOrganizationId,
     });
 
     // guardar refresh token en bd
-    await storeRefreshToken(userId, refreshToken);
+    await storeSessionToken({ userId, token: refreshToken, type: consts.token.refresh });
 
     // almacenar token en cookies
     saveRefreshTokenInCookies(res, refreshToken);
-
     // crea un access token
     const accessToken = await signAccessToken({
-      userId, name, lastName, sex, role,
+      userId, name, lastName, sex, role, clientOrganizationId,
     });
+
+    // guardar access token en bd
+    await storeSessionToken({ userId, token: accessToken, type: consts.token.access });
 
     res.send({ accessToken });
   } catch (ex) {
@@ -56,19 +59,21 @@ const loginController = async (req, res) => {
 
 const refreshAccessTokenController = async (req, res) => {
   const {
-    userId, name, lastName, sex, role,
+    userId, name, lastName, sex, role, clientOrganizationId,
   } = req.session;
 
   const { refreshToken } = req.cookies;
 
   try {
     // validar refresh token en bd
-    await validateRefreshToken(userId, refreshToken);
+    await validateSessionToken({ userId, token: refreshToken, type: consts.token.refresh });
 
     // create access token
     const accessToken = await signAccessToken({
-      userId, name, lastName, sex, role,
+      userId, name, lastName, sex, role, clientOrganizationId,
     });
+
+    await storeSessionToken({ userId, token: accessToken, type: consts.token.access });
 
     res.send({ accessToken });
   } catch (ex) {
@@ -89,7 +94,10 @@ const logoutController = async (req, res) => {
   try {
     // Eliminar token de bd y cookie
     res.clearCookie('refreshToken');
-    await deleteRefreshToken(refreshToken);
+
+    const { userId } = validateToken(refreshToken);
+
+    await deleteSessionTokenByUserId(userId);
 
     res.sendStatus(200);
   } catch (ex) {

@@ -37,11 +37,16 @@ const isMemberController = async ({ userId, idClient }) => {
 
 const getOrderRequestsController = async (req, res) => {
   const userId = req.session.role === consts.role.client ? req.session.userId : undefined;
-  const { idClient } = req.params;
-  const { page, search } = req.query;
+  const idClient = req.session.role === consts.role.client
+    ? req.session.clientOrganizationId : req.params.idClient;
+  const {
+    page, search, startDeadline, endDeadline, startDatePlaced, endDatePlaced, idProduct,
+  } = req.query;
   try {
     if (userId) await isMemberController({ userId, idClient });
-    const result = await getOrderRequests({ idClient, page, search });
+    const result = await getOrderRequests({
+      idClient, page, idProduct, startDatePlaced, endDatePlaced, startDeadline, endDeadline, search,
+    });
 
     res.send(result);
   } catch (ex) {

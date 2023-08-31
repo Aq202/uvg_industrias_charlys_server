@@ -17,6 +17,7 @@ import {
   newProductType,
   newRequeriment,
   updateProductModel,
+  verifyProductModelOwner,
 } from './product.model.js';
 import { begin, commit, rollback } from '../../database/transactions.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
@@ -120,7 +121,10 @@ const getProductsbyOrganizationController = async (req, res) => {
   try {
     if (userId) await isMemberController({ userId, idClient });
     const result = await getProductModelsbyOrganization({
-      idClient, colors, types, search,
+      idClient,
+      colors,
+      types,
+      search,
     });
     res.send(result);
   } catch (ex) {
@@ -142,7 +146,11 @@ const newProductRequirementController = async (req, res) => {
 
   try {
     const { id } = await newRequeriment({
-      product, size, material, fabric, quantityPerUnit,
+      product,
+      size,
+      material,
+      fabric,
+      quantityPerUnit,
     });
     res.send({ id });
   } catch (ex) {
@@ -203,7 +211,7 @@ const saveProductModelMedia = async ({ files, idProductModel }) => {
 
     // eliminar archivos temporales
 
-    fs.unlink(filePath, () => { });
+    fs.unlink(filePath, () => {});
   }
 
   if (uploadError) {
@@ -226,12 +234,15 @@ const newProductModelController = async (req, res) => {
     type, idClientOrganization, name, details, color,
   } = req.body;
   try {
-    if (userId) await isMemberController({ userId, idClientOrganization });
+    if (userId) await isMemberController({ userId, idClient: idClientOrganization });
     await begin();
 
     // crear modelo del producto
     const idProductModel = await newProductModel({
-      type, idClientOrganization, name, details,
+      type,
+      idClientOrganization,
+      name,
+      details,
     });
 
     // guardar colores
@@ -271,7 +282,11 @@ const updateProductModelController = async (req, res) => {
     begin(); // begin transaction
 
     await updateProductModel({
-      idProductModel, type, idClientOrganization, name, details,
+      idProductModel,
+      type,
+      idClientOrganization,
+      name,
+      details,
     });
 
     // save files
@@ -298,6 +313,12 @@ const updateProductModelController = async (req, res) => {
 const getProductModelByIdController = async (req, res) => {
   const { idProductModel } = req.params;
   try {
+    if (req.session.role === consts.role.client) {
+      await verifyProductModelOwner({
+        idClientOrganization: req.session.organization,
+        idProductModel,
+      });
+    }
     const result = await getProductModelById({ idProductModel });
     res.send(result);
   } catch (ex) {

@@ -33,13 +33,13 @@ productRouter.post(
   newProductModelController,
 );
 productRouter.post('/type', validateBody(newProductTypeSchema), newProuctTypeController);
-productRouter.get('/type', ensureAdminAuth, getProuctTypesController);
+productRouter.get('/type', ensureAdminOrClientAuth, getProuctTypesController);
 productRouter.get('/type/by-organization/:idOrganization', ensureAdminOrClientAuth, getProuctTypesByOrganizationController);
 productRouter.post('/requirement', validateBody(newProductRequirementSchema), newProductRequirementController);
 productRouter.get('/requirement', ensureAdminAuth, getProductRequirementsController);
 productRouter.post('/', validateBody(newProductSchema), newProductController);
-productRouter.get('/', ensureAdminAuth, getProductsController);
-productRouter.get('/model/:idProductModel', ensureAdminAuth, getProductModelByIdController);
+productRouter.get('/', ensureAdminOrClientAuth, getProductsController);
+productRouter.get('/model/:idProductModel', ensureAdminOrClientAuth, getProductModelByIdController);
 productRouter.post('/model/by-organization/:idClient', ensureAdminOrClientAuth, getProductsbyOrganizationController);
 productRouter.put(
   '/model',

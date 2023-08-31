@@ -20,7 +20,7 @@ const organizationRouter = express.Router();
 organizationRouter.get('/clients/:idOrganization', ensureAdminAuth, getClientsController);
 
 organizationRouter.get(
-  '/orderRequests/:idClient',
+  '/orderRequests/:idClient?',
   ensureAdminOrClientAuth,
   getOrderRequestsController,
 );

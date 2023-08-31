@@ -6,9 +6,11 @@ const newOrderRequest = async ({
   description,
   idClientOrganization = null,
   idTemporaryClient = null,
+  deadline = null,
+  details = null,
 }) => {
-  const sql = `INSERT INTO order_request(description, date_placed, id_client_organization, id_temporary_client)
-                VALUES ($1, now(), $2, $3) RETURNING id_order_request as id;`;
+  const sql = `INSERT INTO order_request(description, date_placed, id_client_organization, id_temporary_client, deadline, aditional_details)
+                VALUES ($1, now(), $2, $3, $4, $5) RETURNING id_order_request as id;`;
 
   try {
     const { result, rowCount } = await query(
@@ -16,6 +18,8 @@ const newOrderRequest = async ({
       description,
       idClientOrganization,
       idTemporaryClient,
+      deadline,
+      details,
     );
 
     if (rowCount !== 1) throw new CustomError('No se pudo registrar la solicitud de orden', 500);
@@ -134,10 +138,23 @@ const getOrderRequestMedia = async (orderRequestId) => {
 };
 
 const getOrderRequestById = async (orderRequestId) => {
-  const sql = 'SELECT * FROM order_request WHERE id_order_request = $1 LIMIT 1';
+  const sql = 'SELECT * FROM order_request WHERE id_order_request = $1';
   const { result, rowCount } = await query(sql, orderRequestId);
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  const sqlProducts = `select pm.id_product_model, pm.name product, orr.size, orr.quantity, orr.unit_cost  from order_request_requirement orr
+    left join product_model pm on orr.id_product_model = pm.id_product_model
+    where id_order_request = $1;`;
+  const { result: productResult, rowCount: productRows } = await query(sqlProducts, orderRequestId);
+
+  const detail = productRows === 0 ? [] : productResult.map((product) => ({
+    id: product.id_product_model,
+    product: product.product,
+    size: product.size,
+    quantity: product.quantity,
+    unit_price: product.unit_cost,
+  }));
 
   const [val] = result;
 
@@ -145,12 +162,12 @@ const getOrderRequestById = async (orderRequestId) => {
 
   return {
     id: val.id_order_request,
-    client: val.client,
     description: val.description,
     datePlaced: val.date_placed,
-    clientOrganization: val.id_client_organization ?? undefined,
-    temporaryClient: val.id_temporary_client ?? undefined,
+    deadline: val.deadline,
+    details: val.aditional_details,
     media,
+    detail,
   };
 };
 

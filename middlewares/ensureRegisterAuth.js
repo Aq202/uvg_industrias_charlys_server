@@ -11,7 +11,7 @@ const ensureRegisterAuth = async (req, res, next) => {
   }
 
   try {
-    const userData = await validateToken(authToken);
+    const userData = validateToken(authToken);
 
     await validateAlterUserToken({ idUser: userData.id, token: authToken });
 
