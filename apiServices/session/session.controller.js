@@ -24,11 +24,11 @@ const loginController = async (req, res) => {
   try {
     const passwordHash = sha256(password);
     const {
-      userId, name, lastName, sex, role, organization,
+      userId, name, lastName, sex, role, clientOrganizationId,
     } = await authenticate({ email, passwordHash });
 
     const refreshToken = await signRefreshToken({
-      userId, name, lastName, sex, role, organization,
+      userId, name, lastName, sex, role, clientOrganizationId,
     });
 
     // guardar refresh token en bd
@@ -36,10 +36,9 @@ const loginController = async (req, res) => {
 
     // almacenar token en cookies
     saveRefreshTokenInCookies(res, refreshToken);
-
     // crea un access token
     const accessToken = await signAccessToken({
-      userId, name, lastName, sex, role, organization,
+      userId, name, lastName, sex, role, clientOrganizationId,
     });
 
     // guardar access token en bd
@@ -60,7 +59,7 @@ const loginController = async (req, res) => {
 
 const refreshAccessTokenController = async (req, res) => {
   const {
-    userId, name, lastName, sex, role, organization,
+    userId, name, lastName, sex, role, clientOrganizationId,
   } = req.session;
 
   const { refreshToken } = req.cookies;
@@ -71,7 +70,7 @@ const refreshAccessTokenController = async (req, res) => {
 
     // create access token
     const accessToken = await signAccessToken({
-      userId, name, lastName, sex, role, organization,
+      userId, name, lastName, sex, role, clientOrganizationId,
     });
 
     await storeSessionToken({ userId, token: accessToken, type: consts.token.access });

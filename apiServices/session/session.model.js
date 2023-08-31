@@ -77,12 +77,7 @@ const authenticate = async ({ email, passwordHash }) => {
     }
 
     return {
-      userId,
-      name,
-      lastName,
-      sex,
-      role,
-      organization: clientOrganizationId,
+      userId, name, lastName, sex, role, clientOrganizationId,
     };
   } catch (ex) {
     if (ex instanceof CustomError) throw ex;

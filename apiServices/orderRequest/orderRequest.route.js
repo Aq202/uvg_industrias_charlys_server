@@ -4,7 +4,7 @@ import newOrderRequestSchema from './validationSchemas/newOrderRequestSchema.js'
 import {
   getOrderRequestByIdController,
   getOrderRequestsController,
-  newClientOrderRequestController,
+  newLoggedOrderRequestController,
   newOrderRequestController,
   updateOrderRequestController,
 } from './orderRequest.controller.js';
@@ -37,7 +37,7 @@ orderRequestRouter.post(
   ensureAdminOrClientAuth,
   multerMiddleware(uploadImage.any()),
   validateBody(newClientOrderRequestSchema),
-  newClientOrderRequestController,
+  newLoggedOrderRequestController,
 );
 orderRequestRouter.get('/', ensureAdminAuth, getOrderRequestsController);
 orderRequestRouter.get('/:orderRequestId', ensureAdminAuth, getOrderRequestByIdController);
