@@ -162,6 +162,8 @@ const getOrderRequestById = async (orderRequestId) => {
 
   return {
     id: val.id_order_request,
+    clientOrganization: val.id_client_organization ?? undefined,
+    temporaryClient: val.id_temporary_client ?? undefined,
     description: val.description,
     datePlaced: val.date_placed,
     deadline: val.deadline,
