@@ -18,6 +18,8 @@ import {
   newRequeriment,
   updateProductModel,
   verifyProductModelOwner,
+  verifyProductOwner,
+  getProductById,
 } from './product.model.js';
 import { begin, commit, rollback } from '../../database/transactions.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
@@ -333,6 +335,29 @@ const getProductModelByIdController = async (req, res) => {
   }
 };
 
+const getProductByIdController = async (req, res) => {
+  const { idProduct } = req.params;
+  try {
+    if (req.session.role === consts.role.client) {
+      await verifyProductOwner({
+        idClientOrganization: req.session.organization,
+        idProduct,
+      });
+    }
+    const result = await getProductById({ idProduct });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener la información del producto.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newProuctTypeController,
   getProuctTypesController,
@@ -345,4 +370,5 @@ export {
   getProuctTypesByOrganizationController,
   getProductModelByIdController,
   updateProductModelController,
+  getProductByIdController,
 };
