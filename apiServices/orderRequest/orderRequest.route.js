@@ -14,6 +14,7 @@ import uploadImage from '../../services/uploadFiles/uploadImage.js';
 import newClientOrderRequestSchema from './validationSchemas/newClientOrderRequestSchema.js';
 import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';
 import updateOrderRequestSchema from './validationSchemas/updateOrderRequestSchema.js';
+import parseObjectBodyProp from '../../middlewares/parseObjectBodyProp.js';
 
 const orderRequestRouter = express.Router();
 
@@ -36,6 +37,7 @@ orderRequestRouter.post(
   '/client',
   ensureAdminOrClientAuth,
   multerMiddleware(uploadImage.any()),
+  parseObjectBodyProp('products'),
   validateBody(newClientOrderRequestSchema),
   newLoggedOrderRequestController,
 );
