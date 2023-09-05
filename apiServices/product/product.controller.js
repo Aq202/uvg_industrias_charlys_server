@@ -305,10 +305,9 @@ const updateProductModelController = async (req, res) => {
       for (const imageUrl of imagesToRemove) {
         const urlParts = imageUrl.split('/');
         const mediaKey = urlParts[urlParts.length - 1];
-
         // eslint-disable-next-line no-await-in-loop
         await removeProductModelMedia({ idProductModel, name: mediaKey });
-        mediaKey.push(mediaKey);
+        mediaKeys.push(mediaKey);
       }
 
       // Delete al files in bucket
