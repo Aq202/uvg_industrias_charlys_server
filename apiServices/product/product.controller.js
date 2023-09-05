@@ -298,19 +298,24 @@ const updateProductModelController = async (req, res) => {
     }
 
     // remover media
-    const deletePromises = [];
-    for (const imageUrl of imagesToRemove) {
-      const urlParts = imageUrl.split('/');
-      const mediaKey = urlParts[urlParts.length - 1];
+    if (imagesToRemove) {
+      const mediaKeys = [];
 
-      // eslint-disable-next-line no-await-in-loop
-      await removeProductModelMedia({ idProductModel, name: mediaKey });
-      deletePromises.push(deleteFileInBucket(`${consts.bucketRoutes.product}/${mediaKey}`));
+      // remover en la bd
+      for (const imageUrl of imagesToRemove) {
+        const urlParts = imageUrl.split('/');
+        const mediaKey = urlParts[urlParts.length - 1];
+
+        // eslint-disable-next-line no-await-in-loop
+        await removeProductModelMedia({ idProductModel, name: mediaKey });
+        mediaKey.push(mediaKey);
+      }
+
+      // Delete al files in bucket
+      await Promise.all(
+        mediaKeys.map(async (mediaKey) => deleteFileInBucket(`${consts.bucketRoutes.product}/${mediaKey}`)),
+      );
     }
-
-    // delete all files in bucket
-    await Promise.all(deletePromises);
-
     await commit();
 
     res.send({ idProductModel });
