@@ -20,6 +20,7 @@ import {
   verifyProductModelOwner,
   verifyProductOwner,
   getProductById,
+  removeProductModelMedia,
 } from './product.model.js';
 import { begin, commit, rollback } from '../../database/transactions.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
@@ -277,7 +278,7 @@ const newProductModelController = async (req, res) => {
 
 const updateProductModelController = async (req, res) => {
   const {
-    idProductModel, type, idClientOrganization, name, details,
+    idProductModel, type, idClientOrganization, name, details, imagesToRemove,
   } = req.body;
 
   try {
@@ -295,6 +296,20 @@ const updateProductModelController = async (req, res) => {
     if (Array.isArray(req.uploadedFiles)) {
       await saveProductModelMedia({ files: req.uploadedFiles, idProductModel });
     }
+
+    // remover media
+    const deletePromises = [];
+    for (const imageUrl of imagesToRemove) {
+      const urlParts = imageUrl.split('/');
+      const mediaKey = urlParts[urlParts.length - 1];
+
+      // eslint-disable-next-line no-await-in-loop
+      await removeProductModelMedia({ idProductModel, name: mediaKey });
+      deletePromises.push(deleteFileInBucket(`${consts.bucketRoutes.product}/${mediaKey}`));
+    }
+
+    // delete all files in bucket
+    await Promise.all(deletePromises);
 
     await commit();
 

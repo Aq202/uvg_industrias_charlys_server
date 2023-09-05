@@ -415,6 +415,14 @@ const updateProductModel = async ({
   );
 };
 
+const removeProductModelMedia = async ({ idProductModel, name }) => {
+  const sql = 'DELETE FROM product_model_media WHERE id_product_model = $1 AND name = $2';
+
+  const { rowCount } = await query(sql, idProductModel, name);
+
+  if (rowCount === 0) throw new CustomError('No se encontró el recurso multimedia para el modelo de producto.', 404);
+};
+
 const verifyProductModelOwner = async ({ idClientOrganization, idProductModel }) => {
   const sqlQuery = 'SELECT 1 FROM product_model WHERE id_product_model = $1 AND id_client_organization = $2';
 
@@ -448,4 +456,5 @@ export {
   verifyProductModelOwner,
   getProductById,
   verifyProductOwner,
+  removeProductModelMedia,
 };
