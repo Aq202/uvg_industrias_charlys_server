@@ -2,7 +2,7 @@ import { validateSessionToken } from '../apiServices/session/session.model.js';
 import { validateToken } from '../services/jwt.js';
 import consts from '../utils/consts.js';
 
-const ensureAdminOrClientAuth = async (req, res, next) => {
+const ensureClientAuth = async (req, res, next) => {
   const authToken = req.headers?.authorization;
 
   if (!authToken) {
@@ -24,8 +24,8 @@ const ensureAdminOrClientAuth = async (req, res, next) => {
       return res.sendStatus(401);
     }
 
-    if (userData.role !== consts.role.admin && userData.role !== consts.role.client) {
-      res.statusMessage = 'No se cuenta con los privilegios necesarios para realizar esta acción.';
+    if (userData.role !== consts.role.client) {
+      res.statusMessage = 'No se cuenta con los privilegios necesarios de cliente.';
       return res.sendStatus(403);
     }
 
@@ -39,4 +39,4 @@ const ensureAdminOrClientAuth = async (req, res, next) => {
   return null;
 };
 
-export default ensureAdminOrClientAuth;
+export default ensureClientAuth;

@@ -2,32 +2,42 @@ import query from '../../database/query.js';
 import CustomError from '../../utils/customError.js';
 import consts from '../../utils/consts.js';
 
-const storeRefreshToken = async (userId, token) => {
-  const sql = 'INSERT INTO session(id_user, token) VALUES ($1,$2)';
-  const { rowCount } = await query(sql, userId, token);
+const storeSessionToken = async ({ userId, token, type }) => {
+  const sql = 'INSERT INTO session(id_user, token, type) VALUES ($1,$2, $3)';
+  const { rowCount } = await query(sql, userId, token, type);
 
   if (rowCount !== 1) {
-    throw new CustomError('No se pudo registrar el refresh token.', 500);
+    throw new CustomError('No se pudo registrar el token.', 500);
   }
 };
 
-const deleteRefreshToken = async (token) => {
+const deleteSessionToken = async (token) => {
   const sql = 'DELETE FROM session WHERE token = $1';
   const { rowCount } = await query(sql, token);
 
   if (rowCount === 0) {
-    throw new CustomError('No se pudo eliminar el refresh token.', 500);
+    throw new CustomError('No se pudo eliminar el token.', 500);
   }
 };
 
-const validateRefreshToken = async (userId, token) => {
+const deleteSessionTokenByUserId = async (userId) => {
+  const sql = 'DELETE FROM session WHERE id_user = $1';
+  const { rowCount } = await query(sql, userId);
+
+  if (rowCount === 0) {
+    throw new CustomError('No se pudo eliminar los tokens del usuario.', 500);
+  }
+};
+
+const validateSessionToken = async ({ userId, token, type }) => {
   const { rowCount } = await query(
-    'SELECT 1 FROM session WHERE id_user = $1 AND token = $2 LIMIT 1',
+    'SELECT 1 FROM session WHERE "type"=$3 AND id_user = $1 AND token = $2 LIMIT 1',
     userId,
     token,
+    type,
   );
 
-  if (rowCount !== 1) throw new CustomError('Refresh token invalido.', 401);
+  if (rowCount !== 1) throw new CustomError('Token invalido.', 401);
 
   return true;
 };
@@ -45,7 +55,11 @@ const authenticate = async ({ email, passwordHash }) => {
     // obtener rol
 
     const {
-      id_user: userId, name, lastname: lastName, sex, id_client_organization: clientOrganizationId,
+      id_user: userId,
+      name,
+      lastname: lastName,
+      sex,
+      id_client_organization: clientOrganizationId,
     } = userData[0];
     let role;
 
@@ -57,13 +71,13 @@ const authenticate = async ({ email, passwordHash }) => {
                     WHERE id_user = $1 LIMIT 1`;
       const { result: employeeData, rowCount: rowCountEmployee } = await query(sql2, userId);
 
-      if (rowCountEmployee !== 1) throw new CustomError('El empleado no está registrado adecuadamente.', 409);
+      if (rowCountEmployee !== 1) { throw new CustomError('El empleado no está registrado adecuadamente.', 409); }
 
       role = employeeData[0].role;
     }
 
     return {
-      userId, name, lastName, sex, role,
+      userId, name, lastName, sex, role, clientOrganizationId,
     };
   } catch (ex) {
     if (ex instanceof CustomError) throw ex;
@@ -72,5 +86,9 @@ const authenticate = async ({ email, passwordHash }) => {
 };
 
 export {
-  storeRefreshToken, deleteRefreshToken, authenticate, validateRefreshToken,
+  storeSessionToken,
+  deleteSessionToken,
+  authenticate,
+  validateSessionToken,
+  deleteSessionTokenByUserId,
 };

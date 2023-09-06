@@ -15,7 +15,7 @@ import updateMaterialSchema from '../../utils/validationSchemas/updateMaterialSc
 
 const inventoryRouter = express.Router();
 
-inventoryRouter.post('/material', validateBody(newMaterialSchema), newMaterialController);
+inventoryRouter.post('/material', ensureAdminAuth, validateBody(newMaterialSchema), newMaterialController);
 inventoryRouter.get('/', ensureAdminAuth, getInventoryController);
 inventoryRouter.get('/id', ensureAdminAuth, getInventorybyIdController);
 inventoryRouter.put('/updateMaterial', ensureAdminAuth, validateBody(updateMaterialSchema), updateMaterialController);

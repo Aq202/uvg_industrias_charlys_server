@@ -294,9 +294,12 @@ const addProductModelMedia = async ({ idProductModel, name }) => {
 };
 
 const getProductModelById = async ({ idProductModel }) => {
-  const infoSql = `select id_product_model, pt.id_product_type "id_product_type", pt.name "type", id_client_organization, pm.name description, details from product_model pm
+  const infoSql = `select id_product_model, pt.id_product_type "id_product_type", pt.name "type", pm.id_client_organization,
+  c.name as client, pm.name description, details 
+  from product_model pm
   inner join product_type pt on pm.type = pt.id_product_type
-  where id_product_model = $1; `;
+  inner join client_organization c on pm.id_client_organization = c.id_client_organization
+  where id_product_model = $1`;
 
   const { result: infoResult, rowCount: infoRowCount } = await query(infoSql, idProductModel);
 
@@ -315,7 +318,8 @@ const getProductModelById = async ({ idProductModel }) => {
     id: val.id_product_model,
     id_product_type: val.id_product_type,
     type: val.type,
-    client: val.id_client_organization,
+    id_client_organization: val.id_client_organization,
+    client: val.client,
     description: val.description,
     details: val.details,
   }));
@@ -330,9 +334,56 @@ const getProductModelById = async ({ idProductModel }) => {
     blue: val.blue,
   }));
 
-  const media = mediaResult.map((val) => ({
-    name: val.name,
+  const media = mediaResult.map((val) => (`${consts.imagePath.product}/${val.name}`));
+
+  response[0].media = media;
+  response[0].colors = colors;
+
+  return response[0];
+};
+
+const getProductById = async ({ idProduct }) => {
+  const infoSql = `select id_product, pt.id_product_type "id_product_type", pt.name "type", pm.id_client_organization,
+  c.name as client, pm.name description, details 
+  from product pm
+  inner join product_type pt on pm.type = pt.id_product_type
+  inner join client_organization c on pm.id_client_organization = c.id_client_organization
+  where id_product = $1`;
+
+  const { result: infoResult, rowCount: infoRowCount } = await query(infoSql, idProduct);
+
+  if (infoRowCount === 0) throw new CustomError('No se encontraron resultados para el ID proporcionado.', 404);
+
+  const mediaSql = `select * from product_media
+    where id_product = $1; `;
+
+  const { result: mediaResult } = await query(mediaSql, idProduct);
+
+  const colorSql = `select c.* from product_color pc
+  inner join color c on pc.id_color = c.id_color
+  where pc.id_product = $1 `;
+
+  const response = infoResult.map((val) => ({
+    id: val.id_product,
+    id_product_type: val.id_product_type,
+    type: val.type,
+    id_client_organization: val.id_client_organization,
+    client: val.client,
+    description: val.description,
+    details: val.details,
   }));
+
+  const { result: colorResult } = await query(colorSql, idProduct);
+
+  const colors = colorResult.map((val) => ({
+    id: val.id_color,
+    color: val.name,
+    red: val.red,
+    green: val.green,
+    blue: val.blue,
+  }));
+
+  const media = mediaResult.map((val) => (`${consts.imagePath.product}/${val.name}`));
 
   response[0].media = media;
   response[0].colors = colors;
@@ -364,6 +415,30 @@ const updateProductModel = async ({
   );
 };
 
+const removeProductModelMedia = async ({ idProductModel, name }) => {
+  const sql = 'DELETE FROM product_model_media WHERE id_product_model = $1 AND name = $2';
+
+  const { rowCount } = await query(sql, idProductModel, name);
+
+  if (rowCount === 0) throw new CustomError('No se encontró el recurso multimedia para el modelo de producto.', 404);
+};
+
+const verifyProductModelOwner = async ({ idClientOrganization, idProductModel }) => {
+  const sqlQuery = 'SELECT 1 FROM product_model WHERE id_product_model = $1 AND id_client_organization = $2';
+
+  const { rowCount } = await query(sqlQuery, idProductModel, idClientOrganization);
+
+  if (rowCount === 0) throw new CustomError('Acceso denegado a datos del modelo de producto.', 403);
+};
+
+const verifyProductOwner = async ({ idClientOrganization, idProduct }) => {
+  const sqlQuery = 'SELECT 1 FROM product WHERE id_product = $1 AND id_client_organization = $2';
+
+  const { rowCount } = await query(sqlQuery, idProduct, idClientOrganization);
+
+  if (rowCount === 0) throw new CustomError('Acceso denegado a datos del producto.', 403);
+};
+
 export {
   getProductTypes,
   newProductType,
@@ -378,4 +453,8 @@ export {
   getProductTypesByOrganization,
   getProductModelById,
   updateProductModel,
+  verifyProductModelOwner,
+  getProductById,
+  verifyProductOwner,
+  removeProductModelMedia,
 };
