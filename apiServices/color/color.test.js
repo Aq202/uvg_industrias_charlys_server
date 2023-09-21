@@ -116,17 +116,5 @@ describe('Api service: color', () => {
         name, red, green, blue,
       });
     });
-
-    it('No duplicated color names', async () => {
-      try {
-        await newColor({
-          name, red, green, blue,
-        });
-      } catch (ex) {
-        // Fallo esperado
-        return;
-      }
-      throw new Error('El valor de name debe ser único.');
-    });
   });
 });

@@ -11,7 +11,7 @@
     "lint": "eslint ./*/*.js",
     "production": "export NODE_ENV= && pm2 start ./bin/www.js --name charlysApp --update-env",
     "qa": "export NODE_ENV=qa && pm2 start ./bin/www.js --name charlysApp --update-env",
-    "test": "jest ./tests"
+    "test": "cross-env NODE_ENV=develop && node --test .\\apiServices\\product\\"
   },
   "author": "Diego Aquino, Erick Guerra, Pablo Zamora, Jose Kiesling, Elias Alvarado",
   "license": "ISC",

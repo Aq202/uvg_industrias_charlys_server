@@ -294,6 +294,7 @@ const addProductModelMedia = async ({ idProductModel, name }) => {
 };
 
 const getProductModelById = async ({ idProductModel }) => {
+  console.log(idProductModel);
   const infoSql = `select id_product_model, pt.id_product_type "id_product_type", pt.name "type", pm.id_client_organization,
   c.name as client, pm.name description, details 
   from product_model pm
