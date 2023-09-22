@@ -138,38 +138,60 @@ const getOrderRequestMedia = async (orderRequestId) => {
 };
 
 const getOrderRequestById = async (orderRequestId) => {
-  const sql = 'SELECT * FROM order_request WHERE id_order_request = $1';
-  const { result, rowCount } = await query(sql, orderRequestId);
+  const sql = `select "or".id_order_request, "or".description, "or".date_placed, "or".id_client_organization,
+  "or".id_temporary_client, "or".deadline, "or".aditional_details, orq.size, orq.quantity, orq.unit_cost,
+  pm.id_product_model, pm.name, pm.details
+  from order_request "or"
+  left join order_request_requirement orq on "or".id_order_request = orq.id_order_request
+  left join product_model pm on orq.id_product_model = pm.id_product_model
+  where "or".id_order_request = $1;`;
+  const { result: queryResult, rowCount } = await query(sql, orderRequestId);
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  const sqlProducts = `select pm.id_product_model, pm.name product, orr.size, orr.quantity, orr.unit_cost  from order_request_requirement orr
-    left join product_model pm on orr.id_product_model = pm.id_product_model
-    where id_order_request = $1;`;
-  const { result: productResult, rowCount: productRows } = await query(sqlProducts, orderRequestId);
+  const transformedData = queryResult.reduce((acc, current) => {
+    const currentProduct = acc.find((item) => (
+      current.id_product_model === item.id
+      && current.name === item.product
+    ));
 
-  const detail = productRows === 0 ? [] : productResult.map((product) => ({
-    id: product.id_product_model,
-    product: product.product,
-    size: product.size,
-    quantity: product.quantity,
-    unit_price: product.unit_cost,
-  }));
+    if (currentProduct) {
+      currentProduct.sizes.push({
+        size: current.size,
+        quantity: current.quantity,
+        unit_price: current.unit_cost,
+      });
+    } else {
+      const newProduct = {
+        id: current.id_product_model,
+        product: current.name,
+        sizes: [{
+          size: current.size,
+          quantity: current.quantity,
+          unit_price: current.unit_cost,
+        }],
+      };
 
-  const [val] = result;
+      acc.push(newProduct);
+    }
+
+    return acc;
+  }, []);
 
   const media = await getOrderRequestMedia(orderRequestId);
 
-  return {
-    id: val.id_order_request,
-    clientOrganization: val.id_client_organization,
-    description: val.description,
-    datePlaced: val.date_placed,
-    deadline: val.deadline,
-    details: val.aditional_details,
+  const result = {
+    id: queryResult[0].id_order_request,
+    clientOrganization: queryResult[0].id_client_organization || queryResult[0].id_temporary_client,
+    description: queryResult[0].description,
+    datePlaced: queryResult[0].date_placed,
+    deadline: queryResult[0].deadline,
+    details: queryResult[0].aditional_details,
     media,
-    detail,
+    detail: transformedData,
   };
+
+  return result;
 };
 
 export {
