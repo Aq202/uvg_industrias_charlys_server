@@ -198,6 +198,7 @@ const getOrderRequestByIdController = async (req, res) => {
     const result = await getOrderRequestById(orderRequestId);
     res.send(result);
   } catch (ex) {
+    console.log(ex);
     let err = 'Ocurrio un error al obtener solicitudes de pedido.';
     let status = 500;
     if (ex instanceof CustomError) {
