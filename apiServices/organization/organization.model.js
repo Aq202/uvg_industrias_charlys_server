@@ -114,7 +114,8 @@ const getOrders = async ({
 
   if (idProduct !== undefined) {
     conditions.count.push(`p.id_product = $${params.length + 1}`);
-    conditions.query.push(`p.id_prduct = $${params.length}`);
+    conditions.query.push(`p.id_product = $${params.length}`);
+    params.push(idProduct);
   }
   if (startDeadline !== undefined) {
     conditions.count.push(`o.deadline >= $${params.length + 1}`);
