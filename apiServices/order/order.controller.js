@@ -1,4 +1,4 @@
-import { getOrders, newOrder } from './order.model.js';
+import { getOrderById, getOrders, newOrder } from './order.model.js';
 import CustomError from '../../utils/customError.js';
 import OrderAcceptedEmail from '../../services/email/OrderAcceptedEmail.js';
 
@@ -53,7 +53,25 @@ const getOrdersController = async (req, res) => {
   }
 };
 
+const getOrderByIdController = async (req, res) => {
+  const { orderId } = req.params;
+  try {
+    const result = await getOrderById(orderId);
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener la información de este pedido.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newOrderController,
   getOrdersController,
+  getOrderByIdController,
 };
