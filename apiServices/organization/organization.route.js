@@ -26,7 +26,7 @@ organizationRouter.get(
 );
 
 organizationRouter.get(
-  '/orders/:idClient',
+  '/orders/:idClient?',
   ensureAdminOrClientAuth,
   getOrdersController,
 );

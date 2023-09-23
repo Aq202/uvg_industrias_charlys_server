@@ -43,6 +43,7 @@ const getOrderRequestsController = async (req, res) => {
     page, search, startDeadline, endDeadline, startDatePlaced, endDatePlaced, idProduct,
   } = req.query;
   try {
+    if (!userId && !idClient) throw new CustomError('Debe especificar el id de la organización', 400);
     if (userId) await isMemberController({ userId, idClient });
     const result = await getOrderRequests({
       idClient, page, idProduct, startDatePlaced, endDatePlaced, startDeadline, endDeadline, search,
@@ -69,6 +70,7 @@ const getOrdersController = async (req, res) => {
     page, search, startDeadline, endDeadline, idProduct,
   } = req.query;
   try {
+    if (!userId && !idClient) throw new CustomError('Debe especificar el id de la organización', 400);
     if (userId) await isMemberController({ userId, idClient });
     const result = await getOrders({
       idClient, page, idProduct, startDeadline, endDeadline, search,
