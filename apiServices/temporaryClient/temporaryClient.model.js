@@ -25,5 +25,14 @@ const createTemporaryClient = async ({
   }
 };
 
-// eslint-disable-next-line import/prefer-default-export
-export { createTemporaryClient };
+const getTemporaryClient = async (temporaryClientId) => {
+  const sql = `SELECT id_temporary_client as id, name, email, phone, address FROM temporary_client 
+              WHERE id_temporary_client = $1;`;
+  const { result, rowCount } = await query(sql, temporaryClientId);
+
+  return rowCount > 0
+    ? result[0]
+    : null;
+};
+
+export { createTemporaryClient, getTemporaryClient };

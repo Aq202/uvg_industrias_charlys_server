@@ -12,7 +12,7 @@ import {
   newOrderRequestRequirement,
   updateOrderRequest,
 } from './orderRequest.model.js';
-import { createTemporaryClient } from '../temporaryClient/temporaryClient.model.js';
+import { createTemporaryClient, getTemporaryClient } from '../temporaryClient/temporaryClient.model.js';
 import { isMemberController } from '../organization/organization.controller.js';
 
 const saveOrderRequestMedia = async ({ files, id }) => {
@@ -196,6 +196,11 @@ const getOrderRequestByIdController = async (req, res) => {
   const { orderRequestId } = req.params;
   try {
     const result = await getOrderRequestById(orderRequestId);
+
+    if (result.temporaryClient) {
+      // añadir datos de cliente temporal
+      result.temporaryClient = await getTemporaryClient(result.temporaryClient);
+    }
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener la información de esta solicitud.';

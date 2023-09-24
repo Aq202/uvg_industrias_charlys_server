@@ -138,16 +138,6 @@ const getOrderRequestMedia = async (orderRequestId) => {
     : null;
 };
 
-const getOrderRequestTemporaryClient = async (temporaryClientId) => {
-  const sql = `SELECT id_temporary_client as id, name, email, phone, address FROM temporary_client 
-              WHERE id_temporary_client = $1;`;
-  const { result, rowCount } = await query(sql, temporaryClientId);
-
-  return rowCount > 0
-    ? result[0]
-    : null;
-};
-
 const getOrderRequestById = async (orderRequestId) => {
   const sql = `select "or".id_order_request, "or".description, "or".date_placed, "or".id_client_organization,
   "or".id_temporary_client, "or".deadline, "or".aditional_details, orq.size, orq.quantity, orq.unit_cost,
@@ -198,15 +188,10 @@ const getOrderRequestById = async (orderRequestId) => {
 
   const media = await getOrderRequestMedia(orderRequestId);
 
-  let temporaryClient;
-  if (queryResult[0].id_temporary_client) {
-    temporaryClient = await getOrderRequestTemporaryClient(queryResult[0].id_temporary_client);
-  }
-
   const result = {
     id: queryResult[0].id_order_request,
     clientOrganization: queryResult[0].id_client_organization,
-    temporaryClient,
+    temporaryClient: queryResult[0].id_temporary_client,
     description: queryResult[0].description,
     datePlaced: queryResult[0].date_placed,
     deadline: queryResult[0].deadline,
