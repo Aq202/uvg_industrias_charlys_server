@@ -67,6 +67,7 @@ const getOrderByIdController = async (req, res) => {
 
     res.send(result);
   } catch (ex) {
+    console.log(ex);
     let err = 'Ocurrio un error al obtener la información de este pedido.';
     let status = 500;
     if (ex instanceof CustomError) {
