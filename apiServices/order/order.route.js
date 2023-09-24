@@ -3,6 +3,7 @@ import validateBody from '../../middlewares/validateBody.js';
 import newOrderSchema from './validationSchemas/newOrderSchema.js';
 import { getOrderByIdController, getOrdersController, newOrderController } from './order.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
+import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';
 
 const orderRouter = express.Router();
 
@@ -20,8 +21,8 @@ orderRouter.get(
 );
 
 orderRouter.get(
-  '/:orderId',
-  ensureAdminAuth,
+  '/:orderId?',
+  ensureAdminOrClientAuth,
   getOrderByIdController,
 );
 
