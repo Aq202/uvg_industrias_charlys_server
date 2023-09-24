@@ -192,7 +192,8 @@ const getOrderRequestById = async (orderRequestId) => {
 
   const result = {
     id: queryResult[0].id_order_request,
-    clientOrganization: queryResult[0].id_client_organization || queryResult[0].id_temporary_client,
+    clientOrganization: queryResult[0].id_client_organization,
+    temporaryClient: queryResult[0].id_temporary_client,
     description: queryResult[0].description,
     datePlaced: queryResult[0].date_placed,
     deadline: queryResult[0].deadline,
@@ -204,6 +205,31 @@ const getOrderRequestById = async (orderRequestId) => {
   return result;
 };
 
+const getOrderRequestTemporaryClientId = async (orderRequestId) => {
+  const sqlQuery = 'SELECT id_temporary_client FROM order_request WHERE id_order_request = $1;';
+
+  const { result, rowCount } = await query(sqlQuery, orderRequestId);
+
+  if (rowCount === 0) throw new CustomError('No se encontró la solicidut de orden.', 404);
+  if (!result || !result[0]?.id_temporary_client) throw new CustomError('La solicitud de orden no cuenta con un cliente temporal', 400);
+
+  return result[0].id_temporary_client;
+};
+
+const replaceTemporaryClientWithOrganization = async ({ orderRequestId, organizationId }) => {
+  try {
+    const sqlQuery = `UPDATE order_request SET id_client_organization = $1, id_temporary_client = NULL 
+    WHERE id_order_request = $2`;
+
+    const { rowCount } = await query(sqlQuery, organizationId, orderRequestId);
+
+    if (rowCount === 0) throw new CustomError('No se encontró la solicidut de orden.', 404);
+  } catch (ex) {
+    if (ex?.code === '22001' || ex?.code === '23503') throw new CustomError('La organización con el id proporcionado no existe.', 400);
+    throw ex;
+  }
+};
+
 export {
   newOrderRequest,
   getOrderRequests,
@@ -211,4 +237,6 @@ export {
   getOrderRequestById,
   updateOrderRequest,
   newOrderRequestRequirement,
+  getOrderRequestTemporaryClientId,
+  replaceTemporaryClientWithOrganization,
 };
