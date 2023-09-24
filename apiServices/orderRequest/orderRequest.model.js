@@ -1,6 +1,7 @@
 import query from '../../database/query.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
+import { getProductModelColors, getProductModelMedia } from '../product/product.model.js';
 
 const newOrderRequest = async ({
   description,
@@ -140,19 +141,23 @@ const getOrderRequestMedia = async (orderRequestId) => {
 const getOrderRequestById = async (orderRequestId) => {
   const sql = `select "or".id_order_request, "or".description, "or".date_placed, "or".id_client_organization,
   "or".id_temporary_client, "or".deadline, "or".aditional_details, orq.size, orq.quantity, orq.unit_cost,
-  pm.id_product_model, pm.name, pm.details
+  pm.id_product_model, pm.name, pm.details, pt.name "type"
   from order_request "or"
   left join order_request_requirement orq on "or".id_order_request = orq.id_order_request
   left join product_model pm on orq.id_product_model = pm.id_product_model
+  left join product_type pt on pt.id_product_type = pm.type
   where "or".id_order_request = $1;`;
   const { result: queryResult, rowCount } = await query(sql, orderRequestId);
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  const transformedData = queryResult.reduce((acc, current) => {
+  const transformedData = await queryResult.reduce(async (accPromise, current) => {
+    const acc = await accPromise;
+
     const currentProduct = acc.find((item) => (
       current.id_product_model === item.id
       && current.name === item.product
+      && current.type === item.type
     ));
 
     if (currentProduct) {
@@ -165,6 +170,9 @@ const getOrderRequestById = async (orderRequestId) => {
       const newProduct = {
         id: current.id_product_model,
         product: current.name,
+        type: current.type,
+        media: await getProductModelMedia(current.id_product_model),
+        colors: await getProductModelColors(current.id_product_model),
         sizes: [{
           size: current.size,
           quantity: current.quantity,
