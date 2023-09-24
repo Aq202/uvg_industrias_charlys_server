@@ -2,6 +2,78 @@
 import query from '../../database/query.js';
 import CustomError from '../../utils/customError.js';
 import consts from '../../utils/consts.js';
+import { getProductColors, getProductMedia } from '../product/product.model.js';
+
+const getOrderMedia = async (orderId) => {
+  const sql = 'SELECT name FROM order_media WHERE id_order = $1';
+  const { result, rowCount } = await query(sql, orderId);
+
+  return rowCount > 0
+    ? result.map((val) => `${consts.imagePath.order}/${val.name}`)
+    : null;
+};
+
+const getOrderById = async (orderId) => {
+  const sql = `select o.id_order, o.description, o.id_client_organization,
+  o.deadline, od.size, od.quantity, od.unit_cost,
+  p.id_product, p.name, p.details, pt.name "type"
+  from "order" o
+  left join order_detail od on o.id_order = od.id_order
+  left join product p on od.id_product = p.id_product
+  left join product_type pt on pt.id_product_type = p.type
+  where o.id_order = $1;`;
+  const { result: queryResult, rowCount } = await query(sql, orderId);
+
+  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  const transformedData = await queryResult.reduce(async (accPromise, current) => {
+    const acc = await accPromise;
+
+    const currentProduct = acc.find((item) => (
+      current.id_product === item.id
+      && current.name === item.product
+      && current.type === item.type
+    ));
+
+    if (currentProduct) {
+      currentProduct.sizes.push({
+        size: current.size,
+        quantity: current.quantity,
+        unit_price: current.unit_cost,
+      });
+    } else {
+      const newProduct = {
+        id: current.id_product,
+        product: current.name,
+        type: current.type,
+        media: await getProductMedia(current.id_product),
+        colors: await getProductColors(current.id_product),
+        sizes: [{
+          size: current.size,
+          quantity: current.quantity,
+          unit_price: current.unit_cost,
+        }],
+      };
+
+      acc.push(newProduct);
+    }
+
+    return acc;
+  }, []);
+
+  const media = await getOrderMedia(orderId);
+
+  const result = {
+    id: queryResult[0].id_order,
+    clientOrganization: queryResult[0].id_client_organization,
+    description: queryResult[0].description,
+    deadline: queryResult[0].deadline,
+    media,
+    detail: transformedData,
+  };
+
+  return result;
+};
 
 const newOrder = async ({ idOrderRequest }) => {
   const sql = 'insert into "order"(id_order, id_order_request) values(default, $1) RETURNING id_order as id';
@@ -101,4 +173,5 @@ const getOrders = async ({
 export {
   newOrder,
   getOrders,
+  getOrderById,
 };
