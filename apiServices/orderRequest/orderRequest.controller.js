@@ -7,12 +7,14 @@ import randomString from '../../utils/randomString.js';
 import {
   addOrderRequestMedia,
   getOrderRequestById,
+  getOrderRequestTemporaryClientId,
   getOrderRequests,
   newOrderRequest,
   newOrderRequestRequirement,
+  replaceTemporaryClientWithOrganization,
   updateOrderRequest,
 } from './orderRequest.model.js';
-import { createTemporaryClient, getTemporaryClient } from '../temporaryClient/temporaryClient.model.js';
+import { createTemporaryClient, deleteTemporaryClient, getTemporaryClient } from '../temporaryClient/temporaryClient.model.js';
 import { isMemberController } from '../organization/organization.controller.js';
 
 const saveOrderRequestMedia = async ({ files, id }) => {
@@ -214,6 +216,34 @@ const getOrderRequestByIdController = async (req, res) => {
   }
 };
 
+const confirmTemporaryClientController = async (req, res) => {
+  const { orderRequestId } = req.params;
+  const { organizationId } = req.body;
+
+  try {
+    await begin();
+
+    const temporaryClientId = await getOrderRequestTemporaryClientId(orderRequestId);
+
+    await replaceTemporaryClientWithOrganization({ orderRequestId, organizationId });
+
+    await deleteTemporaryClient(temporaryClientId);
+
+    await commit();
+    res.send('El cliente temporal fue confirmado como organización.');
+  } catch (ex) {
+    await rollback();
+    let err = 'Ocurrio un error al confirmar cliente temporal como organización.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 // eslint-disable-next-line import/prefer-default-export
 export {
   newOrderRequestController,
@@ -221,4 +251,5 @@ export {
   getOrderRequestByIdController,
   newLoggedOrderRequestController,
   updateOrderRequestController,
+  confirmTemporaryClientController,
 };

@@ -35,4 +35,10 @@ const getTemporaryClient = async (temporaryClientId) => {
     : null;
 };
 
-export { createTemporaryClient, getTemporaryClient };
+const deleteTemporaryClient = async (temporaryClientId) => {
+  const sql = 'DELETE FROM temporary_client WHERE id_temporary_client = $1';
+  const { rowCount } = await query(sql, temporaryClientId);
+  if (rowCount !== 1) throw new CustomError('No se encontró el cliente temporal a eliminar.', 404);
+};
+
+export { createTemporaryClient, getTemporaryClient, deleteTemporaryClient };
