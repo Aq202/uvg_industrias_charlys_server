@@ -14,8 +14,13 @@ import {
   replaceTemporaryClientWithOrganization,
   updateOrderRequest,
 } from './orderRequest.model.js';
-import { createTemporaryClient, deleteTemporaryClient, getTemporaryClient } from '../temporaryClient/temporaryClient.model.js';
+import {
+  createTemporaryClient,
+  deleteTemporaryClient,
+  getTemporaryClient,
+} from '../temporaryClient/temporaryClient.model.js';
 import { isMemberController } from '../organization/organization.controller.js';
+import { getOrganizationById } from '../organization/organization.model.js';
 
 const saveOrderRequestMedia = async ({ files, id }) => {
   let uploadError = false;
@@ -42,7 +47,7 @@ const saveOrderRequestMedia = async ({ files, id }) => {
 
     // eliminar archivos temporales
 
-    fs.unlink(filePath, () => { });
+    fs.unlink(filePath, () => {});
   }
 
   await Promise.all(promises);
@@ -102,7 +107,10 @@ const updateOrderRequestController = async (req, res) => {
     begin(); // begin transaction
 
     await updateOrderRequest({
-      idOrderRequest, description, deadline, details,
+      idOrderRequest,
+      description,
+      deadline,
+      details,
     });
 
     // save files
@@ -129,7 +137,8 @@ const updateOrderRequestController = async (req, res) => {
 const newLoggedOrderRequestController = async (req, res) => {
   const userId = req.session.role === consts.role.client ? req.session.userId : undefined;
   const idClientOrganization = req.session.role === consts.role.client
-    ? req.session.clientOrganizationId : req.body.idClientOrganization;
+    ? req.session.clientOrganizationId
+    : req.body.idClientOrganization;
   const {
     description, products, deadline, details,
   } = req.body;
@@ -150,7 +159,10 @@ const newLoggedOrderRequestController = async (req, res) => {
       const { idProductModel, size, quantity } = product;
       // eslint-disable-next-line no-await-in-loop
       await newOrderRequestRequirement({
-        idOrderRequest: id, idProductModel, size, quantity,
+        idOrderRequest: id,
+        idProductModel,
+        size,
+        quantity,
       });
     }
 
@@ -202,6 +214,10 @@ const getOrderRequestByIdController = async (req, res) => {
     if (result.temporaryClient) {
       // añadir datos de cliente temporal
       result.temporaryClient = await getTemporaryClient(result.temporaryClient);
+    } else if (result.clientOrganization) {
+      result.clientOrganization = await getOrganizationById({
+        idClient: result.clientOrganization,
+      });
     }
     res.send(result);
   } catch (ex) {
