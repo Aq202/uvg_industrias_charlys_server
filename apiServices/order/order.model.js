@@ -29,6 +29,8 @@ const getOrderById = async (orderId) => {
   const transformedData = await queryResult.reduce(async (accPromise, current) => {
     const acc = await accPromise;
 
+    if (current.id_product === null) return acc;
+
     const currentProduct = acc.find((item) => (
       current.id_product === item.id
       && current.name === item.product
@@ -69,7 +71,7 @@ const getOrderById = async (orderId) => {
     description: queryResult[0].description,
     deadline: queryResult[0].deadline,
     media,
-    detail: transformedData,
+    detail: transformedData.length > 0 ? transformedData : null,
   };
 
   return result;
