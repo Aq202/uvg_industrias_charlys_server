@@ -137,6 +137,16 @@ const getOrderRequestMedia = async (orderRequestId) => {
     : null;
 };
 
+const getOrderRequestTemporaryClient = async (temporaryClientId) => {
+  const sql = `SELECT id_temporary_client as id, name, email, phone, address FROM temporary_client 
+              WHERE id_temporary_client = $1;`;
+  const { result, rowCount } = await query(sql, temporaryClientId);
+
+  return rowCount > 0
+    ? result[0]
+    : null;
+};
+
 const getOrderRequestById = async (orderRequestId) => {
   const sql = 'SELECT * FROM order_request WHERE id_order_request = $1';
   const { result, rowCount } = await query(sql, orderRequestId);
@@ -160,9 +170,15 @@ const getOrderRequestById = async (orderRequestId) => {
 
   const media = await getOrderRequestMedia(orderRequestId);
 
+  let temporaryClient;
+  if (val.id_temporary_client) {
+    temporaryClient = await getOrderRequestTemporaryClient(val.id_temporary_client);
+  }
+
   return {
     id: val.id_order_request,
     clientOrganization: val.id_client_organization,
+    temporaryClient,
     description: val.description,
     datePlaced: val.date_placed,
     deadline: val.deadline,
