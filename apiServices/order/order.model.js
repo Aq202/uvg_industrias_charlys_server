@@ -2,6 +2,7 @@
 import query from '../../database/query.js';
 import CustomError from '../../utils/customError.js';
 import consts from '../../utils/consts.js';
+import { getProductColors, getProductMedia } from '../product/product.model.js';
 
 const getOrderMedia = async (orderId) => {
   const sql = 'SELECT name FROM order_media WHERE id_order = $1';
@@ -15,19 +16,25 @@ const getOrderMedia = async (orderId) => {
 const getOrderById = async (orderId) => {
   const sql = `select o.id_order, o.description, o.id_client_organization,
   o.deadline, od.size, od.quantity, od.unit_cost,
-  p.id_product, p.name, p.details
+  p.id_product, p.name, p.details, pt.name "type"
   from "order" o
   left join order_detail od on o.id_order = od.id_order
   left join product p on od.id_product = p.id_product
+  left join product_type pt on pt.id_product_type = p.type
   where o.id_order = $1;`;
   const { result: queryResult, rowCount } = await query(sql, orderId);
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  const transformedData = queryResult.reduce((acc, current) => {
+  const transformedData = await queryResult.reduce(async (accPromise, current) => {
+    const acc = await accPromise;
+
+    if (current.id_product === null) return acc;
+
     const currentProduct = acc.find((item) => (
       current.id_product === item.id
       && current.name === item.product
+      && current.type === item.type
     ));
 
     if (currentProduct) {
@@ -40,6 +47,9 @@ const getOrderById = async (orderId) => {
       const newProduct = {
         id: current.id_product,
         product: current.name,
+        type: current.type,
+        media: await getProductMedia(current.id_product),
+        colors: await getProductColors(current.id_product),
         sizes: [{
           size: current.size,
           quantity: current.quantity,
@@ -61,7 +71,7 @@ const getOrderById = async (orderId) => {
     description: queryResult[0].description,
     deadline: queryResult[0].deadline,
     media,
-    detail: transformedData,
+    detail: transformedData.length > 0 ? transformedData : null,
   };
 
   return result;

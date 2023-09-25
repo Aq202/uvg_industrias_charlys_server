@@ -2,6 +2,40 @@ import query from '../../database/query.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 
+const getProductColors = async (productId) => {
+  const sql = `select c."name", c.red r, c.green g, c.blue b from product_color pc
+    natural join color c
+    where pc.id_product = $1;`;
+  const { result, rowCount } = await query(sql, productId);
+  return rowCount > 0 ? result : null;
+};
+
+const getProductModelColors = async (productModelId) => {
+  const sql = `select c."name", c.red r, c.green g, c.blue b from product_model_color pmc
+    natural join color c
+    where pmc.id_product_model = $1;`;
+  const { result, rowCount } = await query(sql, productModelId);
+  return rowCount > 0 ? result : null;
+};
+
+const getProductMedia = async (productId) => {
+  const sql = 'SELECT name FROM product_media WHERE id_product = $1';
+  const { result, rowCount } = await query(sql, productId);
+
+  return rowCount > 0
+    ? result.map((val) => `${consts.imagePath.product}/${val.name}`)
+    : null;
+};
+
+const getProductModelMedia = async (productModelId) => {
+  const sql = 'SELECT name FROM product_model_media WHERE id_product_model = $1';
+  const { result, rowCount } = await query(sql, productModelId);
+
+  return rowCount > 0
+    ? result.map((val) => `${consts.imagePath.productModel}/${val.name}`)
+    : null;
+};
+
 const newProductType = async ({ name }) => {
   const sql = 'INSERT INTO product_type("name") VALUES($1) RETURNING id_product_type as id;';
 
@@ -457,4 +491,8 @@ export {
   getProductById,
   verifyProductOwner,
   removeProductModelMedia,
+  getProductMedia,
+  getProductModelMedia,
+  getProductColors,
+  getProductModelColors,
 };

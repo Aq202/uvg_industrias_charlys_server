@@ -7,13 +7,20 @@ import randomString from '../../utils/randomString.js';
 import {
   addOrderRequestMedia,
   getOrderRequestById,
+  getOrderRequestTemporaryClientId,
   getOrderRequests,
   newOrderRequest,
   newOrderRequestRequirement,
+  replaceTemporaryClientWithOrganization,
   updateOrderRequest,
 } from './orderRequest.model.js';
-import { createTemporaryClient } from '../temporaryClient/temporaryClient.model.js';
+import {
+  createTemporaryClient,
+  deleteTemporaryClient,
+  getTemporaryClient,
+} from '../temporaryClient/temporaryClient.model.js';
 import { isMemberController } from '../organization/organization.controller.js';
+import { getOrganizationById } from '../organization/organization.model.js';
 
 const saveOrderRequestMedia = async ({ files, id }) => {
   let uploadError = false;
@@ -40,7 +47,7 @@ const saveOrderRequestMedia = async ({ files, id }) => {
 
     // eliminar archivos temporales
 
-    fs.unlink(filePath, () => { });
+    fs.unlink(filePath, () => {});
   }
 
   await Promise.all(promises);
@@ -100,7 +107,10 @@ const updateOrderRequestController = async (req, res) => {
     begin(); // begin transaction
 
     await updateOrderRequest({
-      idOrderRequest, description, deadline, details,
+      idOrderRequest,
+      description,
+      deadline,
+      details,
     });
 
     // save files
@@ -127,7 +137,8 @@ const updateOrderRequestController = async (req, res) => {
 const newLoggedOrderRequestController = async (req, res) => {
   const userId = req.session.role === consts.role.client ? req.session.userId : undefined;
   const idClientOrganization = req.session.role === consts.role.client
-    ? req.session.clientOrganizationId : req.body.idClientOrganization;
+    ? req.session.clientOrganizationId
+    : req.body.idClientOrganization;
   const {
     description, products, deadline, details,
   } = req.body;
@@ -148,7 +159,10 @@ const newLoggedOrderRequestController = async (req, res) => {
       const { idProductModel, size, quantity } = product;
       // eslint-disable-next-line no-await-in-loop
       await newOrderRequestRequirement({
-        idOrderRequest: id, idProductModel, size, quantity,
+        idOrderRequest: id,
+        idProductModel,
+        size,
+        quantity,
       });
     }
 
@@ -196,6 +210,15 @@ const getOrderRequestByIdController = async (req, res) => {
   const { orderRequestId } = req.params;
   try {
     const result = await getOrderRequestById(orderRequestId);
+
+    if (result.temporaryClient) {
+      // añadir datos de cliente temporal
+      result.temporaryClient = await getTemporaryClient(result.temporaryClient);
+    } else if (result.clientOrganization) {
+      result.clientOrganization = await getOrganizationById({
+        idClient: result.clientOrganization,
+      });
+    }
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener la información de esta solicitud.';
@@ -209,6 +232,34 @@ const getOrderRequestByIdController = async (req, res) => {
   }
 };
 
+const confirmTemporaryClientController = async (req, res) => {
+  const { orderRequestId } = req.params;
+  const { organizationId } = req.body;
+
+  try {
+    await begin();
+
+    const temporaryClientId = await getOrderRequestTemporaryClientId(orderRequestId);
+
+    await replaceTemporaryClientWithOrganization({ orderRequestId, organizationId });
+
+    await deleteTemporaryClient(temporaryClientId);
+
+    await commit();
+    res.send('El cliente temporal fue confirmado como organización.');
+  } catch (ex) {
+    await rollback();
+    let err = 'Ocurrio un error al confirmar cliente temporal como organización.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 // eslint-disable-next-line import/prefer-default-export
 export {
   newOrderRequestController,
@@ -216,4 +267,5 @@ export {
   getOrderRequestByIdController,
   newLoggedOrderRequestController,
   updateOrderRequestController,
+  confirmTemporaryClientController,
 };
