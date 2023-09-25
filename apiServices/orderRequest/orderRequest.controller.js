@@ -156,13 +156,16 @@ const newLoggedOrderRequestController = async (req, res) => {
 
     // guardar requerimientos de productos de la orden
     for (const product of products) {
-      const { idProductModel, size, quantity } = product;
+      const {
+        idProductModel, size, quantity, price,
+      } = product;
       // eslint-disable-next-line no-await-in-loop
       await newOrderRequestRequirement({
         idOrderRequest: id,
         idProductModel,
         size,
         quantity,
+        price: req.session.role === consts.role.admin ? price : undefined,
       });
     }
 
@@ -183,6 +186,7 @@ const newLoggedOrderRequestController = async (req, res) => {
       status = ex.status;
     }
     res.statusMessage = err;
+    console.log(ex);
     res.status(status).send({ err, status });
   }
 };
