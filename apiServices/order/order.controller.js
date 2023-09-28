@@ -1,4 +1,8 @@
-import { getOrderById, getOrders, newOrder } from './order.model.js';
+import {
+  getOrderById,
+  getOrders,
+  newOrder,
+} from './order.model.js';
 import CustomError from '../../utils/customError.js';
 import OrderAcceptedEmail from '../../services/email/OrderAcceptedEmail.js';
 import consts from '../../utils/consts.js';

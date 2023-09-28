@@ -68,4 +68,23 @@ const getOrderDetails = async (noOrder, searchQuery) => {
   }));
 };
 
-export { getOrderDetails, newOrderDetail };
+const updateProductProgress = async ({
+  completed, idOrder, idProduct, size,
+}) => {
+  const sql = `update order_detail set quantity_completed = $1 where id_order = $2
+    and id_product = $3 and size = $4`;
+  try {
+    const { rowCount } = await query(sql, completed, idOrder, idProduct, size);
+    if (rowCount === 0) throw new CustomError('No se encontró el registro.', 400);
+  } catch (ex) {
+    if (ex?.code === '22P02') { throw new CustomError('El valor ingresado no es válido.', 400); }
+    if (ex?.code === 'P0001') { throw new CustomError(ex.message, 400); }
+    throw ex;
+  }
+};
+
+export {
+  getOrderDetails,
+  newOrderDetail,
+  updateProductProgress,
+};
