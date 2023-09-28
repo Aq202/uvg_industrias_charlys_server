@@ -172,8 +172,37 @@ const getOrders = async ({
   return { result: response, count: pages };
 };
 
+const getOrdersInProduction = async () => {
+  const sqlQuery = `
+  SELECT O.id_order, O.deadline, O.description, CO.name AS client, PU.pending_units
+  FROM "order" O
+  INNER JOIN client_organization CO ON O.id_client_organization = CO.id_client_organization
+  INNER JOIN (
+    SELECT O.id_order, SUM(COALESCE(OD.quantity, 0) - COALESCE(OD.quantity_completed,0)) AS pending_units
+    FROM "order" O
+    INNER JOIN order_detail OD ON OD.id_order = O.id_order
+    GROUP BY O.id_order
+    HAVING SUM(COALESCE(OD.quantity, 0) - COALESCE(OD.quantity_completed,0)) > 0
+  ) PU ON O.id_order = PU.id_order
+  ORDER BY O.deadline, PU.pending_units DESC
+  `;
+
+  const { result, rowCount } = await query(sqlQuery);
+
+  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  return result.map((res) => ({
+    orderId: res.id_order,
+    deadline: res.deadline,
+    description: res.description,
+    client: res.client,
+    pendingUnits: res.pending_units,
+  }));
+};
+
 export {
   newOrder,
   getOrders,
   getOrderById,
+  getOrdersInProduction,
 };
