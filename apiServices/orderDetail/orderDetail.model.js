@@ -30,6 +30,22 @@ const newOrderDetail = async ({
   }
 };
 
+const getProgressLog = async ({
+  idOrder, idProduct, size,
+}) => {
+  const sql = `select date, description from order_progress where id_order = $1
+    and id_product = $2 and "size" = $3 order by date desc;`;
+  const { result, rowCount } = await query(sql, idOrder, idProduct, size);
+  if (rowCount === 0) throw new CustomError('No se han encontrado registros.', 404);
+
+  return {
+    id_order: idOrder,
+    id_product: idProduct,
+    size,
+    logs: result,
+  };
+};
+
 const updateProductProgress = async ({
   completed, idOrder, idProduct, size,
 }) => {
@@ -48,4 +64,5 @@ const updateProductProgress = async ({
 export {
   newOrderDetail,
   updateProductProgress,
+  getProgressLog,
 };
