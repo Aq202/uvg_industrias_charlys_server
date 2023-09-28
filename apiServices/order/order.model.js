@@ -15,7 +15,7 @@ const getOrderMedia = async (orderId) => {
 
 const getOrderById = async (orderId) => {
   const sql = `select o.id_order, o.description, o.id_client_organization,
-  o.deadline, od.size, od.quantity, od.unit_cost,
+  o.deadline, od.size, od.quantity, od.quantity_completed, od.unit_cost,
   p.id_product, p.name, p.details, pt.name "type"
   from "order" o
   left join order_detail od on o.id_order = od.id_order
@@ -41,6 +41,7 @@ const getOrderById = async (orderId) => {
       currentProduct.sizes.push({
         size: current.size,
         quantity: current.quantity,
+        completed: current.quantity_completed || 0,
         unit_price: current.unit_cost,
       });
     } else {
@@ -53,6 +54,7 @@ const getOrderById = async (orderId) => {
         sizes: [{
           size: current.size,
           quantity: current.quantity,
+          completed: current.quantity_completed || 0,
           unit_price: current.unit_cost,
         }],
       };

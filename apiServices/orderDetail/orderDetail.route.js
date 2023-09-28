@@ -2,7 +2,6 @@ import express from 'express';
 import validateBody from '../../middlewares/validateBody.js';
 import newOrderDetailSchema from '../../utils/validationSchemas/newOrderDetailSchema.js';
 import {
-  getOrderDetailsController,
   newOrderDetailController,
   updateProductProgressController,
 } from './orderDetail.controller.js';
@@ -12,7 +11,6 @@ import updateProductProgressSchema from './validationSchemas/updateProductProgre
 const orderDetailRouter = express.Router();
 
 orderDetailRouter.post('/', validateBody(newOrderDetailSchema), newOrderDetailController);
-orderDetailRouter.get('/', ensureAdminAuth, getOrderDetailsController);
 orderDetailRouter.put(
   '/',
   ensureAdminAuth,

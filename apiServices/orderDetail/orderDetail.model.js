@@ -30,44 +30,6 @@ const newOrderDetail = async ({
   }
 };
 
-const getOrderDetails = async (noOrder, searchQuery) => {
-  let queryResult;
-  if (searchQuery) {
-    const sql = `select od.no_order, pt.name product, prod.client client_id, co.name client,
-                prod.color, s.size, od.quantity from order_detail od
-                inner join product prod on od.product = prod.id_product
-                inner join product_type pt on prod.type = pt.id_product_type
-                inner join client_organization co on prod.client = co.id_client_organization
-                inner join "size" s on od.size = s.id_size
-                where no_order = $1
-                AND (pt.name ilike $2 or client ilike $2 or color ilike $2)`;
-    queryResult = await query(sql, noOrder, `%${searchQuery}%`);
-  } else {
-    const sql = `select od.no_order, pt.name product, prod.client client_id, co.name client,
-                prod.color, s.size, od.quantity from order_detail od
-                inner join product prod on od.product = prod.id_product
-                inner join product_type pt on prod.type = pt.id_product_type
-                inner join client_organization co on prod.client = co.id_client_organization
-                inner join "size" s on od.size = s.id_size
-                where no_order = $1`;
-    queryResult = await query(sql, noOrder);
-  }
-
-  const { result, rowCount } = queryResult;
-
-  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
-
-  return result.map((val) => ({
-    order: val.no_order,
-    product: val.product,
-    client_id: val.client_id,
-    client: val.client,
-    color: val.color,
-    size: val.size,
-    quantity: val.quantity,
-  }));
-};
-
 const updateProductProgress = async ({
   completed, idOrder, idProduct, size,
 }) => {
@@ -84,7 +46,6 @@ const updateProductProgress = async ({
 };
 
 export {
-  getOrderDetails,
   newOrderDetail,
   updateProductProgress,
 };
