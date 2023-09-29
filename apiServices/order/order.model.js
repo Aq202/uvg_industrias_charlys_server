@@ -16,11 +16,12 @@ const getOrderMedia = async (orderId) => {
 const getOrderById = async (orderId) => {
   const sql = `select o.id_order, o.description, o.id_client_organization,
   o.deadline, o.production_phase, od.size, od.quantity, od.quantity_completed, od.unit_cost,
-  p.id_product, p.name, p.details, pt.name "type"
+  p.id_product, p.name, p.details, pt.name "type", co.name client
   from "order" o
   left join order_detail od on o.id_order = od.id_order
   left join product p on od.id_product = p.id_product
   left join product_type pt on pt.id_product_type = p.type
+  left join client_organization co on co.id_client_organization = o.id_client_organization
   where o.id_order = $1;`;
   const { result: queryResult, rowCount } = await query(sql, orderId);
 
@@ -69,7 +70,8 @@ const getOrderById = async (orderId) => {
 
   const result = {
     id: queryResult[0].id_order,
-    clientOrganization: queryResult[0].id_client_organization,
+    idClientOrganization: queryResult[0].id_client_organization,
+    clientOrganization: queryResult[0].client,
     description: queryResult[0].description,
     phase: queryResult[0].production_phase,
     deadline: queryResult[0].deadline,
