@@ -103,6 +103,8 @@ const getOrdersInProductionController = async (req, res) => {
 const updateOrderPhaseController = async (req, res) => {
   const { phase, idOrder } = req.body;
   try {
+    if (parseInt(phase, 10) > consts.orderPhases.length) throw new CustomError(`La fase de una orden debe encontrarse entre 0 y ${consts.orderPhases.length - 1}.`, 400);
+
     await updateOrderPhase({ phase, idOrder });
     res.send({ id: idOrder });
   } catch (ex) {

@@ -42,6 +42,7 @@ create table "order"(
 	deadline date,
 	description text,
 	id_client_organization VARCHAR(15),
+	production_phase INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE "size"(

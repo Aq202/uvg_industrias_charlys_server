@@ -73,7 +73,10 @@ const getOrderById = async (orderId) => {
     idClientOrganization: queryResult[0].id_client_organization,
     clientOrganization: queryResult[0].client,
     description: queryResult[0].description,
-    phase: queryResult[0].production_phase,
+    phase: {
+      id: queryResult[0].production_phase,
+      name: consts.orderPhases[queryResult[0].production_phase] ?? null,
+    },
     deadline: queryResult[0].deadline,
     media,
     detail: transformedData.length > 0 ? transformedData : null,
@@ -174,7 +177,10 @@ const getOrders = async ({
     description: val.description,
     client: val.client,
     deadline: val.deadline,
-    phase: val.production_phase || 'Confirmado',
+    phase: {
+      id: val.production_phase,
+      name: consts.orderPhases[val.production_phase] ?? null,
+    },
   }));
   return { result: response, count: pages };
 };
