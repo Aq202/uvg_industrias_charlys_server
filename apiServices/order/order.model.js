@@ -15,7 +15,7 @@ const getOrderMedia = async (orderId) => {
 
 const getOrderById = async (orderId) => {
   const sql = `select o.id_order, o.description, o.id_client_organization,
-  o.deadline, od.size, od.quantity, od.quantity_completed, od.unit_cost,
+  o.deadline, o.production_phase, od.size, od.quantity, od.quantity_completed, od.unit_cost,
   p.id_product, p.name, p.details, pt.name "type"
   from "order" o
   left join order_detail od on o.id_order = od.id_order
@@ -71,6 +71,7 @@ const getOrderById = async (orderId) => {
     id: queryResult[0].id_order,
     clientOrganization: queryResult[0].id_client_organization,
     description: queryResult[0].description,
+    phase: queryResult[0].production_phase,
     deadline: queryResult[0].deadline,
     media,
     detail: transformedData.length > 0 ? transformedData : null,
@@ -140,7 +141,7 @@ const getOrders = async ({
   }
 
   const sqlCount = `select ceiling(count(*) / $1:: numeric) from(
-    select distinct o.id_order, o.deadline, o.description, co.name client from "order" o
+    select distinct o.id_order, o.deadline, o.description, o.production_phase, co.name client from "order" o
     inner join client_organization co on co.id_client_organization = o.id_client_organization
     left join order_detail od on o.id_order = od.id_order
     left join product "p" on od.id_product = "p".id_product
@@ -153,12 +154,13 @@ const getOrders = async ({
 
   if (page !== undefined) params.push(consts.pageLength, offset);
 
-  const sql = `select distinct o.id_order, o.deadline, o.description, co.name client from "order" o
+  const sql = `select distinct o.id_order, o.deadline, o.description, o.production_phase, co.name client from "order" o
   inner join client_organization co on co.id_client_organization = o.id_client_organization
   left join order_detail od on o.id_order = od.id_order
   left join product "p" on od.id_product = "p".id_product
   where (o.description ilike $1 or "p".name ilike $1 or co.name ilike $1)
   ${conditions.query.length > 0 ? `AND ${conditions.query.join(' and ')}` : ''}
+  ORDER BY o.id_order
   ${page !== undefined ? `LIMIT $${params.length - 2} OFFSET $${params.length - 1}` : ''}`;
 
   const { result, rowCount } = await query(sql, ...params.slice(1));
@@ -170,12 +172,22 @@ const getOrders = async ({
     description: val.description,
     client: val.client,
     deadline: val.deadline,
+    phase: val.production_phase || 'Confirmado',
   }));
   return { result: response, count: pages };
+};
+
+const updateOrderPhase = async ({ phase, idOrder }) => {
+  const sql = `update "order" set production_phase = $1
+    where id_order = $2;`;
+
+  const { rowCount } = await query(sql, phase, idOrder);
+  if (rowCount === 0) throw new CustomError('No ha sido posible actualizar la fase del pedido.', 400);
 };
 
 export {
   newOrder,
   getOrders,
   getOrderById,
+  updateOrderPhase,
 };

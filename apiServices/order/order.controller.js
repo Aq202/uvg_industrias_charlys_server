@@ -2,6 +2,7 @@ import {
   getOrderById,
   getOrders,
   newOrder,
+  updateOrderPhase,
 } from './order.model.js';
 import CustomError from '../../utils/customError.js';
 import OrderAcceptedEmail from '../../services/email/OrderAcceptedEmail.js';
@@ -82,8 +83,26 @@ const getOrderByIdController = async (req, res) => {
   }
 };
 
+const updateOrderPhaseController = async (req, res) => {
+  const { phase, idOrder } = req.body;
+  try {
+    await updateOrderPhase({ phase, idOrder });
+    res.send({ id: idOrder });
+  } catch (ex) {
+    let err = 'Ocurrio un error al actualizar la fase del pedido.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newOrderController,
   getOrdersController,
   getOrderByIdController,
+  updateOrderPhaseController,
 };
