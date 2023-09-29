@@ -15,12 +15,13 @@ const getOrderMedia = async (orderId) => {
 
 const getOrderById = async (orderId) => {
   const sql = `select o.id_order, o.description, o.id_client_organization,
-  o.deadline, od.size, od.quantity, od.unit_cost,
-  p.id_product, p.name, p.details, pt.name "type"
+  o.deadline, o.production_phase, od.size, od.quantity, od.quantity_completed, od.unit_cost,
+  p.id_product, p.name, p.details, pt.name "type", co.name client
   from "order" o
   left join order_detail od on o.id_order = od.id_order
   left join product p on od.id_product = p.id_product
   left join product_type pt on pt.id_product_type = p.type
+  left join client_organization co on co.id_client_organization = o.id_client_organization
   where o.id_order = $1;`;
   const { result: queryResult, rowCount } = await query(sql, orderId);
 
@@ -41,6 +42,7 @@ const getOrderById = async (orderId) => {
       currentProduct.sizes.push({
         size: current.size,
         quantity: current.quantity,
+        completed: current.quantity_completed || 0,
         unit_price: current.unit_cost,
       });
     } else {
@@ -53,6 +55,7 @@ const getOrderById = async (orderId) => {
         sizes: [{
           size: current.size,
           quantity: current.quantity,
+          completed: current.quantity_completed || 0,
           unit_price: current.unit_cost,
         }],
       };
@@ -67,8 +70,13 @@ const getOrderById = async (orderId) => {
 
   const result = {
     id: queryResult[0].id_order,
-    clientOrganization: queryResult[0].id_client_organization,
+    idClientOrganization: queryResult[0].id_client_organization,
+    clientOrganization: queryResult[0].client,
     description: queryResult[0].description,
+    phase: {
+      id: queryResult[0].production_phase,
+      name: consts.orderPhases[queryResult[0].production_phase] ?? null,
+    },
     deadline: queryResult[0].deadline,
     media,
     detail: transformedData.length > 0 ? transformedData : null,
@@ -138,7 +146,7 @@ const getOrders = async ({
   }
 
   const sqlCount = `select ceiling(count(*) / $1:: numeric) from(
-    select distinct o.id_order, o.deadline, o.description, co.name client from "order" o
+    select distinct o.id_order, o.deadline, o.description, o.production_phase, co.name client from "order" o
     inner join client_organization co on co.id_client_organization = o.id_client_organization
     left join order_detail od on o.id_order = od.id_order
     left join product "p" on od.id_product = "p".id_product
@@ -151,12 +159,13 @@ const getOrders = async ({
 
   if (page !== undefined) params.push(consts.pageLength, offset);
 
-  const sql = `select distinct o.id_order, o.deadline, o.description, co.name client from "order" o
+  const sql = `select distinct o.id_order, o.deadline, o.description, o.production_phase, co.name client from "order" o
   inner join client_organization co on co.id_client_organization = o.id_client_organization
   left join order_detail od on o.id_order = od.id_order
   left join product "p" on od.id_product = "p".id_product
   where (o.description ilike $1 or "p".name ilike $1 or co.name ilike $1)
   ${conditions.query.length > 0 ? `AND ${conditions.query.join(' and ')}` : ''}
+  ORDER BY o.id_order
   ${page !== undefined ? `LIMIT $${params.length - 2} OFFSET $${params.length - 1}` : ''}`;
 
   const { result, rowCount } = await query(sql, ...params.slice(1));
@@ -168,12 +177,54 @@ const getOrders = async ({
     description: val.description,
     client: val.client,
     deadline: val.deadline,
+    phase: {
+      id: val.production_phase,
+      name: consts.orderPhases[val.production_phase] ?? null,
+    },
   }));
   return { result: response, count: pages };
+};
+
+const updateOrderPhase = async ({ phase, idOrder }) => {
+  const sql = `update "order" set production_phase = $1
+    where id_order = $2;`;
+
+  const { rowCount } = await query(sql, phase, idOrder);
+  if (rowCount === 0) throw new CustomError('No ha sido posible actualizar la fase del pedido.', 400);
+};
+
+const getOrdersInProduction = async () => {
+  const sqlQuery = `
+  SELECT O.id_order, O.deadline, O.description, CO.name AS client, PU.pending_units
+  FROM "order" O
+  INNER JOIN client_organization CO ON O.id_client_organization = CO.id_client_organization
+  LEFT JOIN (
+    SELECT O.id_order, SUM(COALESCE(OD.quantity, 0) - COALESCE(OD.quantity_completed,0)) AS pending_units
+    FROM "order" O
+    INNER JOIN order_detail OD ON OD.id_order = O.id_order
+    GROUP BY O.id_order
+    HAVING SUM(COALESCE(OD.quantity, 0) - COALESCE(OD.quantity_completed,0)) > 0
+  ) PU ON O.id_order = PU.id_order
+  ORDER BY O.deadline, PU.pending_units DESC
+  `;
+
+  const { result, rowCount } = await query(sqlQuery);
+
+  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  return result.map((res) => ({
+    orderId: res.id_order,
+    deadline: res.deadline,
+    description: res.description,
+    client: res.client,
+    pendingUnits: res.pending_units,
+  }));
 };
 
 export {
   newOrder,
   getOrders,
   getOrderById,
+  updateOrderPhase,
+  getOrdersInProduction,
 };

@@ -42,6 +42,7 @@ create table "order"(
 	deadline date,
 	description text,
 	id_client_organization VARCHAR(15),
+	production_phase INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE "size"(
@@ -69,8 +70,17 @@ CREATE TABLE order_detail(
 	"size" VARCHAR(10),
 	quantity INT,
 	unit_cost FLOAT,
-	PRIMARY KEY(no_order, product, "size")
+	quantity_completed INT,
+	PRIMARY KEY(id_order, id_product, "size")
 );
+
+CREATE TABLE order_progress(
+	id_order VARCHAR(15) NOT NULL,
+	id_product VARCHAR(15) NOT NULL,
+	"size" VARCHAR(10) NOT NULL,
+	date DATE NOT NULL,
+	description VARCHAR(50) NOT NULL
+)
 
 	CREATE TABLE material(
 		id_material VARCHAR(15) PRIMARY KEY,

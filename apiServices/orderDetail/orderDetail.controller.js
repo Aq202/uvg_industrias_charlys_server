@@ -1,5 +1,9 @@
 import CustomError from '../../utils/customError.js';
-import { getOrderDetails, newOrderDetail } from './orderDetail.model.js';
+import {
+  getProgressLog,
+  newOrderDetail,
+  updateProductProgress,
+} from './orderDetail.model.js';
 
 const newOrderDetailController = async (req, res) => {
   const {
@@ -23,15 +27,38 @@ const newOrderDetailController = async (req, res) => {
   }
 };
 
-const getOrderDetailsController = async (req, res) => {
-  const { noOrder, search } = req.query;
+const updateProductProgressController = async (req, res) => {
+  const {
+    completed, idOrder, idProduct, size,
+  } = req.body;
+  try {
+    await updateProductProgress({
+      completed, idOrder, idProduct, size,
+    });
+    res.send({ id: idOrder });
+  } catch (ex) {
+    let err = 'Ocurrio un error al actualizar la cantidad de unidades completadas.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getProgressLogController = async (req, res) => {
+  const { idOrder } = req.params;
+  const { idProduct, size } = req.body;
 
   try {
-    const result = await getOrderDetails(noOrder, search);
-
+    const result = await getProgressLog({
+      idOrder, idProduct, size,
+    });
     res.send(result);
   } catch (ex) {
-    let err = `Ocurrio un error al obtener el detalle de la orden ${noOrder}.`;
+    let err = 'Ocurrio un error obtener los registros de la bitácora.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -43,4 +70,8 @@ const getOrderDetailsController = async (req, res) => {
 };
 
 // eslint-disable-next-line import/prefer-default-export
-export { newOrderDetailController, getOrderDetailsController };
+export {
+  newOrderDetailController,
+  updateProductProgressController,
+  getProgressLogController,
+};

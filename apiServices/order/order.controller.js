@@ -1,4 +1,10 @@
-import { getOrderById, getOrders, newOrder } from './order.model.js';
+import {
+  getOrderById,
+  getOrders,
+  newOrder,
+  updateOrderPhase,
+  getOrdersInProduction,
+} from './order.model.js';
 import CustomError from '../../utils/customError.js';
 import OrderAcceptedEmail from '../../services/email/OrderAcceptedEmail.js';
 import consts from '../../utils/consts.js';
@@ -61,7 +67,7 @@ const getOrderByIdController = async (req, res) => {
   try {
     const result = await getOrderById(orderId);
     if (userId) {
-      const idClient = result.clientOrganization;
+      const idClient = result.idClientOrganization;
       await isMemberController({ userId, idClient });
     }
 
@@ -77,9 +83,46 @@ const getOrderByIdController = async (req, res) => {
     res.status(status).send({ err, status });
   }
 };
+const getOrdersInProductionController = async (req, res) => {
+  try {
+    const result = await getOrdersInProduction();
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener la información de los pedidos en producción.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const updateOrderPhaseController = async (req, res) => {
+  const { phase, idOrder } = req.body;
+  try {
+    if (parseInt(phase, 10) > consts.orderPhases.length) throw new CustomError(`La fase de una orden debe encontrarse entre 0 y ${consts.orderPhases.length - 1}.`, 400);
+
+    await updateOrderPhase({ phase, idOrder });
+    res.send({ id: idOrder });
+  } catch (ex) {
+    let err = 'Ocurrio un error al actualizar la fase del pedido.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
 
 export {
   newOrderController,
   getOrdersController,
   getOrderByIdController,
+  updateOrderPhaseController,
+  getOrdersInProductionController,
 };

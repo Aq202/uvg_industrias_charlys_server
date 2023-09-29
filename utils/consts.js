@@ -23,6 +23,7 @@ const consts = {
   },
   imagePath: {
   },
+  orderPhases: ['Pronto a iniciar', 'En producción', 'Planchado y empaque', 'Listo para entrega'],
 };
 
 consts.imagePath.orderRequest = `${consts.apiPath}/image/orderRequest`;

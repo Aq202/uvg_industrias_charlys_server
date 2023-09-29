@@ -17,11 +17,12 @@ ADD CONSTRAINT session_user_fk FOREIGN KEY (id_user) REFERENCES user_account(id_
 ALTER TABLE "order"
 ADD CONSTRAINT order_client_fk FOREIGN KEY (id_client_organization) REFERENCES client_organization(id_client_organization);
 
-
+ALTER TABLE "order_detail" 
 ALTER TABLE "order_detail" 
 ADD CONSTRAINT od_order_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order),
 ADD CONSTRAINT od_product_fk FOREIGN KEY (id_product) REFERENCES product(id_product),
-ADD CONSTRAINT od_size_fk FOREIGN KEY ("size") REFERENCES "size"("size");
+ADD CONSTRAINT od_size_fk FOREIGN KEY ("size") REFERENCES "size"("size"),
+ADD CONSTRAINT od_quantity_completed_check CHECK (quantity_completed <= quantity);
 
 ALTER TABLE material
 ADD CONSTRAINT material_type_fk FOREIGN KEY (type) REFERENCES material_type(id_material_type);

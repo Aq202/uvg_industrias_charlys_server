@@ -17,6 +17,8 @@ import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.j
 import updateOrderRequestSchema from './validationSchemas/updateOrderRequestSchema.js';
 import parseObjectBodyProp from '../../middlewares/parseObjectBodyProp.js';
 import confirmTemporaryClientSchema from './validationSchemas/confirmTemporaryClientSchema.js';
+import consts from '../../utils/consts.js';
+import newClientOrderRequestByAdminSchema from './validationSchemas/newClientOrderRequestByAdminSchema.js';
 
 const orderRequestRouter = express.Router();
 
@@ -40,11 +42,12 @@ orderRequestRouter.post(
   ensureAdminOrClientAuth,
   multerMiddleware(uploadImage.any()),
   parseObjectBodyProp('products'),
-  validateBody(newClientOrderRequestSchema),
+  validateBody(newClientOrderRequestSchema, consts.role.client),
+  validateBody(newClientOrderRequestByAdminSchema, consts.role.admin),
   newLoggedOrderRequestController,
 );
 orderRequestRouter.get('/', ensureAdminAuth, getOrderRequestsController);
-orderRequestRouter.get('/:orderRequestId', ensureAdminAuth, getOrderRequestByIdController);
+orderRequestRouter.get('/:orderRequestId', ensureAdminOrClientAuth, getOrderRequestByIdController);
 
 orderRequestRouter.patch('/:orderRequestId/temporaryClient/confirm', ensureAdminAuth, validateBody(confirmTemporaryClientSchema), confirmTemporaryClientController);
 
