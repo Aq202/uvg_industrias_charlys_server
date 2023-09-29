@@ -1,5 +1,9 @@
 const parseObjectBodyProp = (key) => (req, res, next) => {
-  req.body[key] = JSON.parse(req.body[key]);
+  try {
+    req.body[key] = JSON.parse(req.body[key]);
+  } catch (ex) {
+    // Error al hacer el parseo
+  }
   next();
 };
 

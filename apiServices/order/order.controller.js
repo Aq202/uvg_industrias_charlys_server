@@ -3,6 +3,7 @@ import {
   getOrders,
   newOrder,
   updateOrderPhase,
+  getOrdersInProduction,
 } from './order.model.js';
 import CustomError from '../../utils/customError.js';
 import OrderAcceptedEmail from '../../services/email/OrderAcceptedEmail.js';
@@ -82,6 +83,22 @@ const getOrderByIdController = async (req, res) => {
     res.status(status).send({ err, status });
   }
 };
+const getOrdersInProductionController = async (req, res) => {
+  try {
+    const result = await getOrdersInProduction();
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener la información de los pedidos en producción.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
 
 const updateOrderPhaseController = async (req, res) => {
   const { phase, idOrder } = req.body;
@@ -105,4 +122,5 @@ export {
   getOrdersController,
   getOrderByIdController,
   updateOrderPhaseController,
+  getOrdersInProductionController,
 };

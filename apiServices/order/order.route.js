@@ -7,6 +7,7 @@ import {
   getOrdersController,
   newOrderController,
   updateOrderPhaseController,
+  getOrdersInProductionController,
 } from './order.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';
@@ -25,6 +26,8 @@ orderRouter.get(
   ensureAdminAuth,
   getOrdersController,
 );
+
+orderRouter.get('/inProduction', ensureAdminAuth, getOrdersInProductionController);
 
 orderRouter.get(
   '/:orderId?',
