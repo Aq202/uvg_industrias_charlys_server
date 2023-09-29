@@ -212,8 +212,16 @@ const getOrderRequestsController = async (req, res) => {
 
 const getOrderRequestByIdController = async (req, res) => {
   const { orderRequestId } = req.params;
+  const userId = req.session.role === consts.role.client ? req.session.userId : undefined;
+
   try {
     const result = await getOrderRequestById(orderRequestId);
+
+    if (userId) {
+      // Verificar (si es cliente) que sea dueño de la solicitud
+      const idClient = result.clientOrganization;
+      await isMemberController({ userId, idClient });
+    }
 
     if (result.temporaryClient) {
       // añadir datos de cliente temporal

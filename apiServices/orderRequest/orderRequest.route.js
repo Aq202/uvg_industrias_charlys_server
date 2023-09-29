@@ -47,7 +47,7 @@ orderRequestRouter.post(
   newLoggedOrderRequestController,
 );
 orderRequestRouter.get('/', ensureAdminAuth, getOrderRequestsController);
-orderRequestRouter.get('/:orderRequestId', ensureAdminAuth, getOrderRequestByIdController);
+orderRequestRouter.get('/:orderRequestId', ensureAdminOrClientAuth, getOrderRequestByIdController);
 
 orderRequestRouter.patch('/:orderRequestId/temporaryClient/confirm', ensureAdminAuth, validateBody(confirmTemporaryClientSchema), confirmTemporaryClientController);
 
