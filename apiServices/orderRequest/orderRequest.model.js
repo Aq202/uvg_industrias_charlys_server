@@ -1,6 +1,7 @@
 import query from '../../database/query.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
+import { getProductModelColors, getProductModelMedia } from '../product/product.model.js';
 
 const newOrderRequest = async ({
   description,
@@ -27,21 +28,36 @@ const newOrderRequest = async ({
     return result[0];
   } catch (ex) {
     if (ex?.code === '23503') {
-      if (ex.detail?.includes('id_client_organization')) { throw new CustomError('La organización cliente no existe.', 400); }
-      if (ex.detail?.includes('id_temporary_client')) { throw new CustomError('El cliente temporal no existe.', 400); }
+      if (ex.detail?.includes('id_client_organization')) {
+        throw new CustomError('La organización cliente no existe.', 400);
+      }
+      if (ex.detail?.includes('id_temporary_client')) {
+        throw new CustomError('El cliente temporal no existe.', 400);
+      }
     }
     throw ex;
   }
 };
 
 const newOrderRequestRequirement = async ({
-  idOrderRequest, idProductModel, size, quantity,
+  idOrderRequest,
+  idProductModel,
+  size,
+  quantity,
+  price,
 }) => {
-  const sql = `INSERT INTO order_request_requirement(id_order_request, id_product_model, "size", quantity)
-                VALUES ($1, $2, $3, $4)`;
+  const sql = `INSERT INTO order_request_requirement(id_order_request, id_product_model, "size", quantity, unit_cost)
+                VALUES ($1, $2, $3, $4, $5)`;
 
   try {
-    const { result, rowCount } = await query(sql, idOrderRequest, idProductModel, size, quantity);
+    const { result, rowCount } = await query(
+      sql,
+      idOrderRequest,
+      idProductModel,
+      size,
+      quantity,
+      price,
+    );
 
     if (rowCount !== 1) {
       throw new CustomError(
@@ -52,12 +68,24 @@ const newOrderRequestRequirement = async ({
 
     return result[0];
   } catch (ex) {
-    if (ex?.code === '23514') throw new CustomError('El modelo del producto no pertenece a esta organización.', 400);
-    if (ex?.code === '23505') throw new CustomError('No se permiten requerimientos duplicados con el mismo modelo de producto y talla.', 400);
+    
+    if (ex?.code === '23514') { throw new CustomError('El modelo del producto no pertenece a esta organización.', 400); }
+    if (ex?.code === '23505') {
+      throw new CustomError(
+        'No se permiten requerimientos duplicados con el mismo modelo de producto y talla.',
+        400,
+      );
+    }
     if (ex?.code === '23503') {
-      if (ex.detail?.includes('id_order_request')) { throw new CustomError('La solicitud de orden no existe.', 400); }
-      if (ex.detail?.includes('id_product_model')) { throw new CustomError('El modelo de producto no existe.', 400); }
-      if (ex.detail?.includes('size')) { throw new CustomError('La talla proporcionada no existe.', 400); }
+      if (ex.detail?.includes('id_order_request')) {
+        throw new CustomError('La solicitud de orden no existe.', 400);
+      }
+      if (ex.detail?.includes('id_product_model')) {
+        throw new CustomError('El modelo de producto no existe.', 400);
+      }
+      if (ex.detail?.includes('size')) {
+        throw new CustomError('La talla proporcionada no existe.', 400);
+      }
     }
     throw ex;
   }
@@ -69,7 +97,9 @@ const updateOrderRequest = async ({
   const sqlGet = 'select * from order_request where id_order_request = $1;';
   const { result: resultGet, rowCount: rowCountGet } = await query(sqlGet, idOrderRequest);
 
-  if (rowCountGet === 0) { throw new CustomError('No se han encontrado registros con el id proporcionado.', 404); }
+  if (rowCountGet === 0) {
+    throw new CustomError('No se han encontrado registros con el id proporcionado.', 404);
+  }
 
   const sqlUpdate = `update order_request set description = $1, deadline = $2,
     aditional_details = $3 where id_order_request = $4`;
@@ -125,50 +155,110 @@ const addOrderRequestMedia = async (orderRequestId, name) => {
 
   const { rowCount } = await query(sql, orderRequestId, name);
 
-  if (rowCount !== 1) { throw new CustomError('No se pudo guardar el recurso para la solicitud de orden.', 500); }
+  if (rowCount !== 1) {
+    throw new CustomError('No se pudo guardar el recurso para la solicitud de orden.', 500);
+  }
 };
 
 const getOrderRequestMedia = async (orderRequestId) => {
   const sql = 'SELECT name FROM order_request_media WHERE id_order_request = $1';
   const { result, rowCount } = await query(sql, orderRequestId);
 
-  return rowCount > 0
-    ? result.map((val) => `${consts.imagePath.orderRequest}/${val.name}`)
-    : null;
+  return rowCount > 0 ? result.map((val) => `${consts.imagePath.orderRequest}/${val.name}`) : null;
 };
 
 const getOrderRequestById = async (orderRequestId) => {
-  const sql = 'SELECT * FROM order_request WHERE id_order_request = $1';
-  const { result, rowCount } = await query(sql, orderRequestId);
+  const sql = `select "or".id_order_request, "or".description, "or".date_placed, "or".id_client_organization,
+  "or".id_temporary_client, "or".deadline, "or".aditional_details, orq.size, orq.quantity, orq.unit_cost,
+  pm.id_product_model, pm.name, pm.details, pt.name "type"
+  from order_request "or"
+  left join order_request_requirement orq on "or".id_order_request = orq.id_order_request
+  left join product_model pm on orq.id_product_model = pm.id_product_model
+  left join product_type pt on pt.id_product_type = pm.type
+  where "or".id_order_request = $1;`;
+  const { result: queryResult, rowCount } = await query(sql, orderRequestId);
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  const sqlProducts = `select pm.id_product_model, pm.name product, orr.size, orr.quantity, orr.unit_cost  from order_request_requirement orr
-    left join product_model pm on orr.id_product_model = pm.id_product_model
-    where id_order_request = $1;`;
-  const { result: productResult, rowCount: productRows } = await query(sqlProducts, orderRequestId);
+  const transformedData = await queryResult.reduce(async (accPromise, current) => {
+    const acc = await accPromise;
 
-  const detail = productRows === 0 ? [] : productResult.map((product) => ({
-    id: product.id_product_model,
-    product: product.product,
-    size: product.size,
-    quantity: product.quantity,
-    unit_price: product.unit_cost,
-  }));
+    if (current.id_product_model === null) return acc;
 
-  const [val] = result;
+    const currentProduct = acc.find(
+      (item) => current.id_product_model === item.id
+        && current.name === item.product
+        && current.type === item.type,
+    );
+
+    if (currentProduct) {
+      currentProduct.sizes.push({
+        size: current.size,
+        quantity: current.quantity,
+        unit_price: current.unit_cost,
+      });
+    } else {
+      const newProduct = {
+        id: current.id_product_model,
+        product: current.name,
+        type: current.type,
+        media: await getProductModelMedia(current.id_product_model),
+        colors: await getProductModelColors(current.id_product_model),
+        sizes: [
+          {
+            size: current.size,
+            quantity: current.quantity,
+            unit_price: current.unit_cost,
+          },
+        ],
+      };
+
+      acc.push(newProduct);
+    }
+
+    return acc;
+  }, []);
 
   const media = await getOrderRequestMedia(orderRequestId);
 
-  return {
-    id: val.id_order_request,
-    description: val.description,
-    datePlaced: val.date_placed,
-    deadline: val.deadline,
-    details: val.aditional_details,
+  const result = {
+    id: queryResult[0].id_order_request,
+    clientOrganization: queryResult[0].id_client_organization,
+    temporaryClient: queryResult[0].id_temporary_client,
+    description: queryResult[0].description,
+    datePlaced: queryResult[0].date_placed,
+    deadline: queryResult[0].deadline,
+    details: queryResult[0].aditional_details,
     media,
-    detail,
+    detail: transformedData.length > 0 ? transformedData : null,
   };
+
+  return result;
+};
+
+const getOrderRequestTemporaryClientId = async (orderRequestId) => {
+  const sqlQuery = 'SELECT id_temporary_client FROM order_request WHERE id_order_request = $1;';
+
+  const { result, rowCount } = await query(sqlQuery, orderRequestId);
+
+  if (rowCount === 0) throw new CustomError('No se encontró la solicidut de orden.', 404);
+  if (!result || !result[0]?.id_temporary_client) { throw new CustomError('La solicitud de orden no cuenta con un cliente temporal', 400); }
+
+  return result[0].id_temporary_client;
+};
+
+const replaceTemporaryClientWithOrganization = async ({ orderRequestId, organizationId }) => {
+  try {
+    const sqlQuery = `UPDATE order_request SET id_client_organization = $1, id_temporary_client = NULL 
+    WHERE id_order_request = $2`;
+
+    const { rowCount } = await query(sqlQuery, organizationId, orderRequestId);
+
+    if (rowCount === 0) throw new CustomError('No se encontró la solicidut de orden.', 404);
+  } catch (ex) {
+    if (ex?.code === '22001' || ex?.code === '23503') { throw new CustomError('La organización con el id proporcionado no existe.', 400); }
+    throw ex;
+  }
 };
 
 export {
@@ -178,4 +268,6 @@ export {
   getOrderRequestById,
   updateOrderRequest,
   newOrderRequestRequirement,
+  getOrderRequestTemporaryClientId,
+  replaceTemporaryClientWithOrganization,
 };

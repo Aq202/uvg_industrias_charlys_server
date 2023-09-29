@@ -23,9 +23,12 @@ const consts = {
   },
   imagePath: {
   },
+  orderPhases: ['Pronto a iniciar', 'En producción', 'Planchado y empaque', 'Listo para entrega'],
 };
 
 consts.imagePath.orderRequest = `${consts.apiPath}/image/orderRequest`;
+consts.imagePath.order = `${consts.apiPath}/image/order`;
 consts.imagePath.product = `${consts.apiPath}/image/product`;
+consts.imagePath.productModel = `${consts.apiPath}/image/productModel`;
 
 export default consts;

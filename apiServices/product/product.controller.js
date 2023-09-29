@@ -18,6 +18,9 @@ import {
   newRequeriment,
   updateProductModel,
   verifyProductModelOwner,
+  verifyProductOwner,
+  getProductById,
+  removeProductModelMedia,
 } from './product.model.js';
 import { begin, commit, rollback } from '../../database/transactions.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
@@ -275,7 +278,7 @@ const newProductModelController = async (req, res) => {
 
 const updateProductModelController = async (req, res) => {
   const {
-    idProductModel, type, idClientOrganization, name, details,
+    idProductModel, type, idClientOrganization, name, details, imagesToRemove,
   } = req.body;
 
   try {
@@ -294,6 +297,24 @@ const updateProductModelController = async (req, res) => {
       await saveProductModelMedia({ files: req.uploadedFiles, idProductModel });
     }
 
+    // remover media
+    if (imagesToRemove) {
+      const mediaKeys = [];
+
+      // remover en la bd
+      for (const imageUrl of imagesToRemove) {
+        const urlParts = imageUrl.split('/');
+        const mediaKey = urlParts[urlParts.length - 1];
+        // eslint-disable-next-line no-await-in-loop
+        await removeProductModelMedia({ idProductModel, name: mediaKey });
+        mediaKeys.push(mediaKey);
+      }
+
+      // Delete al files in bucket
+      await Promise.all(
+        mediaKeys.map(async (mediaKey) => deleteFileInBucket(`${consts.bucketRoutes.product}/${mediaKey}`)),
+      );
+    }
     await commit();
 
     res.send({ idProductModel });
@@ -333,6 +354,29 @@ const getProductModelByIdController = async (req, res) => {
   }
 };
 
+const getProductByIdController = async (req, res) => {
+  const { idProduct } = req.params;
+  try {
+    if (req.session.role === consts.role.client) {
+      await verifyProductOwner({
+        idClientOrganization: req.session.organization,
+        idProduct,
+      });
+    }
+    const result = await getProductById({ idProduct });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al obtener la información del producto.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newProuctTypeController,
   getProuctTypesController,
@@ -345,4 +389,5 @@ export {
   getProuctTypesByOrganizationController,
   getProductModelByIdController,
   updateProductModelController,
+  getProductByIdController,
 };

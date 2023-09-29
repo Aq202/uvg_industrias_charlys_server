@@ -4,16 +4,13 @@ import CustomError from '../../utils/customError.js';
 
 const getOrganizationById = async ({ idClient }) => {
   const sqlOrg = 'SELECT * FROM client_organization where id_client_organization = $1;';
-  const sqlTemp = 'SELECT * FROM temporary_client where id_temporary_client = $1;';
 
-  let { result, rowCount } = await query(sqlOrg, idClient);
+  const { result, rowCount } = await query(sqlOrg, idClient);
 
-  if (rowCount === 0) {
-    ({ result, rowCount } = await query(sqlTemp, idClient));
-    if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
-  }
+  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
+
   return result.map((val) => ({
-    id: val.id_temporary_client || val.id_client_organization,
+    id: val.id_client_organization,
     name: val.name,
     email: val.email,
     phone: val.phone,
@@ -102,29 +99,63 @@ const isMember = async ({ userId, idClient }) => {
   return result[0].exists;
 };
 
-const getOrders = async ({ idClient, page, search = '' }) => {
+const getOrders = async ({
+  idClient, page, idProduct, startDeadline, endDeadline, search = '',
+}) => {
   const offset = page * consts.pageLength;
-  const sqlCount = `select ceiling(count(*) / $1:: numeric) from "order"
-    where(id_client_organization = $2)
-    and(description ilike $3); `;
-  const pages = (await query(sqlCount, consts.pageLength, idClient, `%${search}%`)).result[0].ceiling;
+  const conditions = {
+    count: [],
+    query: [],
+  };
+  const params = [consts.pageLength, idClient, `%${search}%`];
 
-  const sql = `select * from "order"
-    where(id_client_organization = $1)
-    and(description ilike $2) ${page !== undefined ? 'LIMIT $3 OFFSET $4;' : ''}`;
+  if (idProduct !== undefined) {
+    conditions.count.push(`p.id_product = $${params.length + 1}`);
+    conditions.query.push(`p.id_product = $${params.length}`);
+    params.push(idProduct);
+  }
+  if (startDeadline !== undefined) {
+    conditions.count.push(`o.deadline >= $${params.length + 1}`);
+    conditions.query.push(`o.deadline >= $${params.length}`);
+    params.push(startDeadline);
+  }
+  if (endDeadline !== undefined) {
+    conditions.count.push(`o.deadline <= $${params.length + 1}`);
+    conditions.query.push(`o.deadline <= $${params.length}`);
+    params.push(endDeadline);
+  }
 
-  const { result, rowCount } = page === undefined
-    ? await query(sql, idClient, `%${search}%`)
-    : await query(sql, idClient, `%${search}%`, consts.pageLength, offset);
+  const sqlCount = `select ceiling(count(*) / $1::numeric) from(
+    select distinct o.id_order, o.description, o.deadline from "order" o
+      left join order_detail od on o.id_order = od.id_order
+      left join product p on od.id_product = p.id_product
+      where o.id_client_organization = $2
+        and (o.description ilike $3 or p.name ilike $3)      
+        ${conditions.count.length > 0 ? `AND ${conditions.count.join(' and ')}` : ''}
+  ) as subquery;`;
+
+  const pages = (await query(sqlCount, ...params)).result[0].ceiling;
+
+  if (pages === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  if (page !== undefined) params.push(consts.pageLength, offset);
+
+  const sql = `select distinct o.id_order, o.description, o.deadline from "order" o
+  left join order_detail od on o.id_order = od.id_order
+  left join product p on od.id_product = p.id_product
+  where o.id_client_organization = $1
+  and (o.description ilike $2 or p.name ilike $2)
+    ${conditions.query.length > 0 ? `AND ${conditions.query.join(' and ')}` : ''}
+    ${page !== undefined ? `LIMIT $${params.length - 2} OFFSET $${params.length - 1}` : ''}`;
+
+  const { result, rowCount } = await query(sql, ...params.slice(1));
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
   const response = result.map((val) => ({
-    id: val.id_order_request,
+    id: val.id_order,
     description: val.description,
-    client: val.id_client_organization,
     deadline: val.deadline,
-    cost: val.cost,
   }));
   return { result: response, count: pages };
 };

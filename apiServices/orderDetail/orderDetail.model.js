@@ -30,42 +30,39 @@ const newOrderDetail = async ({
   }
 };
 
-const getOrderDetails = async (noOrder, searchQuery) => {
-  let queryResult;
-  if (searchQuery) {
-    const sql = `select od.no_order, pt.name product, prod.client client_id, co.name client,
-                prod.color, s.size, od.quantity from order_detail od
-                inner join product prod on od.product = prod.id_product
-                inner join product_type pt on prod.type = pt.id_product_type
-                inner join client_organization co on prod.client = co.id_client_organization
-                inner join "size" s on od.size = s.id_size
-                where no_order = $1
-                AND (pt.name ilike $2 or client ilike $2 or color ilike $2)`;
-    queryResult = await query(sql, noOrder, `%${searchQuery}%`);
-  } else {
-    const sql = `select od.no_order, pt.name product, prod.client client_id, co.name client,
-                prod.color, s.size, od.quantity from order_detail od
-                inner join product prod on od.product = prod.id_product
-                inner join product_type pt on prod.type = pt.id_product_type
-                inner join client_organization co on prod.client = co.id_client_organization
-                inner join "size" s on od.size = s.id_size
-                where no_order = $1`;
-    queryResult = await query(sql, noOrder);
-  }
+const getProgressLog = async ({
+  idOrder, idProduct, size,
+}) => {
+  const sql = `select date, description from order_progress where id_order = $1
+    and id_product = $2 and "size" = $3 order by date desc;`;
+  const { result, rowCount } = await query(sql, idOrder, idProduct, size);
+  if (rowCount === 0) throw new CustomError('No se han encontrado registros.', 404);
 
-  const { result, rowCount } = queryResult;
-
-  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
-
-  return result.map((val) => ({
-    order: val.no_order,
-    product: val.product,
-    client_id: val.client_id,
-    client: val.client,
-    color: val.color,
-    size: val.size,
-    quantity: val.quantity,
-  }));
+  return {
+    id_order: idOrder,
+    id_product: idProduct,
+    size,
+    logs: result,
+  };
 };
 
-export { getOrderDetails, newOrderDetail };
+const updateProductProgress = async ({
+  completed, idOrder, idProduct, size,
+}) => {
+  const sql = `update order_detail set quantity_completed = $1 where id_order = $2
+    and id_product = $3 and size = $4`;
+  try {
+    const { rowCount } = await query(sql, completed, idOrder, idProduct, size);
+    if (rowCount === 0) throw new CustomError('No se encontró el registro.', 400);
+  } catch (ex) {
+    if (ex?.code === '22P02') { throw new CustomError('El valor ingresado no es válido.', 400); }
+    if (ex?.code === 'P0001') { throw new CustomError(ex.message, 400); }
+    throw ex;
+  }
+};
+
+export {
+  newOrderDetail,
+  updateProductProgress,
+  getProgressLog,
+};
