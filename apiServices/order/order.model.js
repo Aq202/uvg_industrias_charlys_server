@@ -198,7 +198,7 @@ const getOrdersInProduction = async () => {
   SELECT O.id_order, O.deadline, O.description, CO.name AS client, PU.pending_units
   FROM "order" O
   INNER JOIN client_organization CO ON O.id_client_organization = CO.id_client_organization
-  INNER JOIN (
+  LEFT JOIN (
     SELECT O.id_order, SUM(COALESCE(OD.quantity, 0) - COALESCE(OD.quantity_completed,0)) AS pending_units
     FROM "order" O
     INNER JOIN order_detail OD ON OD.id_order = O.id_order
