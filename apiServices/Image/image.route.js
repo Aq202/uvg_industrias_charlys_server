@@ -6,6 +6,8 @@ import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.j
 const imageRouter = express.Router();
 
 imageRouter.get('/orderRequest/:id', ensureAdminAuth, getOrderRequestImageController);
+imageRouter.get('/order/:id', ensureAdminAuth, getOrderRequestImageController);
 imageRouter.get('/product/:id', ensureAdminOrClientAuth, getProductImageController);
+imageRouter.get('/productModel/:id', ensureAdminOrClientAuth, getProductImageController);
 
 export default imageRouter;
