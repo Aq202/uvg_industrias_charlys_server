@@ -67,7 +67,7 @@ const getOrderByIdController = async (req, res) => {
   try {
     const result = await getOrderById(orderId);
     if (userId) {
-      const idClient = result.clientOrganization;
+      const idClient = result.idClientOrganization;
       await isMemberController({ userId, idClient });
     }
 
