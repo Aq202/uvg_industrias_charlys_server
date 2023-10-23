@@ -193,6 +193,13 @@ const updateOrderPhase = async ({ phase, idOrder }) => {
   if (rowCount === 0) throw new CustomError('No ha sido posible actualizar la fase del pedido.', 400);
 };
 
+const deleteOrder = async ({ orderId }) => {
+  const sql = 'delete from "order" where id_order = $1';
+  const { rowCount } = await query(sql, orderId);
+  if (rowCount === 0) throw new Error('Error al eliminar orden en la base de datos.');
+  return true;
+};
+
 const getOrdersInProduction = async () => {
   const sqlQuery = `
   SELECT O.id_order, O.deadline, O.description, CO.name AS client, PU.pending_units
@@ -227,4 +234,5 @@ export {
   getOrderById,
   updateOrderPhase,
   getOrdersInProduction,
+  deleteOrder,
 };
