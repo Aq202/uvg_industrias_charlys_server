@@ -18,8 +18,8 @@ ALTER TABLE "order"
 ADD CONSTRAINT order_client_fk FOREIGN KEY (id_client_organization) REFERENCES client_organization(id_client_organization);
 
 ALTER TABLE "order_detail" 
-ALTER TABLE "order_detail" 
-ADD CONSTRAINT od_order_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order),
+ADD CONSTRAINT od_order_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order) ON DELETE CASCADE,
+
 ADD CONSTRAINT od_product_fk FOREIGN KEY (id_product) REFERENCES product(id_product),
 ADD CONSTRAINT od_size_fk FOREIGN KEY ("size") REFERENCES "size"("size"),
 ADD CONSTRAINT od_quantity_completed_check CHECK (quantity_completed <= quantity);
@@ -62,7 +62,7 @@ ALTER TABLE order_request_media
 ADD CONSTRAINT ord_req_media_fk FOREIGN KEY (id_order_request) REFERENCES order_request(id_order_request);
 
 ALTER TABLE order_media
-ADD CONSTRAINT ord_media_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order);
+ADD CONSTRAINT ord_media_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order) ON DELETE CASCADE;
 
 ALTER TABLE temporary_client 
 ADD CONSTRAINT temp_client_check_email CHECK (email ~ '^(([^<>()\[\]\\.,;:\s@”]+(\.[^<>()\[\]\\.,;:\s@”]+)*)|(“.+”))@((\[[0–9]{1,3}\.[0–9]{1,3}\.[0–9]{1,3}\.[0–9]{1,3}])|(([a-zA-Z\-0–9]+\.)+[a-zA-Z]{2,}))$');
@@ -92,8 +92,12 @@ ADD CONSTRAINT orr_product_model_fk FOREIGN KEY (id_product_model) REFERENCES pr
 ADD CONSTRAINT orr_size_fk FOREIGN KEY ("size") REFERENCES "size"("size");
 
 ALTER TABLE product_color
-ADD CONSTRAINT p_product_fk FOREIGN KEY (id_product) REFERENCES product(id_product),
+ADD CONSTRAINT p_product_fk FOREIGN KEY (id_product) REFERENCES product(id_product) ON DELETE CASCADE,
 ADD CONSTRAINT p_color_fk FOREIGN KEY (id_color) REFERENCES color(id_color);
 
 ALTER TABLE product_media
-ADD CONSTRAINT p_media_fk FOREIGN KEY (id_product) REFERENCES product(id_product);
+ADD CONSTRAINT p_media_fk FOREIGN KEY (id_product) REFERENCES product(id_product) ON DELETE CASCADE;
+
+ALTER TABLE order_progress
+ADD CONSTRAINT p_progress_fk FOREIGN KEY (id_product) REFERENCES product(id_product) ON DELETE CASCADE,
+ADD CONSTRAINT o_progress_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order) ON DELETE CASCADE;

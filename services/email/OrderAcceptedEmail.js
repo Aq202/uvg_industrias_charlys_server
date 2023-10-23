@@ -20,10 +20,9 @@ export default class OrderAcceptedEmail extends Email {
     Número de Pedido Resultante: #${idOrder}
     <br>
     <br>
-    ${detail.map((product) => (`${product.name} | Talla: ${product.size} - ${product.quantity} ${product.quantity > 1 ? 'unidades' : 'unidad'}. (Q${product.unit_cost.toFixed(2)})`)).join('<br>')}
+    ${detail.map((product) => (`${product.name} | Talla: ${product.size} - ${product.quantity} ${product.quantity > 1 ? 'unidades' : 'unidad'}. ${product.unit_cost !== null ? `(Q${product.unit_cost.toFixed(2)})` : ''}`)).join('<br>')}
     <br>
-    Total del Pedido: Q${total.toFixed(2)}
-    <br>
+    ${total !== null ? `Total del Pedido: Q${total.toFixed(2)}<br>` : ''}
     <br>
     Su pedido está en proceso y pronto estará listo para el envío.
     Nuestro equipo trabaja para brindarle la mejor experiencia de compra y asegurarse de que reciba sus productos de manera oportuna.

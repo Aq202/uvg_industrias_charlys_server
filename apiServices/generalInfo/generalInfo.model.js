@@ -2,7 +2,7 @@ import query from '../../database/query.js';
 import CustomError from '../../utils/customError.js';
 
 const newSize = async ({ size }) => {
-  const sql = 'INSERT INTO "size"("size") VALUES($1) RETURNING id_size as id;';
+  const sql = 'INSERT INTO "size"("size") VALUES($1) RETURNING "size", "sequence" as id, "sequence";';
 
   try {
     const { result, rowCount } = await query(sql, size);
@@ -11,13 +11,27 @@ const newSize = async ({ size }) => {
 
     return result[0];
   } catch (ex) {
+    if (ex?.code === '23505') throw new CustomError('Esta talla ya existe.', 400);
     const error = 'Datos no válidos.';
     throw new CustomError(error, 400);
   }
 };
 
-const getSizes = async () => {
-  const queryResult = await query('select * from size');
+const deleteSize = async ({ sizeId }) => {
+  const sql = 'DELETE FROM "size" WHERE "size" = $1;';
+  try {
+    const { rowCount } = await query(sql, sizeId);
+
+    if (rowCount !== 1) throw new CustomError('No se ha encontrado la talla especificada.', 404);
+    return true;
+  } catch (ex) {
+    if (ex?.code === '23503') throw new CustomError('Esta talla ya se encuentra en uso.', 400);
+    throw ex;
+  }
+};
+
+const getSizes = async ({ search = '' }) => {
+  const queryResult = await query('select * from size where "size" ilike $1 order by "sequence" asc', `%${search}%`);
 
   const { result, rowCount } = queryResult;
 
@@ -128,4 +142,5 @@ export {
   newMaterial,
   getFabrics,
   newFabric,
+  deleteSize,
 };

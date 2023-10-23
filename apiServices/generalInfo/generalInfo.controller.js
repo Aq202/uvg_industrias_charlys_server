@@ -1,5 +1,6 @@
 import CustomError from '../../utils/customError.js';
 import {
+  deleteSize,
   getFabrics,
   getMaterials, getSizes, newFabric, newMaterial, newSize,
 } from './generalInfo.model.js';
@@ -22,9 +23,28 @@ const newSizeController = async (req, res) => {
   }
 };
 
-const getSizesController = async (req, res) => {
+const deleteSizeController = async (req, res) => {
+  const { size: sizeId } = req.body;
+
   try {
-    const result = await getSizes();
+    const result = await deleteSize({ sizeId });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al eliminar la talla.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getSizesController = async (req, res) => {
+  const { search } = req.query;
+  try {
+    const result = await getSizes({ search });
 
     res.send(result);
   } catch (ex) {
@@ -118,4 +138,5 @@ export {
   getMaterialsController,
   newFabricController,
   getFabricsController,
+  deleteSizeController,
 };
