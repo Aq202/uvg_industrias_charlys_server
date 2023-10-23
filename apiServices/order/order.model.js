@@ -196,7 +196,7 @@ const updateOrderPhase = async ({ phase, idOrder }) => {
 const deleteOrder = async ({ orderId }) => {
   const sql = 'delete from "order" where id_order = $1';
   const { rowCount } = await query(sql, orderId);
-  if (rowCount === 0) throw new Error('Error al eliminar orden en la base de datos.');
+  if (rowCount === 0) throw new CustomError('No se ha encontrado la orden indicada.', 404);
   return true;
 };
 

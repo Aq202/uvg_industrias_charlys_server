@@ -1,5 +1,7 @@
 import CustomError from '../../utils/customError.js';
-import { getColors, getColorsByOrganization, newColor } from './color.model.js';
+import {
+  deleteColor, getColors, getColorsByOrganization, newColor,
+} from './color.model.js';
 
 const newColorController = async (req, res) => {
   const {
@@ -60,8 +62,27 @@ const getColorsByOrganizationController = async (req, res) => {
   }
 };
 
+const deleteColorController = async (req, res) => {
+  const { idColor: colorId } = req.body;
+  try {
+    const result = await deleteColor({ colorId });
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al eliminar el color indicado.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newColorController,
   getColorsController,
   getColorsByOrganizationController,
+  deleteColorController,
 };

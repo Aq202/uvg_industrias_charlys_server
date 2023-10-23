@@ -63,8 +63,21 @@ const getColorsByOrganization = async ({ idOrganization, search = '' }) => {
   return result;
 };
 
+const deleteColor = async ({ colorId }) => {
+  const sql = 'delete from color where id_color =$1';
+  try {
+    const { rowCount } = await query(sql, colorId);
+    if (rowCount === 0) throw new CustomError('No se ha encontrado el color.', 404);
+    return true;
+  } catch (ex) {
+    if (ex?.code === '23503') throw new CustomError('Este color ya se encuentra en uso.', 400);
+    throw ex;
+  }
+};
+
 export {
   getColors,
   newColor,
   getColorsByOrganization,
+  deleteColor,
 };
