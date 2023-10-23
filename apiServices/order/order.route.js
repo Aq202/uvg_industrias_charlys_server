@@ -8,9 +8,11 @@ import {
   newOrderController,
   updateOrderPhaseController,
   getOrdersInProductionController,
+  deleteOrderController,
 } from './order.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';
+import deleteOrderSchema from './validationSchemas/deleteOrderSchema.js';
 
 const orderRouter = express.Router();
 
@@ -41,5 +43,6 @@ orderRouter.put(
   validateBody(updatePhaseSchema),
   updateOrderPhaseController,
 );
+orderRouter.delete('/', ensureAdminAuth, validateBody(deleteOrderSchema), deleteOrderController);
 
 export default orderRouter;

@@ -16,8 +16,8 @@ const newSize = async ({ size }) => {
   }
 };
 
-const getSizes = async () => {
-  const queryResult = await query('select * from size');
+const getSizes = async ({ search = '' }) => {
+  const queryResult = await query('select * from size where "size" ilike $1', `%${search}%`);
 
   const { result, rowCount } = queryResult;
 

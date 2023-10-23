@@ -23,8 +23,9 @@ const newSizeController = async (req, res) => {
 };
 
 const getSizesController = async (req, res) => {
+  const { search } = req.query;
   try {
-    const result = await getSizes();
+    const result = await getSizes({ search });
 
     res.send(result);
   } catch (ex) {
