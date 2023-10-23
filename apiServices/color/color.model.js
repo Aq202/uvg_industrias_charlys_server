@@ -47,14 +47,14 @@ const getColors = async ({ search }) => {
   }));
 };
 
-const getColorsByOrganization = async ({ idOrganization }) => {
+const getColorsByOrganization = async ({ idOrganization, search = '' }) => {
   const sqlQuery = `SELECT DISTINCT C.id_color as id, C.name, C.red, C.green, C.blue FROM color C
   INNER JOIN product_model_color CM ON CM.id_color = C.id_color
   INNER JOIN product_model M ON M.id_product_model = CM.id_product_model
   INNER JOIN client_organization O ON M.id_client_organization = O.id_client_organization
-  WHERE O.id_client_organization = $1`;
+  WHERE O.id_client_organization = $1 and (C.name ilike $2)`;
 
-  const queryResult = await query(sqlQuery, idOrganization);
+  const queryResult = await query(sqlQuery, idOrganization, `%${search}%`);
 
   const { result, rowCount } = queryResult;
 

@@ -9,6 +9,6 @@ const colorRouter = express.Router();
 
 colorRouter.post('/', ensureAdminAuth, validateBody(newColorSchema), newColorController);
 colorRouter.get('/', ensureAdminAuth, getColorsController);
-colorRouter.get('/by-organization/:idOrganization', ensureAdminOrClientAuth, getColorsByOrganizationController);
+colorRouter.get('/organization/:idOrganization', ensureAdminOrClientAuth, getColorsByOrganizationController);
 
 export default colorRouter;
