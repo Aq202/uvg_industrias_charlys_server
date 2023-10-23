@@ -101,3 +101,17 @@ ADD CONSTRAINT p_media_fk FOREIGN KEY (id_product) REFERENCES product(id_product
 ALTER TABLE order_progress
 ADD CONSTRAINT p_progress_fk FOREIGN KEY (id_product) REFERENCES product(id_product) ON DELETE CASCADE,
 ADD CONSTRAINT o_progress_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order) ON DELETE CASCADE;
+
+ALTER TABLE "order"
+ADD COLUMN is_finished BOOLEAN DEFAULT false;
+
+ALTER TABLE "size"
+	DROP COLUMN "sequence",
+	ADD COLUMN "sequence" smallint UNIQUE;
+
+DROP SEQUENCE "size_sequence";
+CREATE SEQUENCE "size_sequence"
+	MINVALUE 0
+	CACHE 10;
+
+UPDATE "size" set "sequence" = nextval('size_sequence');

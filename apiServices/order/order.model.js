@@ -13,6 +13,14 @@ const getOrderMedia = async (orderId) => {
     : null;
 };
 
+const isFinishedOrder = async ({ orderId, finished = true }) => {
+  const sql = 'update "order" set is_finished = $1 where id_order = $2';
+
+  const { rowCount } = await query(sql, finished, orderId);
+  if (rowCount === 0) throw CustomError('No se ha encontrado la orden especificada.', 404);
+  return true;
+};
+
 const getOrderById = async (orderId) => {
   const sql = `select o.id_order, o.description, o.id_client_organization,
   o.deadline, o.production_phase, od.size, od.quantity, od.quantity_completed, od.unit_cost,
@@ -235,4 +243,5 @@ export {
   updateOrderPhase,
   getOrdersInProduction,
   deleteOrder,
+  isFinishedOrder,
 };
