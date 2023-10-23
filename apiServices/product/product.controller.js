@@ -359,7 +359,7 @@ const getProductByIdController = async (req, res) => {
   try {
     if (req.session.role === consts.role.client) {
       await verifyProductOwner({
-        idClientOrganization: req.session.organization,
+        idClientOrganization: req.session.clientOrganizationId,
         idProduct,
       });
     }
