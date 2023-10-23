@@ -1,3 +1,4 @@
+import { begin, commit, rollback } from '../../database/transactions.js';
 import CustomError from '../../utils/customError.js';
 import {
   getProgressLog,
@@ -29,14 +30,22 @@ const newOrderDetailController = async (req, res) => {
 
 const updateProductProgressController = async (req, res) => {
   const {
-    completed, idOrder, idProduct, size,
+    idOrder, idProduct, completed,
   } = req.body;
   try {
-    await updateProductProgress({
-      completed, idOrder, idProduct, size,
-    });
+    await begin();
+
+    for (const productVariant of completed) {
+      // eslint-disable-next-line no-await-in-loop
+      await updateProductProgress({
+        completed: productVariant.quantity, idOrder, idProduct, size: productVariant.size,
+      });
+    }
+
+    await commit();
     res.send({ id: idOrder });
   } catch (ex) {
+    await rollback();
     let err = 'Ocurrio un error al actualizar la cantidad de unidades completadas.';
     let status = 500;
     if (ex instanceof CustomError) {
@@ -69,9 +78,7 @@ const getProgressLogController = async (req, res) => {
   }
 };
 
-// eslint-disable-next-line import/prefer-default-export
 export {
-  newOrderDetailController,
-  updateProductProgressController,
+  newOrderDetailController, updateProductProgressController,
   getProgressLogController,
 };
