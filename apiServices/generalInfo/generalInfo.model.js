@@ -2,7 +2,7 @@ import query from '../../database/query.js';
 import CustomError from '../../utils/customError.js';
 
 const newSize = async ({ size }) => {
-  const sql = 'INSERT INTO "size"("size") VALUES($1) RETURNING size as id;';
+  const sql = 'INSERT INTO "size"("size") VALUES($1) RETURNING "size", "sequence" as id, "sequence";';
 
   try {
     const { result, rowCount } = await query(sql, size);
@@ -17,8 +17,16 @@ const newSize = async ({ size }) => {
   }
 };
 
+const deleteSize = async ({ sizeId }) => {
+  const sql = 'DELETE FROM "size" WHERE "size" = $1;';
+  const { rowCount } = await query(sql, sizeId);
+
+  if (rowCount !== 1) throw new CustomError('No se ha encontrado la talla especificada.', 404);
+  return true;
+};
+
 const getSizes = async ({ search = '' }) => {
-  const queryResult = await query('select * from size where "size" ilike $1', `%${search}%`);
+  const queryResult = await query('select * from size where "size" ilike $1 order by "sequence" asc', `%${search}%`);
 
   const { result, rowCount } = queryResult;
 
@@ -129,4 +137,5 @@ export {
   newMaterial,
   getFabrics,
   newFabric,
+  deleteSize,
 };
