@@ -2,7 +2,7 @@ import query from '../../database/query.js';
 import CustomError from '../../utils/customError.js';
 
 const newSize = async ({ size }) => {
-  const sql = 'INSERT INTO "size"("size") VALUES($1) RETURNING id_size as id;';
+  const sql = 'INSERT INTO "size"("size") VALUES($1) RETURNING size as id;';
 
   try {
     const { result, rowCount } = await query(sql, size);
@@ -11,6 +11,7 @@ const newSize = async ({ size }) => {
 
     return result[0];
   } catch (ex) {
+    if (ex?.code === '23505') throw new CustomError('Esta talla ya existe.', 400);
     const error = 'Datos no válidos.';
     throw new CustomError(error, 400);
   }
