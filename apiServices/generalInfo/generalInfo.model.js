@@ -19,10 +19,15 @@ const newSize = async ({ size }) => {
 
 const deleteSize = async ({ sizeId }) => {
   const sql = 'DELETE FROM "size" WHERE "size" = $1;';
-  const { rowCount } = await query(sql, sizeId);
+  try {
+    const { rowCount } = await query(sql, sizeId);
 
-  if (rowCount !== 1) throw new CustomError('No se ha encontrado la talla especificada.', 404);
-  return true;
+    if (rowCount !== 1) throw new CustomError('No se ha encontrado la talla especificada.', 404);
+    return true;
+  } catch (ex) {
+    if (ex?.code === '23503') throw new CustomError('Esta talla ya se encuentra en uso.', 400);
+    throw ex;
+  }
 };
 
 const getSizes = async ({ search = '' }) => {
