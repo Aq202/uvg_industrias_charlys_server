@@ -3,6 +3,7 @@ import yup from 'yup';
 export default yup
   .object()
   .shape({
+    imagesToRemove: yup.array(yup.string()).nullable().typeError("El campo 'imagesToRemove' debe ser una lista."),
     description: yup.string().nullable(),
     deadline: yup.date().typeError("El campo 'deadline' debe esr una fecha."),
     cost: yup.number().typeError("El campo 'cost' debe ser un número."),

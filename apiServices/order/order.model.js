@@ -222,7 +222,8 @@ const getOrdersInProduction = async () => {
     GROUP BY O.id_order
     HAVING SUM(COALESCE(OD.quantity, 0) - COALESCE(OD.quantity_completed,0)) > 0
   ) PU ON O.id_order = PU.id_order
-  ORDER BY O.deadline, PU.pending_units DESC
+  WHERE O.is_finished = false
+  ORDER BY O.deadline, COALESCE(PU.pending_units,0) DESC,  O.id_order
   `;
 
   const { result, rowCount } = await query(sqlQuery);
