@@ -183,6 +183,7 @@ const getOrderRequestMedia = async (orderRequestId) => {
 };
 
 const getOrderRequestById = async (orderRequestId) => {
+  let total = 0;
   const sql = `select "or".id_order_request, "or".description, "or".date_placed, "or".id_client_organization,
   "or".id_temporary_client, "or".deadline, "or".aditional_details, orq.size, orq.quantity, orq.unit_cost,
   pm.id_product_model, pm.name, pm.details, pt.name "type"
@@ -208,6 +209,7 @@ const getOrderRequestById = async (orderRequestId) => {
         && current.type === item.type,
     );
 
+    total += current.quantity * current.unit_cost;
     if (currentProduct) {
       currentProduct.sizes.push({
         size: current.size,
@@ -248,6 +250,7 @@ const getOrderRequestById = async (orderRequestId) => {
     details: queryResult[0].aditional_details,
     media,
     detail: transformedData.length > 0 ? transformedData : null,
+    total,
   };
 
   return result;
