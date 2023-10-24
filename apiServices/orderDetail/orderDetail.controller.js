@@ -59,11 +59,11 @@ const updateProductProgressController = async (req, res) => {
 
 const getProgressLogController = async (req, res) => {
   const { idOrder } = req.params;
-  const { idProduct, size } = req.body;
+  const { idProduct } = req.body;
 
   try {
     const result = await getProgressLog({
-      idOrder, idProduct, size,
+      idOrder, idProduct,
     });
     res.send(result);
   } catch (ex) {
