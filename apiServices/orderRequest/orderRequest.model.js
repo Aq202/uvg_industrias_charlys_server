@@ -278,6 +278,50 @@ const replaceTemporaryClientWithOrganization = async ({ orderRequestId, organiza
   }
 };
 
+const addProductRequirement = async ({
+  idOrderRequest,
+  idProductModel,
+  size,
+  quantity,
+  unitCost,
+}) => {
+  const sql = 'insert into order_request_requirement values($1,$2,$3,$4,$5) RETURNING id_order_request as id;';
+
+  try {
+    const { result, rowCount } = await query(
+      sql,
+      idOrderRequest,
+      idProductModel,
+      size,
+      quantity,
+      unitCost,
+    );
+    if (rowCount !== 1) throw new CustomError('No se ha podido añadir el producto al detalle de la intención de pedido.');
+
+    return result[0];
+  } catch (ex) {
+    if (ex?.code === '23505') {
+      const sqlUpdate = `update order_request_requirement set quantity = $1, unit_cost = $2
+      where id_order_request = $3
+        and id_product_model = $4
+        and "size" = $5 RETURNING id_order_request as id;`;
+
+      const { result: updateResult, rowCount: updateCount } = await query(
+        sqlUpdate,
+        quantity,
+        unitCost,
+        idOrderRequest,
+        idProductModel,
+        size,
+      );
+      if (updateCount !== 1) throw new CustomError('No se ha podido actualizar el registro en el detalle de intención de pedido.');
+
+      return updateResult[0];
+    }
+    throw ex;
+  }
+};
+
 export {
   newOrderRequest,
   getOrderRequests,
@@ -288,4 +332,5 @@ export {
   getOrderRequestTemporaryClientId,
   replaceTemporaryClientWithOrganization,
   deleteOrderRequest,
+  addProductRequirement,
 };

@@ -6,6 +6,7 @@ import CustomError from '../../utils/customError.js';
 import randomString from '../../utils/randomString.js';
 import {
   addOrderRequestMedia,
+  addProductRequirement,
   deleteOrderRequest,
   getOrderRequestById,
   getOrderRequestTemporaryClientId,
@@ -59,6 +60,7 @@ const saveOrderRequestMedia = async ({ files, id }) => {
     throw new CustomError('No se pudieron guardar imagenes en el servidor.', 500);
   }
 };
+
 const deleteOrderRequestMedia = async ({ files }) => {
   let deleteError = false;
   const promises = [];
@@ -82,6 +84,32 @@ const deleteOrderRequestMedia = async ({ files }) => {
   if (deleteError) {
     await rollback();
     throw new CustomError('No se pudieron eliminar las imágenes del servidor.', 500);
+  }
+};
+
+const addOrderRequestRequirement = async ({ products, idOrderRequest }) => {
+  let updateError = false;
+
+  for (const product of products) {
+    if (!updateError) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await addProductRequirement({
+          idOrderRequest,
+          idProductModel: product.idProductModel,
+          size: product.size,
+          quantity: product.quantity,
+          unitCost: product.price,
+        });
+      } catch (ex) {
+        updateError = true;
+      }
+    }
+  }
+
+  if (updateError) {
+    await rollback();
+    throw new CustomError('No se ha podido actualizar el detalle de la orden.', 500);
   }
 };
 
@@ -156,7 +184,7 @@ const deleteOrderRequestController = async (req, res) => {
 
 const updateOrderRequestController = async (req, res) => {
   const {
-    description, deadline, details, idOrderRequest,
+    description, deadline, details, idOrderRequest, products,
   } = req.body;
 
   try {
@@ -172,6 +200,10 @@ const updateOrderRequestController = async (req, res) => {
     // save files
     if (Array.isArray(req.uploadedFiles)) {
       await saveOrderRequestMedia({ files: req.uploadedFiles, idOrderRequest });
+    }
+
+    if (products) {
+      await addOrderRequestRequirement({ products, idOrderRequest });
     }
 
     await commit();
