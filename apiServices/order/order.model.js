@@ -30,7 +30,9 @@ const getOrderById = async (orderId) => {
   left join product p on od.id_product = p.id_product
   left join product_type pt on pt.id_product_type = p.type
   left join client_organization co on co.id_client_organization = o.id_client_organization
-  where o.id_order = $1;`;
+  left join "size" on "size".size = od.size
+  where o.id_order = $1
+  order by "size".sequence;`;
   const { result: queryResult, rowCount } = await query(sql, orderId);
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
