@@ -19,8 +19,7 @@ ADD CONSTRAINT order_client_fk FOREIGN KEY (id_client_organization) REFERENCES c
 
 ALTER TABLE "order_detail" 
 ADD CONSTRAINT od_order_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order) ON DELETE CASCADE,
-
-ADD CONSTRAINT od_product_fk FOREIGN KEY (id_product) REFERENCES product(id_product),
+ADD CONSTRAINT od_product_fk FOREIGN KEY (id_product) REFERENCES product(id_product) ON DELETE CASCADE,
 ADD CONSTRAINT od_size_fk FOREIGN KEY ("size") REFERENCES "size"("size"),
 ADD CONSTRAINT od_quantity_completed_check CHECK (quantity_completed <= quantity);
 

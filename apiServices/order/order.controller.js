@@ -71,6 +71,7 @@ const deleteOrderController = async (req, res) => {
     const result = await deleteOrder({ orderId });
     res.send(result);
   } catch (ex) {
+    console.log(ex);
     let err = 'Ocurrio un error al eliminar el registro.';
     let status = 500;
     if (ex instanceof CustomError) {
