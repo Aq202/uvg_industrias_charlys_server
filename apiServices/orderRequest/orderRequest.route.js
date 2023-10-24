@@ -35,6 +35,7 @@ orderRequestRouter.put(
   '/',
   ensureAdminAuth,
   multerMiddleware(uploadImage.any()),
+  parseObjectBodyProp('products'),
   validateBody(updateOrderRequestSchema),
   updateOrderRequestController,
 );

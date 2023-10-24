@@ -325,6 +325,19 @@ const addProductRequirement = async ({
   }
 };
 
+const clearOrderRequestRequirements = async ({ idOrderRequest }) => {
+  const sqlQuery = 'DELETE FROM order_request_requirement WHERE id_order_request = $1 ';
+  await query(sqlQuery, idOrderRequest);
+};
+
+const removeOrderRequestMedia = async ({ idOrderRequest, name }) => {
+  const sql = 'DELETE FROM order_request_media WHERE id_order_request = $1 AND name = $2';
+
+  const { rowCount } = await query(sql, idOrderRequest, name);
+
+  if (rowCount === 0) throw new CustomError('No se encontró el recurso multimedia para el modelo de producto.', 404);
+};
+
 export {
   newOrderRequest,
   getOrderRequests,
@@ -336,4 +349,6 @@ export {
   replaceTemporaryClientWithOrganization,
   deleteOrderRequest,
   addProductRequirement,
+  clearOrderRequestRequirements,
+  removeOrderRequestMedia,
 };
