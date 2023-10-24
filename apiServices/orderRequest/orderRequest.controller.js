@@ -7,12 +7,14 @@ import randomString from '../../utils/randomString.js';
 import {
   addOrderRequestMedia,
   addProductRequirement,
+  clearOrderRequestRequirements,
   deleteOrderRequest,
   getOrderRequestById,
   getOrderRequestTemporaryClientId,
   getOrderRequests,
   newOrderRequest,
   newOrderRequestRequirement,
+  removeOrderRequestMedia,
   replaceTemporaryClientWithOrganization,
   updateOrderRequest,
 } from './orderRequest.model.js';
@@ -184,7 +186,7 @@ const deleteOrderRequestController = async (req, res) => {
 
 const updateOrderRequestController = async (req, res) => {
   const {
-    description, deadline, details, idOrderRequest, products,
+    description, deadline, details, idOrderRequest, products, imagesToRemove,
   } = req.body;
 
   try {
@@ -197,19 +199,41 @@ const updateOrderRequestController = async (req, res) => {
       details,
     });
 
-    // save files
-    if (Array.isArray(req.uploadedFiles)) {
-      await saveOrderRequestMedia({ files: req.uploadedFiles, idOrderRequest });
-    }
-
     if (products) {
+      // Eliminar productos anteriores
+      clearOrderRequestRequirements({ idOrderRequest });
+      // Añadir actualizados
       await addOrderRequestRequirement({ products, idOrderRequest });
     }
 
+    // remover media
+    if (imagesToRemove) {
+      const mediaKeys = [];
+
+      // remover en la bd
+      for (const imageUrl of imagesToRemove) {
+        const urlParts = imageUrl.split('/');
+        const mediaKey = urlParts[urlParts.length - 1];
+        // eslint-disable-next-line no-await-in-loop
+        await removeOrderRequestMedia({ idOrderRequest, name: mediaKey });
+        mediaKeys.push(mediaKey);
+      }
+
+      // Delete al files in bucket
+      await Promise.all(
+        mediaKeys.map(async (mediaKey) => deleteFileInBucket(`${consts.bucketRoutes.product}/${mediaKey}`)),
+      );
+    }
+
+    // save files
+    if (Array.isArray(req.uploadedFiles)) {
+      await saveOrderRequestMedia({ files: req.uploadedFiles, id: idOrderRequest });
+    }
     await commit();
 
     res.send({ idOrderRequest });
   } catch (ex) {
+    console.log(ex);
     await rollback();
     let err = 'Ocurrio un error al actualizar la solicitud de pedido.';
     let status = 500;
