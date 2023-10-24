@@ -63,7 +63,7 @@ const getColorsByOrganizationController = async (req, res) => {
 };
 
 const deleteColorController = async (req, res) => {
-  const { idColor: colorId } = req.body;
+  const { id: colorId } = req.body;
   try {
     const result = await deleteColor({ colorId });
 

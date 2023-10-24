@@ -6,6 +6,8 @@ import CustomError from '../../utils/customError.js';
 import randomString from '../../utils/randomString.js';
 import {
   addOrderRequestMedia,
+  addProductRequirement,
+  deleteOrderRequest,
   getOrderRequestById,
   getOrderRequestTemporaryClientId,
   getOrderRequests,
@@ -21,6 +23,7 @@ import {
 } from '../temporaryClient/temporaryClient.model.js';
 import { isMemberController } from '../organization/organization.controller.js';
 import { getOrganizationById } from '../organization/organization.model.js';
+import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
 
 const saveOrderRequestMedia = async ({ files, id }) => {
   let uploadError = false;
@@ -47,7 +50,7 @@ const saveOrderRequestMedia = async ({ files, id }) => {
 
     // eliminar archivos temporales
 
-    fs.unlink(filePath, () => {});
+    fs.unlink(filePath, () => { });
   }
 
   await Promise.all(promises);
@@ -57,6 +60,59 @@ const saveOrderRequestMedia = async ({ files, id }) => {
     throw new CustomError('No se pudieron guardar imagenes en el servidor.', 500);
   }
 };
+
+const deleteOrderRequestMedia = async ({ files }) => {
+  let deleteError = false;
+  const promises = [];
+
+  for (const file of files) {
+    // subir archivos
+    if (!deleteError) {
+      const fileKey = file.name;
+
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await deleteFileInBucket(fileKey);
+      } catch (ex) {
+        deleteError = true;
+      }
+    }
+  }
+
+  await Promise.all(promises);
+
+  if (deleteError) {
+    await rollback();
+    throw new CustomError('No se pudieron eliminar las imágenes del servidor.', 500);
+  }
+};
+
+const addOrderRequestRequirement = async ({ products, idOrderRequest }) => {
+  let updateError = false;
+
+  for (const product of products) {
+    if (!updateError) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        await addProductRequirement({
+          idOrderRequest,
+          idProductModel: product.idProductModel,
+          size: product.size,
+          quantity: product.quantity,
+          unitCost: product.price,
+        });
+      } catch (ex) {
+        updateError = true;
+      }
+    }
+  }
+
+  if (updateError) {
+    await rollback();
+    throw new CustomError('No se ha podido actualizar el detalle de la orden.', 500);
+  }
+};
+
 const newOrderRequestController = async (req, res) => {
   const {
     name, email, phone, address, description,
@@ -97,10 +153,38 @@ const newOrderRequestController = async (req, res) => {
     res.status(status).send({ err, status });
   }
 };
+const deleteOrderRequestController = async (req, res) => {
+  const { idOrderRequest } = req.body;
+
+  try {
+    begin(); // begin transaction
+
+    const result = await deleteOrderRequest({ idOrderRequest });
+
+    // delete files
+    if (result && result.length > 0) {
+      await deleteOrderRequestMedia({ files: result });
+    }
+
+    await commit();
+
+    res.send(true);
+  } catch (ex) {
+    await rollback();
+    let err = 'Ocurrio un error al eliminar la intención de compra.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
 
 const updateOrderRequestController = async (req, res) => {
   const {
-    description, deadline, details, idOrderRequest,
+    description, deadline, details, idOrderRequest, products,
   } = req.body;
 
   try {
@@ -116,6 +200,10 @@ const updateOrderRequestController = async (req, res) => {
     // save files
     if (Array.isArray(req.uploadedFiles)) {
       await saveOrderRequestMedia({ files: req.uploadedFiles, idOrderRequest });
+    }
+
+    if (products) {
+      await addOrderRequestRequirement({ products, idOrderRequest });
     }
 
     await commit();
@@ -186,7 +274,6 @@ const newLoggedOrderRequestController = async (req, res) => {
       status = ex.status;
     }
     res.statusMessage = err;
-    console.log(ex);
     res.status(status).send({ err, status });
   }
 };
@@ -280,4 +367,5 @@ export {
   newLoggedOrderRequestController,
   updateOrderRequestController,
   confirmTemporaryClientController,
+  deleteOrderRequestController,
 };

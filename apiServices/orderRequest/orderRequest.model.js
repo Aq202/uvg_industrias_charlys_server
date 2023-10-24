@@ -38,6 +38,22 @@ const newOrderRequest = async ({
     throw ex;
   }
 };
+const deleteOrderRequest = async ({ idOrderRequest }) => {
+  const mediaSQL = 'select * from order_request_media where id_order_request = $1';
+  const sql = 'delete from order_request where id_order_request = $1';
+
+  const { result, rowCount: mediaCount } = await query(mediaSQL, idOrderRequest);
+  const { rowCount } = await query(sql, idOrderRequest);
+  if (rowCount !== 1) throw new CustomError('No se encontró solicitud de orden', 404);
+
+  if (mediaCount !== 0) {
+    return result.map((file) => ({
+      name: file.name,
+    }));
+  }
+
+  return true;
+};
 
 const newOrderRequestRequirement = async ({
   idOrderRequest,
@@ -68,7 +84,6 @@ const newOrderRequestRequirement = async ({
 
     return result[0];
   } catch (ex) {
-    
     if (ex?.code === '23514') { throw new CustomError('El modelo del producto no pertenece a esta organización.', 400); }
     if (ex?.code === '23505') {
       throw new CustomError(
@@ -175,7 +190,9 @@ const getOrderRequestById = async (orderRequestId) => {
   left join order_request_requirement orq on "or".id_order_request = orq.id_order_request
   left join product_model pm on orq.id_product_model = pm.id_product_model
   left join product_type pt on pt.id_product_type = pm.type
-  where "or".id_order_request = $1;`;
+  left join "size" on "size".size = orq.size
+  where "or".id_order_request = $1
+  order by "size".sequence;`;
   const { result: queryResult, rowCount } = await query(sql, orderRequestId);
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
@@ -261,6 +278,50 @@ const replaceTemporaryClientWithOrganization = async ({ orderRequestId, organiza
   }
 };
 
+const addProductRequirement = async ({
+  idOrderRequest,
+  idProductModel,
+  size,
+  quantity,
+  unitCost,
+}) => {
+  const sql = 'insert into order_request_requirement values($1,$2,$3,$4,$5) RETURNING id_order_request as id;';
+
+  try {
+    const { result, rowCount } = await query(
+      sql,
+      idOrderRequest,
+      idProductModel,
+      size,
+      quantity,
+      unitCost,
+    );
+    if (rowCount !== 1) throw new CustomError('No se ha podido añadir el producto al detalle de la intención de pedido.');
+
+    return result[0];
+  } catch (ex) {
+    if (ex?.code === '23505') {
+      const sqlUpdate = `update order_request_requirement set quantity = $1, unit_cost = $2
+      where id_order_request = $3
+        and id_product_model = $4
+        and "size" = $5 RETURNING id_order_request as id;`;
+
+      const { result: updateResult, rowCount: updateCount } = await query(
+        sqlUpdate,
+        quantity,
+        unitCost,
+        idOrderRequest,
+        idProductModel,
+        size,
+      );
+      if (updateCount !== 1) throw new CustomError('No se ha podido actualizar el registro en el detalle de intención de pedido.');
+
+      return updateResult[0];
+    }
+    throw ex;
+  }
+};
+
 export {
   newOrderRequest,
   getOrderRequests,
@@ -270,4 +331,6 @@ export {
   newOrderRequestRequirement,
   getOrderRequestTemporaryClientId,
   replaceTemporaryClientWithOrganization,
+  deleteOrderRequest,
+  addProductRequirement,
 };

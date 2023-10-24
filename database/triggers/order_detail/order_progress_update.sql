@@ -4,7 +4,7 @@
  $BODY$
  begin
  	INSERT INTO order_progress VALUES (new.id_order, new.id_product, new.size, now(),
-									   CONCAT(TG_OP, ': Se registran -', new.quantity_completed, '- unidades completadas.'));
+									   CONCAT(TG_OP, ': Se han completado ', COALESCE(new.quantity_completed, 0), ' unidades.'));
 	RETURN NEW;
  END;
  $BODY$

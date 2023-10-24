@@ -5,6 +5,7 @@ import {
   updateOrderPhase,
   getOrdersInProduction,
   deleteOrder,
+  isFinishedOrder,
 } from './order.model.js';
 import CustomError from '../../utils/customError.js';
 import OrderAcceptedEmail from '../../services/email/OrderAcceptedEmail.js';
@@ -70,6 +71,7 @@ const deleteOrderController = async (req, res) => {
     const result = await deleteOrder({ orderId });
     res.send(result);
   } catch (ex) {
+    console.log(ex);
     let err = 'Ocurrio un error al eliminar el registro.';
     let status = 500;
     if (ex instanceof CustomError) {
@@ -138,6 +140,22 @@ const updateOrderPhaseController = async (req, res) => {
     res.status(status).send({ err, status });
   }
 };
+const isFinishedOrderController = async (req, res) => {
+  const { idOrder: orderId, isFinished: finished } = req.body;
+  try {
+    const result = await isFinishedOrder({ orderId, finished });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al actualizar estado de la orden.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
 
 export {
   newOrderController,
@@ -146,4 +164,5 @@ export {
   updateOrderPhaseController,
   getOrdersInProductionController,
   deleteOrderController,
+  isFinishedOrderController,
 };
