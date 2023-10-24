@@ -38,6 +38,22 @@ const newOrderRequest = async ({
     throw ex;
   }
 };
+const deleteOrderRequest = async ({ idOrderRequest }) => {
+  const mediaSQL = 'select * from order_request_media where id_order_request = $1';
+  const sql = 'delete from order_request where id_order_request = $1';
+
+  const { result, rowCount: mediaCount } = await query(mediaSQL, idOrderRequest);
+  const { rowCount } = await query(sql, idOrderRequest);
+  if (rowCount !== 1) throw new CustomError('No se encontró solicitud de orden', 404);
+
+  if (mediaCount !== 0) {
+    return result.map((file) => ({
+      name: file.name,
+    }));
+  }
+
+  return true;
+};
 
 const newOrderRequestRequirement = async ({
   idOrderRequest,
@@ -68,7 +84,6 @@ const newOrderRequestRequirement = async ({
 
     return result[0];
   } catch (ex) {
-    
     if (ex?.code === '23514') { throw new CustomError('El modelo del producto no pertenece a esta organización.', 400); }
     if (ex?.code === '23505') {
       throw new CustomError(
@@ -175,7 +190,9 @@ const getOrderRequestById = async (orderRequestId) => {
   left join order_request_requirement orq on "or".id_order_request = orq.id_order_request
   left join product_model pm on orq.id_product_model = pm.id_product_model
   left join product_type pt on pt.id_product_type = pm.type
-  where "or".id_order_request = $1;`;
+  left join "size" on "size".size = orq.size
+  where "or".id_order_request = $1
+  order by "size".sequence;`;
   const { result: queryResult, rowCount } = await query(sql, orderRequestId);
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
@@ -270,4 +287,5 @@ export {
   newOrderRequestRequirement,
   getOrderRequestTemporaryClientId,
   replaceTemporaryClientWithOrganization,
+  deleteOrderRequest,
 };

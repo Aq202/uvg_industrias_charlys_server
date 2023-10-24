@@ -57,9 +57,9 @@ ADD CONSTRAINT client_or_temporary_check CHECK ((id_client_organization IS NULL 
 	OR (id_client_organization IS NOT NULL AND id_temporary_client IS NULL) 
 	OR (id_client_organization IS NULL AND id_temporary_client IS NULL));
 
-
 ALTER TABLE order_request_media
-ADD CONSTRAINT ord_req_media_fk FOREIGN KEY (id_order_request) REFERENCES order_request(id_order_request);
+ADD CONSTRAINT ord_req_media_fk FOREIGN KEY (id_order_request)
+	REFERENCES order_request(id_order_request) ON DELETE CASCADE;
 
 ALTER TABLE order_media
 ADD CONSTRAINT ord_media_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order) ON DELETE CASCADE;
@@ -87,7 +87,8 @@ ADD CONSTRAINT product_model_client_fk FOREIGN KEY (id_client_organization) REFE
 
 ALTER TABLE order_request_requirement
 ADD CONSTRAINT orr_min_quantity_check CHECK (quantity > 0),
-ADD CONSTRAINT orr_order_request_fk FOREIGN KEY (id_order_request) REFERENCES order_request (id_order_request),
+ADD CONSTRAINT orr_order_request_fk FOREIGN KEY (id_order_request)
+	REFERENCES order_request (id_order_request) ON DELETE CASCADE,
 ADD CONSTRAINT orr_product_model_fk FOREIGN KEY (id_product_model) REFERENCES product_model (id_product_model),
 ADD CONSTRAINT orr_size_fk FOREIGN KEY ("size") REFERENCES "size"("size");
 
