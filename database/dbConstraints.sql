@@ -28,7 +28,7 @@ ADD CONSTRAINT material_type_fk FOREIGN KEY (type) REFERENCES material_type(id_m
 
 ALTER TABLE inventory 
 ADD CONSTRAINT inventory_material_fk FOREIGN KEY (material) REFERENCES material(id_material),
-ADD CONSTRAINT inventory_product_fk FOREIGN KEY (product) REFERENCES product(id_product),
+ADD CONSTRAINT inventory_product_fk FOREIGN KEY (product) REFERENCES product_in_inventory(id),
 ADD CONSTRAINT check_element CHECK (
 	(material IS NULL AND product IS NOT NULL)
 	OR (material IS NOT NULL AND product IS NULL)
@@ -104,6 +104,10 @@ ADD CONSTRAINT o_progress_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order)
 
 ALTER TABLE "order"
 ADD COLUMN is_finished BOOLEAN DEFAULT false;
+
+ALTER TABLE product_in_inventory 
+ADD CONSTRAINT pinv_unique UNIQUE (id_product, "size")
+ADD CONSTRAINT pinv_product_fk FOREIGN KEY (id_product) REFERENCES product(id_product);
 
 ALTER TABLE "size"
 	DROP COLUMN "sequence",
