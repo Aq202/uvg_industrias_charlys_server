@@ -26,9 +26,9 @@ const newColorController = async (req, res) => {
 };
 
 const getColorsController = async (req, res) => {
-  const { search } = req.query;
+  const { search, page } = req.query;
   try {
-    const result = await getColors({ search });
+    const result = await getColors({ search, page });
 
     res.send(result);
   } catch (ex) {
@@ -45,9 +45,9 @@ const getColorsController = async (req, res) => {
 
 const getColorsByOrganizationController = async (req, res) => {
   const { idOrganization } = req.params;
-  const { search } = req.query;
+  const { search, page } = req.query;
   try {
-    const result = await getColorsByOrganization({ idOrganization, search });
+    const result = await getColorsByOrganization({ idOrganization, search, page });
 
     res.send(result);
   } catch (ex) {

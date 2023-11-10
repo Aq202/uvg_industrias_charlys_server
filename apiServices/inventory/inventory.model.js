@@ -106,35 +106,55 @@ const updateInventoryElement = async ({
   }
 };
 
-const getInventory = async ({ id, type, search }) => {
-  let sql = `SELECT I.id_inventory, I.material, I.product, I.quantity, I.measurement_unit, I.details, M.name as material_name, 
-                M.supplier, M.color, T.id_material_type, T.name AS material_type   FROM inventory I
-                INNER JOIN material M ON I.material = M.id_material
-                INNER JOIN material_type T ON M.type = T.id_material_type
-                WHERE 1=1`;
-  const params = [];
-  if (id) {
+const getInventory = async ({
+  id, type, search = '', page,
+}) => {
+  const offset = page * consts.pageLength;
+  const conditions = {
+    count: [],
+    query: [],
+  };
+  const params = [consts.pageLength, `%${search}%`];
+
+  if (id !== undefined) {
+    conditions.count.push(`I.id_inventory = $${params.length + 1}`);
+    conditions.query.push(`I.id_inventory = $${params.length}`);
     params.push(id);
-    sql += ` AND I.id_inventory = $${params.length}`;
   }
-
   if (type !== undefined && type !== null) {
+    conditions.count.push(`T.id_material_type = $${params.length + 1}`);
+    conditions.query.push(`T.id_material_type = $${params.length}`);
     params.push(type);
-    sql += ` AND T.id_material_type = $${params.length}`;
   }
 
-  if (search) {
-    params.push(`%${search}%`);
-    const paramsIndex = params.length;
-    sql += ` AND (I.details ILIKE $${paramsIndex} OR M.name ILIKE $${paramsIndex} 
-                OR M.supplier ILIKE $${paramsIndex} OR M.color ILIKE $${paramsIndex} )`;
-  }
+  const sqlCount = `SELECT ceiling(count(*)/$1::numeric)
+  FROM inventory I
+          INNER JOIN material M ON I.material = M.id_material
+          INNER JOIN material_type T ON M.type = T.id_material_type
+          WHERE (I.details ILIKE $2 OR M.name ILIKE $2
+          OR M.supplier ILIKE $2 OR M.color ILIKE $2)
+    ${conditions.count.length > 0 ? `AND ${conditions.count.join(' and ')}` : ''}`;
 
-  const { result, rowCount } = params.length > 0 ? await query(sql, ...params) : await query(sql);
+  const pages = (await query(sqlCount, ...params)).result[0].ceiling;
+  if (pages === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  if (page !== undefined) params.push(consts.pageLength, offset);
+
+  const sql = `SELECT I.id_inventory, I.material, I.product, I.quantity, I.measurement_unit, I.details, M.name as material_name, 
+  M.supplier, M.color, T.id_material_type, T.name AS material_type   
+FROM inventory I
+  INNER JOIN material M ON I.material = M.id_material
+  INNER JOIN material_type T ON M.type = T.id_material_type
+  WHERE (I.details ILIKE $1 OR M.name ILIKE $1
+  OR M.supplier ILIKE $1 OR M.color ILIKE $1)
+  ${conditions.query.length > 0 ? `AND ${conditions.query.join(' and ')}` : ''}
+  ${page !== undefined ? `LIMIT $${params.length - 2} OFFSET $${params.length - 1}` : ''}`;
+
+  const { result, rowCount } = await query(sql, ...params.slice(1));
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  return result.map((val) => ({
+  const response = result.map((val) => ({
     id: val.id_inventory,
     quantity: val.quantity,
     measurementUnit: val.measurement_unit,
@@ -146,30 +166,7 @@ const getInventory = async ({ id, type, search }) => {
     materialType: val.material_type,
     materialName: val.material_name,
   }));
-};
-
-const getInventorybyId = async (searchQuery) => {
-  const sql = `select id_inventory,
-  coalesce(prod.id_product, f.id_fabric, mat.id_material) as category_id,
-  COALESCE(mat.description, f.fabric, pt.name) as description,
-  coalesce(f.color, prod.color) as color,
-  s.size,
-  co.name as client,
-  quantity, measurement_unit, supplier, details
-      from inventory i
-      left join material mat on i.material = mat.id_material
-      left join fabric f on i.fabric = f.id_fabric
-      left join product prod on i.product = prod.id_product
-      left join product_type pt on prod.type = pt.id_product_type
-      left join client_organization co on prod.client = co.id_client_organization
-      left join "size" s on i.size = s.id_size
-      where i.id_inventory = $1;`;
-  const queryResult = await query(sql, searchQuery);
-
-  const { result, rowCount } = queryResult;
-
-  if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
-  return result;
+  return { result: response, count: pages };
 };
 
 const newMaterialType = async (name) => {
@@ -180,12 +177,25 @@ const newMaterialType = async (name) => {
   return result[0].id;
 };
 
-const getMaterialsTypeList = async () => {
-  const sql = 'SELECT id_material_type AS id, name from material_type';
-  const { result, rowCount } = await query(sql);
+const getMaterialsTypeList = async ({ search = '', page }) => {
+  const offset = page * consts.pageLength;
+  const sqlCount = 'SELECT ceiling(count(*)/ $1::numeric) from material_type where name ilike $2';
 
-  if (rowCount < 1) throw new CustomError('No se encontraron tipos de material.', 404);
-  return result;
+  const params = [consts.pageLength, `%${search}%`];
+
+  const pages = (await query(sqlCount, ...params)).result[0].ceiling;
+  if (pages === 0) throw new CustomError('No se encontraron tipos de material.', 404);
+
+  if (page !== undefined) params.push(consts.pageLength, offset);
+
+  const sql = `SELECT id_material_type AS id, name from material_type where name ilike $1
+  ${page !== undefined ? 'LIMIT $2 OFFSET $3' : ''}`;
+
+  const { result, rowCount } = await query(sql, ...params.slice(1));
+
+  if (rowCount === 0) throw new CustomError('No se encontraron tipos de material.', 404);
+
+  return { result, count: pages };
 };
 
 const addProductToInventory = async ({ idProduct, size, quantity }) => {
@@ -348,7 +358,6 @@ const getProductsInInventory = async ({ idOrganization, search, page = null }) =
 export {
   getInventory,
   newInventoryElement,
-  getInventorybyId,
   updateInventoryElement,
   newMaterialType,
   getMaterialsTypeList,

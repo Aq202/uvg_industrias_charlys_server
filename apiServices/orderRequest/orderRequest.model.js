@@ -127,35 +127,39 @@ const updateOrderRequest = async ({
   );
 };
 
-const getOrderRequests = async (searchQuery) => {
-  let queryResult;
-  if (searchQuery) {
-    const sql = `
-      SELECT * FROM (
-      SELECT O.*, CO.name AS client FROM order_request O
-      INNER JOIN client_organization CO ON O.id_client_organization = CO.id_client_organization
-      UNION
-      SELECT O.*, TC.name AS client FROM order_request O
-      INNER JOIN temporary_client TC ON O.id_temporary_client = TC.id_temporary_client
-      ) AS sub_query
-      WHERE client ILIKE $1 OR description ILIKE $1 ORDER BY date_placed DESC
-    `;
-    queryResult = await query(sql, `%${searchQuery}%`);
-  } else {
-    queryResult = await query(`
-      SELECT O.*, CO.name AS client FROM order_request O
-      INNER JOIN client_organization CO ON O.id_client_organization = CO.id_client_organization
-      UNION
-      SELECT O.*, TC.name AS client FROM order_request O
-      INNER JOIN temporary_client TC ON O.id_temporary_client = TC.id_temporary_client
-    `);
-  }
+const getOrderRequests = async ({ search = '', page }) => {
+  const offset = page * consts.pageLength;
+  const sqlCount = `SELECT ceiling(count(*) / $1::numeric) FROM (
+    SELECT O.*, CO.name AS client FROM order_request O
+    INNER JOIN client_organization CO ON O.id_client_organization = CO.id_client_organization
+    UNION
+    SELECT O.*, TC.name AS client FROM order_request O
+    INNER JOIN temporary_client TC ON O.id_temporary_client = TC.id_temporary_client
+    ) AS sub_query
+    WHERE client ILIKE $2 OR description ILIKE $2`;
 
-  const { result, rowCount } = queryResult;
+  const params = [consts.pageLength, `%${search}%`];
+
+  const pages = (await query(sqlCount, ...params)).result[0].ceiling;
+  if (pages === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  if (page !== undefined) params.push(consts.pageLength, offset);
+
+  const sql = `SELECT * FROM (
+    SELECT O.*, CO.name AS client FROM order_request O
+    INNER JOIN client_organization CO ON O.id_client_organization = CO.id_client_organization
+    UNION
+    SELECT O.*, TC.name AS client FROM order_request O
+    INNER JOIN temporary_client TC ON O.id_temporary_client = TC.id_temporary_client
+    ) AS sub_query
+    WHERE client ILIKE $1 OR description ILIKE $1 ORDER BY date_placed DESC
+  ${page !== undefined ? 'LIMIT $2 OFFSET $3' : ''}`;
+
+  const { result, rowCount } = await query(sql, ...params.slice(1));
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  return result.map((val) => ({
+  const response = result.map((val) => ({
     id: val.id_order_request,
     client: val.client,
     description: val.description,
@@ -163,6 +167,8 @@ const getOrderRequests = async (searchQuery) => {
     clientOrganization: val.id_client_organization ?? undefined,
     temporaryClient: val.id_temporary_client ?? undefined,
   }));
+
+  return { result: response, count: pages };
 };
 
 const addOrderRequestMedia = async (orderRequestId, name) => {

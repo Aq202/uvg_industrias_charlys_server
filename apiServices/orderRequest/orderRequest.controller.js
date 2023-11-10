@@ -302,10 +302,10 @@ const newLoggedOrderRequestController = async (req, res) => {
 };
 
 const getOrderRequestsController = async (req, res) => {
-  const { search } = req.query;
+  const { search, page } = req.query;
 
   try {
-    const result = await getOrderRequests(search);
+    const result = await getOrderRequests({ search, page });
 
     res.send(result);
   } catch (ex) {
