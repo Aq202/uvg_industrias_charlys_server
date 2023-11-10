@@ -233,7 +233,6 @@ const updateOrderRequestController = async (req, res) => {
 
     res.send({ idOrderRequest });
   } catch (ex) {
-    console.log(ex);
     await rollback();
     let err = 'Ocurrio un error al actualizar la solicitud de pedido.';
     let status = 500;
