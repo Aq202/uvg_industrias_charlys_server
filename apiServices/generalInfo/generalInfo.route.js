@@ -7,7 +7,6 @@ import {
   getSizesController,
   getMaterialsController,
   newFabricController,
-  getFabricsController,
   deleteSizeController,
 } from './generalInfo.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
@@ -21,6 +20,5 @@ generalInfoRouter.get('/size', ensureAdminOrClientAuth, getSizesController);
 generalInfoRouter.delete('/size', ensureAdminAuth, validateBody(deleteSizeSchema), deleteSizeController);
 generalInfoRouter.get('/material', ensureAdminAuth, getMaterialsController);
 generalInfoRouter.post('/fabric', validateBody(newFabricSchema), newFabricController);
-generalInfoRouter.get('/fabric', ensureAdminAuth, getFabricsController);
 
 export default generalInfoRouter;

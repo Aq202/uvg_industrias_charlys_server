@@ -2,7 +2,6 @@ import express from 'express';
 import validateBody from '../../middlewares/validateBody.js';
 import {
   getInventoryController,
-  getInventorybyIdController,
   newMaterialTypeController,
   getMaterialsTypeController,
   newMaterialController,
@@ -21,7 +20,6 @@ const inventoryRouter = express.Router();
 
 inventoryRouter.post('/material', ensureAdminAuth, validateBody(newMaterialSchema), newMaterialController);
 inventoryRouter.get('/', ensureAdminAuth, getInventoryController);
-inventoryRouter.get('/id', ensureAdminAuth, getInventorybyIdController);
 inventoryRouter.put('/updateMaterial', ensureAdminAuth, validateBody(updateMaterialSchema), updateMaterialController);
 inventoryRouter.post('/materialType', ensureAdminAuth, validateBody(newMaterialTypeSchema), newMaterialTypeController);
 inventoryRouter.get('/materialType', ensureAdminAuth, getMaterialsTypeController);

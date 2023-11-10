@@ -45,8 +45,9 @@ const newProuctTypeController = async (req, res) => {
 };
 
 const getProuctTypesController = async (req, res) => {
+  const { page, search } = req.query;
   try {
-    const result = await getProductTypes();
+    const result = await getProductTypes({ page, search });
 
     res.send(result);
   } catch (ex) {
@@ -63,8 +64,9 @@ const getProuctTypesController = async (req, res) => {
 
 const getProuctTypesByOrganizationController = async (req, res) => {
   const { idOrganization } = req.params;
+  const { search, page } = req.query;
   try {
-    const result = await getProductTypesByOrganization({ idOrganization });
+    const result = await getProductTypesByOrganization({ idOrganization, search, page });
 
     res.send(result);
   } catch (ex) {
@@ -214,7 +216,7 @@ const saveProductModelMedia = async ({ files, idProductModel }) => {
 
     // eliminar archivos temporales
 
-    fs.unlink(filePath, () => {});
+    fs.unlink(filePath, () => { });
   }
 
   if (uploadError) {
