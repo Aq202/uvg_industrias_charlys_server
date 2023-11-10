@@ -195,13 +195,17 @@ const addProductToInventory = async ({ idProduct, size, quantity }) => {
     const sqlQuery1 = 'INSERT INTO product_in_inventory(id_product, size) VALUES ($1,$2) RETURNING id';
     const { result: result1, rowCount: rowCount1 } = await query(sqlQuery1, idProduct, size);
 
-    if (rowCount1 !== 1) { throw new CustomError('No se pudo insertar un producto al inventario.', 500); }
+    if (rowCount1 !== 1) {
+      throw new CustomError('No se pudo insertar un producto al inventario.', 500);
+    }
 
     const productInInventory = result1[0].id;
     const sqlQuery2 = 'INSERT INTO inventory(product, quantity, measurement_unit) VALUES ($1, $2, $3)';
 
     const { rowCount: rowCount2 } = await query(sqlQuery2, productInInventory, quantity, units);
-    if (rowCount2 !== 1) { throw new CustomError('No se pudo insertar un producto al inventario.', 500); }
+    if (rowCount2 !== 1) {
+      throw new CustomError('No se pudo insertar un producto al inventario.', 500);
+    }
   } catch (ex) {
     if (ex?.code === '23505') {
       throw new CustomError(
@@ -216,6 +220,106 @@ const addProductToInventory = async ({ idProduct, size, quantity }) => {
   }
 };
 
+const getProductsInInventory = async ({ idOrganization, search }) => {
+  const params = [];
+  const conditions = ['1=1'];
+
+  if (exists(idOrganization)) {
+    params.push(idOrganization);
+    conditions.push(`p.id_client_organization = $${params.length}`);
+  }
+
+  if (exists(search)) {
+    params.push(`%${search}%`);
+    conditions.push(`(pt.name ILIKE $${params.length} OR p.name ILIKE $${params.length})`);
+  }
+
+  const sqlQuery = `
+    SELECT DISTINCT inv.id_inventory, od.id_order, p.id_product, pi.size, inv.quantity, pt.name "type",
+    p.name as product_name, co.name as client, pm.name as media, c.name as color_name, c.red, c.green, c.blue
+    FROM inventory inv 
+    INNER JOIN product_in_inventory pi ON pi.id = inv.product
+    INNER JOIN product p ON p.id_product = pi.id_product
+    INNER JOIN client_organization co ON p.id_client_organization = co.id_client_organization
+    INNER JOIN order_detail od ON od.id_product = p.id_product
+    INNER JOIN product_type pt on p.type = pt.id_product_type
+    LEFT JOIN product_media pm ON pm.id_product = p.id_product
+    LEFT JOIN product_color pc ON pc.id_product = p.id_product
+    LEFT JOIN color c ON pc.id_color = c.id_color
+    WHERE ${conditions.join(' AND ')}
+    ORDER BY inv.id_inventory`;
+
+  const { result, rowCount } = await query(sqlQuery, ...params);
+
+  if (rowCount < 1) throw new CustomError('No se encontraron productos en inventario', 404);
+
+  const groupedResult = {};
+
+  result.forEach(
+    ({
+      id_order: idOrder,
+      id_product: idProduct,
+      product_name: productName,
+      type,
+      size,
+      quantity,
+      client,
+      media,
+      color_name: colorName,
+      red,
+      green,
+      blue,
+    }) => {
+      // Si no existe, agregar datos completos. De lo contrario agregar solo colores y media
+      if (!(idProduct in groupedResult)) {
+        groupedResult[idProduct] = {
+          idOrder,
+          idProduct,
+          productName,
+          type,
+          client,
+          sizesAdded: [size],
+          sizes: [{ size, quantity }],
+          media: exists(media) ? [media] : [],
+          colorsAdded: exists(colorName) ? [colorName] : [],
+          colors: exists(colorName) ? [{
+            name: colorName,
+            r: red,
+            g: green,
+            b: blue,
+          }] : [],
+        };
+      } else {
+        const product = groupedResult[idProduct];
+
+        if (!product.sizesAdded.includes(size)) {
+          product.sizesAdded.push(size);
+          product.sizes.push({ size, quantity });
+        }
+
+        if (exists(media) && !product.media.includes(media)) product.media.push(media);
+
+        if (!product.colorsAdded.includes(colorName) && exists(colorName)) {
+          product.colors.push({
+            name: colorName,
+            r: red,
+            g: green,
+            b: blue,
+          });
+        }
+      }
+    },
+  );
+
+  const finalResult = Object.values(groupedResult).map((product) => {
+    const cp = product;
+    delete cp.sizesAdded;
+    delete cp.colorsAdded;
+    return cp;
+  });
+  return finalResult;
+};
+
 export {
   getInventory,
   newInventoryElement,
@@ -226,4 +330,5 @@ export {
   newMaterial,
   updateMaterial,
   addProductToInventory,
+  getProductsInInventory,
 };

@@ -5,6 +5,7 @@ import {
   getInventory,
   getInventorybyId,
   getMaterialsTypeList,
+  getProductsInInventory,
   newInventoryElement,
   newMaterial,
   newMaterialType,
@@ -195,6 +196,24 @@ const updateInventoryProductController = async (req, res) => {
   }
 };
 
+const getProductsInInventoryController = async (req, res) => {
+  const { organization, search } = req.query;
+  try {
+    const result = await getProductsInInventory({ idOrganization: organization, search });
+    res.send(result);
+  } catch (ex) {
+    await rollback();
+    let err = 'Ocurrió un error al obtener productos en inventario.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newMaterialController,
   getInventoryController,
@@ -204,4 +223,5 @@ export {
   updateMaterialController,
   addProductToInventoryController,
   updateInventoryProductController,
+  getProductsInInventoryController,
 };
