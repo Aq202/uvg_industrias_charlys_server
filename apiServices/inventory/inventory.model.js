@@ -1,6 +1,7 @@
 import query from '../../database/query.js';
 import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
+import exists, { someExists } from '../../utils/exists.js';
 
 const newMaterial = async ({
   name, supplier, color, typeId,
@@ -78,20 +79,30 @@ const updateMaterial = async ({
 const updateInventoryElement = async ({
   inventoryId, quantity, measurementUnit, details,
 }) => {
-  const sql = `UPDATE inventory SET quantity=$1, measurement_unit=$2, details=$3
-                WHERE id_inventory =$4`;
+  if (!someExists(quantity, measurementUnit, details)) return;
 
-  try {
-    const { rowCount } = await query(sql, quantity, measurementUnit, details, inventoryId);
+  const params = [inventoryId];
+  const queryOptions = [];
+  if (exists(quantity)) {
+    params.push(quantity);
+    queryOptions.push(`quantity=$${params.length}`);
+  }
+  if (exists(measurementUnit)) {
+    params.push(measurementUnit);
+    queryOptions.push(`measurement_unit=$${params.length}`);
+  }
+  if (exists(details)) {
+    params.push(details);
+    queryOptions.push(`details=$${params.length}`);
+  }
 
-    if (rowCount !== 1) {
-      throw new CustomError('No se pudo actualizar el elemento al inventario', 500);
-    }
-  } catch (err) {
-    if (err instanceof CustomError) throw err;
+  const sql = `UPDATE inventory SET ${queryOptions.join(', ')}
+                WHERE id_inventory =$1`;
 
-    const error = 'Datos no válidos al agregar nuevo articulo de inventario.';
-    throw new CustomError(error, 400);
+  const { rowCount } = await query(sql, ...params);
+  console.log(rowCount);
+  if (rowCount !== 1) {
+    throw new CustomError('No se pudo actualizar el elemento al inventario', 500);
   }
 };
 

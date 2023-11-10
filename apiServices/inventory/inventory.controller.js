@@ -172,6 +172,29 @@ const addProductToInventoryController = async (req, res) => {
   }
 };
 
+const updateInventoryProductController = async (req, res) => {
+  const {
+    idInventory, quantity,
+  } = req.body;
+  try {
+    await updateInventoryElement({
+      inventoryId: idInventory, quantity,
+    });
+
+    res.send({ ok: true });
+  } catch (ex) {
+    await rollback();
+    let err = 'No se pudo actualizar el producto en inventario.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newMaterialController,
   getInventoryController,
@@ -180,4 +203,5 @@ export {
   getMaterialsTypeController,
   updateMaterialController,
   addProductToInventoryController,
+  updateInventoryProductController,
 };
