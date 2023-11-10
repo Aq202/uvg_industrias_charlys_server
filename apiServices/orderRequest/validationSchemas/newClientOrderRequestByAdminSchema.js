@@ -27,7 +27,6 @@ export default yup.object().shape({
         .typeError("El campo 'products' debe contener objetos."),
     )
     .typeError("El campo 'products' debe ser una lista.")
-    .min(1, 'Se debe agregar al menos un producto a la solicitud de pedido.')
     .required("El campo 'products' es obligatorio."),
   description: yup.string().required("El campo 'description' es obligatorio."),
   idClientOrganization: yup.string().required("El campo 'idClientOrganization' es obligatorio."),

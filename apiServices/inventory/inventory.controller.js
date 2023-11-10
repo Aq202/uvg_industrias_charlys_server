@@ -1,6 +1,7 @@
 import { begin, commit, rollback } from '../../database/transactions.js';
 import CustomError from '../../utils/customError.js';
 import {
+  addProductToInventory,
   getInventory,
   getInventorybyId,
   getMaterialsTypeList,
@@ -153,6 +154,46 @@ const getMaterialsTypeController = async (req, res) => {
     res.status(status).send({ err, status });
   }
 };
+const addProductToInventoryController = async (req, res) => {
+  const { idProduct, quantity, size } = req.body;
+  try {
+    await addProductToInventory({ idProduct, quantity, size });
+
+    res.send({ ok: true });
+  } catch (ex) {
+    let err = 'Ocurrió un error al insertar producto al inventario.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const updateInventoryProductController = async (req, res) => {
+  const {
+    idInventory, quantity,
+  } = req.body;
+  try {
+    await updateInventoryElement({
+      inventoryId: idInventory, quantity,
+    });
+
+    res.send({ ok: true });
+  } catch (ex) {
+    await rollback();
+    let err = 'No se pudo actualizar el producto en inventario.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
 
 export {
   newMaterialController,
@@ -161,4 +202,6 @@ export {
   newMaterialTypeController,
   getMaterialsTypeController,
   updateMaterialController,
+  addProductToInventoryController,
+  updateInventoryProductController,
 };

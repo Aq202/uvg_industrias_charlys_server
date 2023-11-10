@@ -99,10 +99,17 @@ CREATE TABLE order_progress(
 CREATE TABLE inventory(
 	id_inventory VARCHAR(15) PRIMARY KEY,
 	material VARCHAR(15) UNIQUE,
-	product VARCHAR(15) UNIQUE,
+	product INTEGER UNIQUE,
 	quantity FLOAT NOT NULL DEFAULT 0,
 	measurement_unit VARCHAR(100) NOT NULL,
 	details VARCHAR(500)
+);
+
+
+CREATE TABLE product_in_inventory(
+	id SERIAL PRIMARY KEY,
+	id_product VARCHAR(15) NOT NULL,
+	"size" VARCHAR(10) NOT NULL
 );
 
 CREATE TABLE requirements(

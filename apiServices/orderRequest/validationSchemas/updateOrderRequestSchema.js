@@ -35,6 +35,5 @@ export default yup
           .typeError("El campo 'products' debe contener objetos."),
       )
       .typeError("El campo 'products' debe ser una lista.")
-      .nullable()
-      .min(1, 'Se debe agregar al menos un producto a la solicitud de pedido.'),
+      .nullable(),
   });

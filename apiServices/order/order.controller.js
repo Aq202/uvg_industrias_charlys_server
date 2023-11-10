@@ -156,6 +156,29 @@ const isFinishedOrderController = async (req, res) => {
   }
 };
 
+const getOrdersFinishedController = async (req, res) => {
+  const {
+    page, search, startDeadline, endDeadline, client,
+  } = req.query;
+
+  try {
+    const result = await getOrders({
+      idClientOrganization: client, startDeadline, endDeadline, page, search, onlyFinished: true,
+    });
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrió un error al obtener órdenes finalizadas.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newOrderController,
   getOrdersController,
@@ -164,4 +187,5 @@ export {
   getOrdersInProductionController,
   deleteOrderController,
   isFinishedOrderController,
+  getOrdersFinishedController,
 };

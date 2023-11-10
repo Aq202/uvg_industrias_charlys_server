@@ -10,6 +10,7 @@ import {
   getOrdersInProductionController,
   deleteOrderController,
   isFinishedOrderController,
+  getOrdersFinishedController,
 } from './order.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';
@@ -32,6 +33,7 @@ orderRouter.get(
 );
 
 orderRouter.get('/inProduction', ensureAdminAuth, getOrdersInProductionController);
+orderRouter.get('/finished', ensureAdminAuth, getOrdersFinishedController);
 
 orderRouter.get(
   '/:orderId?',
