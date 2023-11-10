@@ -197,9 +197,9 @@ const updateInventoryProductController = async (req, res) => {
 };
 
 const getProductsInInventoryController = async (req, res) => {
-  const { organization, search } = req.query;
+  const { organization, search, page } = req.query;
   try {
-    const result = await getProductsInInventory({ idOrganization: organization, search });
+    const result = await getProductsInInventory({ idOrganization: organization, search, page });
     res.send(result);
   } catch (ex) {
     await rollback();

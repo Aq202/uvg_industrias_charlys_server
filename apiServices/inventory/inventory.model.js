@@ -100,7 +100,7 @@ const updateInventoryElement = async ({
                 WHERE id_inventory =$1`;
 
   const { rowCount } = await query(sql, ...params);
-  console.log(rowCount);
+
   if (rowCount !== 1) {
     throw new CustomError('No se pudo actualizar el elemento al inventario', 500);
   }
@@ -220,9 +220,10 @@ const addProductToInventory = async ({ idProduct, size, quantity }) => {
   }
 };
 
-const getProductsInInventory = async ({ idOrganization, search }) => {
+const getProductsInInventory = async ({ idOrganization, search, page = null }) => {
   const params = [];
   const conditions = ['1=1'];
+  const { pageLength } = consts;
 
   if (exists(idOrganization)) {
     params.push(idOrganization);
@@ -248,6 +249,21 @@ const getProductsInInventory = async ({ idOrganization, search }) => {
     LEFT JOIN color c ON pc.id_color = c.id_color
     WHERE ${conditions.join(' AND ')}
     ORDER BY inv.id_inventory`;
+
+  const pageQuery = `
+  SELECT count(1) AS total
+  FROM (  
+  SELECT DISTINCT p.id_product
+  FROM inventory inv 
+  INNER JOIN product_in_inventory pi ON pi.id = inv.product
+  INNER JOIN product p ON p.id_product = pi.id_product
+  INNER JOIN client_organization co ON p.id_client_organization = co.id_client_organization
+  INNER JOIN product_type pt on p.type = pt.id_product_type
+  WHERE ${conditions.join(' AND ')}
+  ) AS Q2`;
+
+  const { result: totalRowCount } = await query(pageQuery, ...params);
+  const pagesNumber = Math.ceil(totalRowCount[0].total / pageLength);
 
   const { result, rowCount } = await query(sqlQuery, ...params);
 
@@ -282,12 +298,16 @@ const getProductsInInventory = async ({ idOrganization, search }) => {
           sizes: [{ size, quantity }],
           media: exists(media) ? [media] : [],
           colorsAdded: exists(colorName) ? [colorName] : [],
-          colors: exists(colorName) ? [{
-            name: colorName,
-            r: red,
-            g: green,
-            b: blue,
-          }] : [],
+          colors: exists(colorName)
+            ? [
+              {
+                name: colorName,
+                r: red,
+                g: green,
+                b: blue,
+              },
+            ]
+            : [],
         };
       } else {
         const product = groupedResult[idProduct];
@@ -311,13 +331,18 @@ const getProductsInInventory = async ({ idOrganization, search }) => {
     },
   );
 
-  const finalResult = Object.values(groupedResult).map((product) => {
+  let finalResult = Object.values(groupedResult).map((product) => {
     const cp = product;
     delete cp.sizesAdded;
     delete cp.colorsAdded;
     return cp;
   });
-  return finalResult;
+
+  if (exists(page)) {
+    finalResult = finalResult.slice(page * pageLength, page * pageLength + pageLength);
+  }
+
+  return { pages: pagesNumber, result: finalResult };
 };
 
 export {
