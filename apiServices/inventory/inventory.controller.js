@@ -3,7 +3,6 @@ import CustomError from '../../utils/customError.js';
 import {
   addProductToInventory,
   getInventory,
-  getInventorybyId,
   getMaterialsTypeList,
   getProductsInInventory,
   newInventoryElement,
@@ -85,31 +84,17 @@ const updateMaterialController = async (req, res) => {
 };
 
 const getInventoryController = async (req, res) => {
-  const { search, id, type } = req.query;
+  const {
+    search, id, type, page,
+  } = req.query;
 
   try {
-    const result = await getInventory({ id, type, search });
+    const result = await getInventory({
+      id, type, search, page,
+    });
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener registros del inventario.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
-  }
-};
-
-const getInventorybyIdController = async (req, res) => {
-  const { search } = req.query;
-
-  try {
-    const result = await getInventorybyId(search);
-    res.send(result);
-  } catch (ex) {
-    let err = 'Ocurrio un error al obtener la información del inventario.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -140,8 +125,9 @@ const newMaterialTypeController = async (req, res) => {
 };
 
 const getMaterialsTypeController = async (req, res) => {
+  const { search, page } = req.query;
   try {
-    const result = await getMaterialsTypeList();
+    const result = await getMaterialsTypeList({ search, page });
 
     res.send({ result });
   } catch (ex) {
@@ -217,7 +203,6 @@ const getProductsInInventoryController = async (req, res) => {
 export {
   newMaterialController,
   getInventoryController,
-  getInventorybyIdController,
   newMaterialTypeController,
   getMaterialsTypeController,
   updateMaterialController,
