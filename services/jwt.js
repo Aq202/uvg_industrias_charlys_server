@@ -48,8 +48,26 @@ const signRegisterToken = ({
   key,
 );
 
+const signRecoverPasswordToken = ({
+  id, name, lastName, email,
+}) => jwt.sign(
+  {
+    id,
+    name,
+    lastName,
+    email,
+    exp: moment().add(1, 'hour').unix(),
+    type: consts.token.recover,
+  },
+  key,
+);
+
 const validateToken = (token) => jwt.verify(token, key);
 
 export {
-  signAccessToken, signRefreshToken, validateToken, signRegisterToken,
+  signAccessToken,
+  signRefreshToken,
+  validateToken,
+  signRegisterToken,
+  signRecoverPasswordToken,
 };

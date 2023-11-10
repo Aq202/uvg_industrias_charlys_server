@@ -9,6 +9,7 @@ const consts = {
     refresh: 'REFRESH',
     access: 'ACCESS',
     register: 'REGISTER',
+    recover: 'RECOVER',
   },
   apiPath: '/api',
   pageLength: 1,

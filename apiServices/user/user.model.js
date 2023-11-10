@@ -135,7 +135,7 @@ const createOrganizationMember = async ({
   }
 };
 
-const saveRegisterToken = async ({ idUser, token }) => {
+const saveAlterToken = async ({ idUser, token }) => {
   const sqlQuery = 'INSERT INTO alter_user_token (id_user, token) VALUES ($1, $2)';
 
   const { rowCount } = await query(sqlQuery, idUser, token);
@@ -182,13 +182,27 @@ const deleteAllUserAlterTokens = async ({ idUser }) => {
   }
 };
 
+const getUserByMail = async ({ email }) => {
+  const sql = 'select * from user_account where email = $1;';
+  const { result, rowCount } = await query(sql, email);
+
+  if (rowCount === 0) throw new CustomError('No se encontró al usuario.', 404);
+  return result.map((user) => ({
+    id: user.id_user,
+    name: user.name,
+    lastname: user.lastname,
+    email,
+  }))[0];
+};
+
 export {
   createAdmin,
   createOrganizationMember,
-  saveRegisterToken,
+  saveAlterToken,
   validateAlterUserToken,
   updateUserPassword,
   deleteAllUserAlterTokens,
   deleteAlterUserToken,
   removeOrganizationMember,
+  getUserByMail,
 };

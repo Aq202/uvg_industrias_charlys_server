@@ -4,14 +4,16 @@ import {
   createAdmin,
   createOrganizationMember,
   deleteAllUserAlterTokens,
+  getUserByMail,
   removeOrganizationMember,
-  saveRegisterToken,
+  saveAlterToken,
   updateUserPassword,
   validateAlterUserToken,
 } from './user.model.js';
 import { begin, rollback, commit } from '../../database/transactions.js';
-import { signRegisterToken } from '../../services/jwt.js';
+import { signRegisterToken, signRecoverPasswordToken } from '../../services/jwt.js';
 import NewUserEmail from '../../services/email/NewUserEmail.js';
+import RecoverPasswordEmail from '../../services/email/RecoverPasswordEmail.js';
 
 const removeOrganizationMemberController = async (req, res) => {
   const { idUser } = req.params;
@@ -84,7 +86,7 @@ const createOrganizationMemberController = async (req, res) => {
       lastName,
       email,
     });
-    await saveRegisterToken({ idUser: id, token });
+    await saveAlterToken({ idUser: id, token });
 
     // enviar email de notificación
     const emailSender = new NewUserEmail({ addresseeEmail: email, name, registerToken: token });
@@ -157,10 +159,51 @@ const finishRegistrationController = async (req, res) => {
   }
 };
 
+const recoverPasswordController = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    await begin();
+
+    const { id, name, lastname } = await getUserByMail({ email });
+
+    const token = signRecoverPasswordToken({
+      id,
+      name,
+      lastName: lastname,
+      email,
+    });
+    await saveAlterToken({ idUser: id, token });
+
+    // enviar email de notificación
+    const emailSender = new RecoverPasswordEmail({
+      addresseeEmail: email,
+      name,
+      recoverToken: token,
+    });
+    emailSender.sendEmail();
+
+    await commit();
+    res.send({ result: `Correo de recuperación enviado a ${email}` });
+  } catch (ex) {
+    await rollback();
+
+    let err = 'Ocurrio un error al crear nuevo usuario cliente.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   createAdminController,
   createOrganizationMemberController,
   finishRegistrationController,
   validateRegisterTokenController,
   removeOrganizationMemberController,
+  recoverPasswordController,
 };
