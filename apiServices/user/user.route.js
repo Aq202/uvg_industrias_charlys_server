@@ -9,12 +9,15 @@ import {
   finishRegistrationController,
   recoverPasswordController,
   removeOrganizationMemberController,
+  updateUserPasswordController,
+  validateRecoverTokenController,
   validateRegisterTokenController,
 } from './user.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import registerClientUserSchema from './validationSchemas/registerClientUserSchema.js';
 import finishRegistrationSchema from './validationSchemas/finishRegistrationSchema.js';
 import ensureRegisterAuth from '../../middlewares/ensureRegisterAuth.js';
+import ensureRecoverAuth from '../../middlewares/ensureRecoverAuth.js';
 // import ensureRecoverAuth from '../../middlewares/ensureRecoverAuth.js';
 
 const userRouter = express.Router();
@@ -37,6 +40,13 @@ userRouter.delete('/client/:idUser', ensureAdminAuth, removeOrganizationMemberCo
 
 userRouter.post('/recoverPassword', validateBody(recoverPasswordSchema), recoverPasswordController);
 
-// userRouter.get('/validateRecoverToken', ensureRecoverAuth, validateRecoverTokenController);
+userRouter.post(
+  '/updatePassword',
+  ensureRecoverAuth,
+  validateBody(finishRegistrationSchema),
+  updateUserPasswordController,
+);
+
+userRouter.get('/validateRecoverToken', ensureRecoverAuth, validateRecoverTokenController);
 
 export default userRouter;

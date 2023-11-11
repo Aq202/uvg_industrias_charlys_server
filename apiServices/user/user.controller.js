@@ -188,7 +188,58 @@ const recoverPasswordController = async (req, res) => {
   } catch (ex) {
     await rollback();
 
-    let err = 'Ocurrio un error al crear nuevo usuario cliente.';
+    let err = 'Ocurrio un error en proceso de recuperación de contraseña.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const updateUserPasswordController = async (req, res) => {
+  console.log('update password entry');
+  const { password } = req.body;
+  const idUser = req.session.id;
+
+  const passwordHash = sha256(password);
+
+  try {
+    await begin();
+
+    await updateUserPassword({ idUser, passwordHash });
+
+    await deleteAllUserAlterTokens({ idUser });
+
+    await commit();
+    res.sendStatus(204);
+  } catch (ex) {
+    await rollback();
+
+    let err = 'Ocurrio un error al actualizar contraseña.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status ?? 500;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const validateRecoverTokenController = async (req, res) => {
+  const token = req.headers?.authorization;
+  const idUser = req.session?.id;
+
+  try {
+    await validateAlterUserToken({ idUser, token });
+    res.sendStatus(204);
+  } catch (ex) {
+    await rollback();
+
+    let err = 'Ocurrio un error al validar token para recuperación de contraseña.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -206,4 +257,6 @@ export {
   validateRegisterTokenController,
   removeOrganizationMemberController,
   recoverPasswordController,
+  updateUserPasswordController,
+  validateRecoverTokenController,
 };
