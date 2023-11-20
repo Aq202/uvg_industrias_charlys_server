@@ -4,6 +4,7 @@ import {
   addProductToInventory,
   getInventory,
   getMaterialsTypeList,
+  getProductInventoryId,
   getProductsInInventory,
   newInventoryElement,
   newMaterial,
@@ -129,7 +130,7 @@ const getMaterialsTypeController = async (req, res) => {
   try {
     const result = await getMaterialsTypeList({ search, page });
 
-    res.send({ result });
+    res.send(result);
   } catch (ex) {
     let err = 'Ocurrió un error al obtener los tipos de material.';
     let status = 500;
@@ -161,11 +162,12 @@ const addProductToInventoryController = async (req, res) => {
 
 const updateInventoryProductController = async (req, res) => {
   const {
-    idInventory, quantity,
+    idProduct, size, quantity,
   } = req.body;
   try {
+    const inventoryId = await getProductInventoryId({ productId: idProduct, size });
     await updateInventoryElement({
-      inventoryId: idInventory, quantity,
+      inventoryId, quantity,
     });
 
     res.send({ ok: true });

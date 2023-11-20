@@ -194,7 +194,6 @@ const getMaterialsTypeList = async ({ search = '', page }) => {
   const { result, rowCount } = await query(sql, ...params.slice(1));
 
   if (rowCount === 0) throw new CustomError('No se encontraron tipos de material.', 404);
-
   return { result, count: pages };
 };
 
@@ -355,6 +354,18 @@ const getProductsInInventory = async ({ idOrganization, search, page = null }) =
   return { pages: pagesNumber, result: finalResult };
 };
 
+const getProductInventoryId = async ({ productId, size }) => {
+  const sqlQuery = `SELECT I.id_inventory AS id FROM inventory I 
+                    INNER JOIN product_in_inventory P ON P.id = I.product
+                    WHERE P.id_product = $1 AND P.size = $2 `;
+
+  const { result, rowCount } = await query(sqlQuery, productId, size);
+
+  if (rowCount === 0) throw new CustomError('No se encontró el item en inventario.', 404);
+
+  return result[0].id;
+};
+
 export {
   getInventory,
   newInventoryElement,
@@ -365,4 +376,5 @@ export {
   updateMaterial,
   addProductToInventory,
   getProductsInInventory,
+  getProductInventoryId,
 };
