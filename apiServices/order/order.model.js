@@ -20,7 +20,7 @@ const isFinishedOrder = async ({ orderId, finished = true }) => {
 };
 
 const getOrderById = async (orderId) => {
-  const sql = `select o.id_order, o.description, o.id_client_organization,
+  const sql = `select o.id_order, o.description, o.id_client_organization, o.is_finished,
   o.deadline, o.production_phase, od.size, od.quantity, od.quantity_completed, od.unit_cost,
   p.id_product, p.name, p.details, pt.name "type", co.name client
   from "order" o
@@ -90,6 +90,7 @@ const getOrderById = async (orderId) => {
     deadline: queryResult[0].deadline,
     media,
     detail: transformedData.length > 0 ? transformedData : null,
+    isFinished: queryResult[0].is_finished,
   };
 
   return result;
