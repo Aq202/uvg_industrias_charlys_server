@@ -51,32 +51,74 @@ const newProductType = async ({ name }) => {
   }
 };
 
-const getProductTypes = async () => {
-  const queryResult = await query('select * from product_type');
+const deleteProductType = async ({ idProductType }) => {
+  const sql = 'DELETE FROM product_type WHERE id_product_type = $1';
 
-  const { result, rowCount } = queryResult;
+  try {
+    const { rowCount } = await query(sql, idProductType);
+
+    if (rowCount !== 1) throw new CustomError('No se pudo eliminar el tipo de producto.', 500);
+  } catch (ex) {
+    const error = 'Datos no válidos.';
+    throw new CustomError(error, 400);
+  }
+};
+
+const getProductTypes = async ({ page, search = '' }) => {
+  const offset = page * consts.pageLength;
+  const sqlCount = 'select ceiling(count(*) /$1::numeric) from product_type where name ilike $2';
+
+  const params = [consts.pageLength, `%${search}%`];
+
+  const pages = (await query(sqlCount, ...params)).result[0].ceiling;
+  if (pages === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  if (page !== undefined) params.push(consts.pageLength, offset);
+
+  const sql = `select * from product_type where name ilike $1
+  ${page !== undefined ? 'LIMIT $2 OFFSET $3' : ''}`;
+
+  const { result, rowCount } = await query(sql, ...params.slice(1));
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  return result.map((val) => ({
+  const response = result.map((val) => ({
     id: val.id_product_type,
     name: val.name,
   }));
+
+  return { result: response, count: pages };
 };
 
-const getProductTypesByOrganization = async ({ idOrganization }) => {
+const getProductTypesByOrganization = async ({ idOrganization, search = '', page }) => {
+  const offset = page * consts.pageLength;
+  const sqlCount = `select ceiling(count(*)/ $1::numeric) from(
+    SELECT DISTINCT T.name AS name, T.id_product_type AS id FROM product_type T
+      INNER JOIN product_model M ON T.id_product_type = M.type
+      INNER JOIN client_organization O ON M.id_client_organization = O.id_client_organization
+      WHERE O.id_client_organization = $2
+      and t.name ilike $3
+    ) as subquery`;
+
+  const params = [consts.pageLength, idOrganization, `%${search}%`];
+
+  const pages = (await query(sqlCount, ...params)).result[0].ceiling;
+  if (pages === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  if (page !== undefined) params.push(consts.pageLength, offset);
+
   const sql = `SELECT DISTINCT T.name AS name, T.id_product_type AS id FROM product_type T
   INNER JOIN product_model M ON T.id_product_type = M.type
   INNER JOIN client_organization O ON M.id_client_organization = O.id_client_organization
   WHERE O.id_client_organization = $1
-  `;
-  const queryResult = await query(sql, idOrganization);
+  and t.name ilike $2
+  ${page !== undefined ? 'LIMIT $3 OFFSET $4' : ''}`;
 
-  const { result, rowCount } = queryResult;
+  const { result, rowCount } = await query(sql, ...params.slice(1));
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  return result;
+  return { result, count: pages };
 };
 
 const newProduct = async ({ type, client, color }) => {
@@ -495,4 +537,5 @@ export {
   getProductModelMedia,
   getProductColors,
   getProductModelColors,
+  deleteProductType,
 };

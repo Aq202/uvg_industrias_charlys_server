@@ -8,9 +8,14 @@ import {
   newOrderController,
   updateOrderPhaseController,
   getOrdersInProductionController,
+  deleteOrderController,
+  isFinishedOrderController,
+  getOrdersFinishedController,
 } from './order.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';
+import deleteOrderSchema from './validationSchemas/deleteOrderSchema.js';
+import updateStatusSchema from './validationSchemas/updateStatusSchema.js';
 
 const orderRouter = express.Router();
 
@@ -28,6 +33,7 @@ orderRouter.get(
 );
 
 orderRouter.get('/inProduction', ensureAdminAuth, getOrdersInProductionController);
+orderRouter.get('/finished', ensureAdminOrClientAuth, getOrdersFinishedController);
 
 orderRouter.get(
   '/:orderId?',
@@ -41,5 +47,13 @@ orderRouter.put(
   validateBody(updatePhaseSchema),
   updateOrderPhaseController,
 );
+
+orderRouter.put(
+  '/status',
+  ensureAdminAuth,
+  validateBody(updateStatusSchema),
+  isFinishedOrderController,
+);
+orderRouter.delete('/', ensureAdminAuth, validateBody(deleteOrderSchema), deleteOrderController);
 
 export default orderRouter;

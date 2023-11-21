@@ -8,13 +8,19 @@ const getOrderMedia = async (orderId) => {
   const sql = 'SELECT name FROM order_media WHERE id_order = $1';
   const { result, rowCount } = await query(sql, orderId);
 
-  return rowCount > 0
-    ? result.map((val) => `${consts.imagePath.order}/${val.name}`)
-    : null;
+  return rowCount > 0 ? result.map((val) => `${consts.imagePath.order}/${val.name}`) : null;
+};
+
+const isFinishedOrder = async ({ orderId, finished = true }) => {
+  const sql = 'update "order" set is_finished = $1 where id_order = $2';
+
+  const { rowCount } = await query(sql, finished, orderId);
+  if (rowCount === 0) throw CustomError('No se ha encontrado la orden especificada.', 404);
+  return true;
 };
 
 const getOrderById = async (orderId) => {
-  const sql = `select o.id_order, o.description, o.id_client_organization,
+  const sql = `select o.id_order, o.description, o.id_client_organization, o.is_finished,
   o.deadline, o.production_phase, od.size, od.quantity, od.quantity_completed, od.unit_cost,
   p.id_product, p.name, p.details, pt.name "type", co.name client
   from "order" o
@@ -22,7 +28,9 @@ const getOrderById = async (orderId) => {
   left join product p on od.id_product = p.id_product
   left join product_type pt on pt.id_product_type = p.type
   left join client_organization co on co.id_client_organization = o.id_client_organization
-  where o.id_order = $1;`;
+  left join "size" on "size".size = od.size
+  where o.id_order = $1
+  order by "size".sequence;`;
   const { result: queryResult, rowCount } = await query(sql, orderId);
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
@@ -32,11 +40,11 @@ const getOrderById = async (orderId) => {
 
     if (current.id_product === null) return acc;
 
-    const currentProduct = acc.find((item) => (
-      current.id_product === item.id
-      && current.name === item.product
-      && current.type === item.type
-    ));
+    const currentProduct = acc.find(
+      (item) => current.id_product === item.id
+        && current.name === item.product
+        && current.type === item.type,
+    );
 
     if (currentProduct) {
       currentProduct.sizes.push({
@@ -52,12 +60,14 @@ const getOrderById = async (orderId) => {
         type: current.type,
         media: await getProductMedia(current.id_product),
         colors: await getProductColors(current.id_product),
-        sizes: [{
-          size: current.size,
-          quantity: current.quantity,
-          completed: current.quantity_completed || 0,
-          unit_price: current.unit_cost,
-        }],
+        sizes: [
+          {
+            size: current.size,
+            quantity: current.quantity,
+            completed: current.quantity_completed || 0,
+            unit_price: current.unit_cost,
+          },
+        ],
       };
 
       acc.push(newProduct);
@@ -80,6 +90,7 @@ const getOrderById = async (orderId) => {
     deadline: queryResult[0].deadline,
     media,
     detail: transformedData.length > 0 ? transformedData : null,
+    isFinished: queryResult[0].is_finished,
   };
 
   return result;
@@ -113,14 +124,24 @@ const newOrder = async ({ idOrderRequest }) => {
 
     return result[0];
   } catch (ex) {
-    if (ex?.code === '23503') { throw new CustomError('La solicitud de pedido no existe.', 400); }
-    if (ex?.code === '42P02') { throw new CustomError(ex.message, 400); }
+    if (ex?.code === '23503') {
+      throw new CustomError('La solicitud de pedido no existe.', 400);
+    }
+    if (ex?.code === '42P02') {
+      throw new CustomError(ex.message, 400);
+    }
     throw ex;
   }
 };
 
 const getOrders = async ({
-  idProduct, startDeadline, endDeadline, page, search = '',
+  idProduct,
+  startDeadline,
+  endDeadline,
+  page,
+  search = '',
+  onlyFinished = false,
+  idClientOrganization,
 }) => {
   const offset = page * consts.pageLength;
   const conditions = {
@@ -145,12 +166,24 @@ const getOrders = async ({
     params.push(endDeadline);
   }
 
+  if (endDeadline !== undefined) {
+    conditions.count.push(`o.deadline <= $${params.length + 1}`);
+    conditions.query.push(`o.deadline <= $${params.length}`);
+    params.push(endDeadline);
+  }
+  if (idClientOrganization !== undefined) {
+    conditions.count.push(`o.id_client_organization = $${params.length + 1}`);
+    conditions.query.push(`o.id_client_organization = $${params.length}`);
+    params.push(idClientOrganization);
+  }
+
   const sqlCount = `select ceiling(count(*) / $1:: numeric) from(
     select distinct o.id_order, o.deadline, o.description, o.production_phase, co.name client from "order" o
     inner join client_organization co on co.id_client_organization = o.id_client_organization
     left join order_detail od on o.id_order = od.id_order
     left join product "p" on od.id_product = "p".id_product
     where (o.description ilike $2 or "p".name ilike $2 or co.name ilike $2)
+    ${onlyFinished ? 'AND is_finished = true ' : ''}
     ${conditions.count.length > 0 ? `AND ${conditions.count.join(' and ')}` : ''}
     ) subquery`;
 
@@ -164,6 +197,7 @@ const getOrders = async ({
   left join order_detail od on o.id_order = od.id_order
   left join product "p" on od.id_product = "p".id_product
   where (o.description ilike $1 or "p".name ilike $1 or co.name ilike $1)
+  ${onlyFinished ? 'AND is_finished = true ' : ''}
   ${conditions.query.length > 0 ? `AND ${conditions.query.join(' and ')}` : ''}
   ORDER BY o.id_order
   ${page !== undefined ? `LIMIT $${params.length - 2} OFFSET $${params.length - 1}` : ''}`;
@@ -190,7 +224,14 @@ const updateOrderPhase = async ({ phase, idOrder }) => {
     where id_order = $2;`;
 
   const { rowCount } = await query(sql, phase, idOrder);
-  if (rowCount === 0) throw new CustomError('No ha sido posible actualizar la fase del pedido.', 400);
+  if (rowCount === 0) { throw new CustomError('No ha sido posible actualizar la fase del pedido.', 400); }
+};
+
+const deleteOrder = async ({ orderId }) => {
+  const sql = 'delete from "order" where id_order = $1';
+  const { rowCount } = await query(sql, orderId);
+  if (rowCount === 0) throw new CustomError('No se ha encontrado la orden indicada.', 404);
+  return true;
 };
 
 const getOrdersInProduction = async () => {
@@ -205,7 +246,8 @@ const getOrdersInProduction = async () => {
     GROUP BY O.id_order
     HAVING SUM(COALESCE(OD.quantity, 0) - COALESCE(OD.quantity_completed,0)) > 0
   ) PU ON O.id_order = PU.id_order
-  ORDER BY O.deadline, PU.pending_units DESC
+  WHERE O.is_finished = false
+  ORDER BY O.deadline, COALESCE(PU.pending_units,0) DESC,  O.id_order
   `;
 
   const { result, rowCount } = await query(sqlQuery);
@@ -227,4 +269,6 @@ export {
   getOrderById,
   updateOrderPhase,
   getOrdersInProduction,
+  deleteOrder,
+  isFinishedOrder,
 };

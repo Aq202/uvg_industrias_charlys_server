@@ -1,4 +1,5 @@
 import query from '../../database/query.js';
+import consts from '../../utils/consts.js';
 import CustomError from '../../utils/customError.js';
 
 const newColor = async ({
@@ -23,48 +24,81 @@ const newColor = async ({
   }
 };
 
-const getColors = async ({ search }) => {
-  let queryResult;
-  if (search) {
-    const sql = `select * from color
-                where name ilike $1`;
-    queryResult = await query(sql, `%${search}%`);
-  } else {
-    const sql = 'select * from color';
-    queryResult = await query(sql);
-  }
+const getColors = async ({ search = '', page }) => {
+  const offset = page * consts.pageLength;
+  const sqlCount = 'select ceiling(count(*) / $1:: numeric) from color where name ilike $2;';
 
-  const { result, rowCount } = queryResult;
+  const params = [consts.pageLength, `%${search}%`];
+
+  const pages = (await query(sqlCount, ...params)).result[0].ceiling;
+  if (pages === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  if (page !== undefined) params.push(consts.pageLength, offset);
+
+  const sql = `select * from color where name ilike $1
+  ${page !== undefined ? 'LIMIT $2 OFFSET $3' : ''}`;
+
+  const { result, rowCount } = await query(sql, ...params.slice(1));
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  return result.map((val) => ({
+  const response = result.map((val) => ({
     id: val.id_color,
     name: val.name,
     red: val.red,
     green: val.green,
     blue: val.blue,
   }));
+
+  return { result: response, count: pages };
 };
 
-const getColorsByOrganization = async ({ idOrganization }) => {
-  const sqlQuery = `SELECT DISTINCT C.id_color as id, C.name, C.red, C.green, C.blue FROM color C
+const getColorsByOrganization = async ({ idOrganization, search = '', page }) => {
+  const offset = page * consts.pageLength;
+  const sqlCount = `select ceiling(count(*) / $1:: numeric) from (
+    SELECT DISTINCT C.id_color as id, C.name, C.red, C.green, C.blue FROM color C
+      INNER JOIN product_model_color CM ON CM.id_color = C.id_color
+      INNER JOIN product_model M ON M.id_product_model = CM.id_product_model
+      INNER JOIN client_organization O ON M.id_client_organization = O.id_client_organization
+      WHERE O.id_client_organization = $2 and (C.name ilike $3)
+    ) q;`;
+
+  const params = [consts.pageLength, idOrganization, `%${search}%`];
+
+  const pages = (await query(sqlCount, ...params)).result[0].ceiling;
+  if (pages === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  if (page !== undefined) params.push(consts.pageLength, offset);
+
+  const sql = `SELECT DISTINCT C.id_color as id, C.name, C.red, C.green, C.blue FROM color C
   INNER JOIN product_model_color CM ON CM.id_color = C.id_color
   INNER JOIN product_model M ON M.id_product_model = CM.id_product_model
   INNER JOIN client_organization O ON M.id_client_organization = O.id_client_organization
-  WHERE O.id_client_organization = $1`;
+  WHERE O.id_client_organization = $1 and (C.name ilike $2)
+  ${page !== undefined ? 'LIMIT $3 OFFSET $4' : ''}`;
 
-  const queryResult = await query(sqlQuery, idOrganization);
-
-  const { result, rowCount } = queryResult;
+  const { result, rowCount } = await query(sql, ...params.slice(1));
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  return result;
+  return { result, count: pages };
+};
+
+const deleteColor = async ({ colorId }) => {
+  const sql = 'delete from color where id_color =$1';
+  try {
+    const { rowCount } = await query(sql, colorId);
+    if (rowCount === 0) throw new CustomError('No se ha encontrado el color.', 404);
+    return true;
+  } catch (ex) {
+    if (ex?.code === '23503') throw new CustomError('Este color ya se encuentra en uso.', 400);
+    throw ex;
+  }
 };
 
 export {
   getColors,
   newColor,
   getColorsByOrganization,
+  deleteColor,
 };

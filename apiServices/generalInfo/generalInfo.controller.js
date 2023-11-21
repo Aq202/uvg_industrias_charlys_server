@@ -1,6 +1,6 @@
 import CustomError from '../../utils/customError.js';
 import {
-  getFabrics,
+  deleteSize,
   getMaterials, getSizes, newFabric, newMaterial, newSize,
 } from './generalInfo.model.js';
 
@@ -22,9 +22,28 @@ const newSizeController = async (req, res) => {
   }
 };
 
-const getSizesController = async (req, res) => {
+const deleteSizeController = async (req, res) => {
+  const { size: sizeId } = req.body;
+
   try {
-    const result = await getSizes();
+    const result = await deleteSize({ sizeId });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al eliminar la talla.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getSizesController = async (req, res) => {
+  const { search, page } = req.query;
+  try {
+    const result = await getSizes({ search, page });
 
     res.send(result);
   } catch (ex) {
@@ -58,9 +77,9 @@ const newMaterialController = async (req, res) => {
 };
 
 const getMaterialsController = async (req, res) => {
-  const { search } = req.query;
+  const { search, page } = req.query;
   try {
-    const result = await getMaterials(search);
+    const result = await getMaterials({ search, page });
 
     res.send(result);
   } catch (ex) {
@@ -93,29 +112,11 @@ const newFabricController = async (req, res) => {
   }
 };
 
-const getFabricsController = async (req, res) => {
-  const { search } = req.query;
-  try {
-    const result = await getFabrics(search);
-
-    res.send(result);
-  } catch (ex) {
-    let err = 'Ocurrio un error al obtener las telas disponibles.';
-    let status = 500;
-    if (ex instanceof CustomError) {
-      err = ex.message;
-      status = ex.status;
-    }
-    res.statusMessage = err;
-    res.status(status).send({ err, status });
-  }
-};
-
 export {
   newSizeController,
   getSizesController,
   newMaterialController,
   getMaterialsController,
   newFabricController,
-  getFabricsController,
+  deleteSizeController,
 };

@@ -4,6 +4,8 @@ import {
   newOrder,
   updateOrderPhase,
   getOrdersInProduction,
+  deleteOrder,
+  isFinishedOrder,
 } from './order.model.js';
 import CustomError from '../../utils/customError.js';
 import OrderAcceptedEmail from '../../services/email/OrderAcceptedEmail.js';
@@ -51,6 +53,25 @@ const getOrdersController = async (req, res) => {
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener las ordenes aprobadas.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const deleteOrderController = async (req, res) => {
+  const {
+    idOrder: orderId,
+  } = req.body;
+  try {
+    const result = await deleteOrder({ orderId });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al eliminar el registro.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -118,6 +139,52 @@ const updateOrderPhaseController = async (req, res) => {
     res.status(status).send({ err, status });
   }
 };
+const isFinishedOrderController = async (req, res) => {
+  const { idOrder: orderId, isFinished: finished } = req.body;
+  try {
+    const result = await isFinishedOrder({ orderId, finished });
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrio un error al actualizar estado de la orden.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const getOrdersFinishedController = async (req, res) => {
+  const {
+    page, search, startDeadline, endDeadline, client,
+  } = req.query;
+
+  const isAdmin = req.session.role === consts.role.admin;
+
+  try {
+    if (!isAdmin) {
+      const { userId } = req.session;
+      await isMemberController({ userId, idClient: client });
+    }
+
+    const result = await getOrders({
+      idClientOrganization: client, startDeadline, endDeadline, page, search, onlyFinished: true,
+    });
+
+    res.send(result);
+  } catch (ex) {
+    let err = 'Ocurrió un error al obtener órdenes finalizadas.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
 
 export {
   newOrderController,
@@ -125,4 +192,7 @@ export {
   getOrderByIdController,
   updateOrderPhaseController,
   getOrdersInProductionController,
+  deleteOrderController,
+  isFinishedOrderController,
+  getOrdersFinishedController,
 };

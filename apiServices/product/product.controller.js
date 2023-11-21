@@ -21,6 +21,7 @@ import {
   verifyProductOwner,
   getProductById,
   removeProductModelMedia,
+  deleteProductType,
 } from './product.model.js';
 import { begin, commit, rollback } from '../../database/transactions.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
@@ -45,8 +46,9 @@ const newProuctTypeController = async (req, res) => {
 };
 
 const getProuctTypesController = async (req, res) => {
+  const { page, search } = req.query;
   try {
-    const result = await getProductTypes();
+    const result = await getProductTypes({ page, search });
 
     res.send(result);
   } catch (ex) {
@@ -63,8 +65,9 @@ const getProuctTypesController = async (req, res) => {
 
 const getProuctTypesByOrganizationController = async (req, res) => {
   const { idOrganization } = req.params;
+  const { search, page } = req.query;
   try {
-    const result = await getProductTypesByOrganization({ idOrganization });
+    const result = await getProductTypesByOrganization({ idOrganization, search, page });
 
     res.send(result);
   } catch (ex) {
@@ -214,7 +217,7 @@ const saveProductModelMedia = async ({ files, idProductModel }) => {
 
     // eliminar archivos temporales
 
-    fs.unlink(filePath, () => {});
+    fs.unlink(filePath, () => { });
   }
 
   if (uploadError) {
@@ -336,7 +339,7 @@ const getProductModelByIdController = async (req, res) => {
   try {
     if (req.session.role === consts.role.client) {
       await verifyProductModelOwner({
-        idClientOrganization: req.session.organization,
+        idClientOrganization: req.session.clientOrganizationId,
         idProductModel,
       });
     }
@@ -359,7 +362,7 @@ const getProductByIdController = async (req, res) => {
   try {
     if (req.session.role === consts.role.client) {
       await verifyProductOwner({
-        idClientOrganization: req.session.organization,
+        idClientOrganization: req.session.clientOrganizationId,
         idProduct,
       });
     }
@@ -367,6 +370,23 @@ const getProductByIdController = async (req, res) => {
     res.send(result);
   } catch (ex) {
     let err = 'Ocurrio un error al obtener la información del producto.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
+const deleteProductTypeController = async (req, res) => {
+  const { idProductType } = req.params;
+  try {
+    await deleteProductType({ idProductType });
+    res.send({ ok: true });
+  } catch (ex) {
+    let err = 'Ocurrio un error al eliminar tipo de producto.';
     let status = 500;
     if (ex instanceof CustomError) {
       err = ex.message;
@@ -390,4 +410,5 @@ export {
   getProductModelByIdController,
   updateProductModelController,
   getProductByIdController,
+  deleteProductTypeController,
 };

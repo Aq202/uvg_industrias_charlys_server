@@ -38,6 +38,22 @@ const newOrderRequest = async ({
     throw ex;
   }
 };
+const deleteOrderRequest = async ({ idOrderRequest }) => {
+  const mediaSQL = 'select * from order_request_media where id_order_request = $1';
+  const sql = 'delete from order_request where id_order_request = $1';
+
+  const { result, rowCount: mediaCount } = await query(mediaSQL, idOrderRequest);
+  const { rowCount } = await query(sql, idOrderRequest);
+  if (rowCount !== 1) throw new CustomError('No se encontró solicitud de orden', 404);
+
+  if (mediaCount !== 0) {
+    return result.map((file) => ({
+      name: file.name,
+    }));
+  }
+
+  return true;
+};
 
 const newOrderRequestRequirement = async ({
   idOrderRequest,
@@ -68,7 +84,6 @@ const newOrderRequestRequirement = async ({
 
     return result[0];
   } catch (ex) {
-    
     if (ex?.code === '23514') { throw new CustomError('El modelo del producto no pertenece a esta organización.', 400); }
     if (ex?.code === '23505') {
       throw new CustomError(
@@ -112,35 +127,39 @@ const updateOrderRequest = async ({
   );
 };
 
-const getOrderRequests = async (searchQuery) => {
-  let queryResult;
-  if (searchQuery) {
-    const sql = `
-      SELECT * FROM (
-      SELECT O.*, CO.name AS client FROM order_request O
-      INNER JOIN client_organization CO ON O.id_client_organization = CO.id_client_organization
-      UNION
-      SELECT O.*, TC.name AS client FROM order_request O
-      INNER JOIN temporary_client TC ON O.id_temporary_client = TC.id_temporary_client
-      ) AS sub_query
-      WHERE client ILIKE $1 OR description ILIKE $1 ORDER BY date_placed DESC
-    `;
-    queryResult = await query(sql, `%${searchQuery}%`);
-  } else {
-    queryResult = await query(`
-      SELECT O.*, CO.name AS client FROM order_request O
-      INNER JOIN client_organization CO ON O.id_client_organization = CO.id_client_organization
-      UNION
-      SELECT O.*, TC.name AS client FROM order_request O
-      INNER JOIN temporary_client TC ON O.id_temporary_client = TC.id_temporary_client
-    `);
-  }
+const getOrderRequests = async ({ search = '', page }) => {
+  const offset = page * consts.pageLength;
+  const sqlCount = `SELECT ceiling(count(*) / $1::numeric) FROM (
+    SELECT O.*, CO.name AS client FROM order_request O
+    INNER JOIN client_organization CO ON O.id_client_organization = CO.id_client_organization
+    UNION
+    SELECT O.*, TC.name AS client FROM order_request O
+    INNER JOIN temporary_client TC ON O.id_temporary_client = TC.id_temporary_client
+    ) AS sub_query
+    WHERE client ILIKE $2 OR description ILIKE $2`;
 
-  const { result, rowCount } = queryResult;
+  const params = [consts.pageLength, `%${search}%`];
+
+  const pages = (await query(sqlCount, ...params)).result[0].ceiling;
+  if (pages === 0) throw new CustomError('No se encontraron resultados.', 404);
+
+  if (page !== undefined) params.push(consts.pageLength, offset);
+
+  const sql = `SELECT * FROM (
+    SELECT O.*, CO.name AS client FROM order_request O
+    INNER JOIN client_organization CO ON O.id_client_organization = CO.id_client_organization
+    UNION
+    SELECT O.*, TC.name AS client FROM order_request O
+    INNER JOIN temporary_client TC ON O.id_temporary_client = TC.id_temporary_client
+    ) AS sub_query
+    WHERE client ILIKE $1 OR description ILIKE $1 ORDER BY date_placed DESC
+  ${page !== undefined ? 'LIMIT $2 OFFSET $3' : ''}`;
+
+  const { result, rowCount } = await query(sql, ...params.slice(1));
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
 
-  return result.map((val) => ({
+  const response = result.map((val) => ({
     id: val.id_order_request,
     client: val.client,
     description: val.description,
@@ -148,6 +167,8 @@ const getOrderRequests = async (searchQuery) => {
     clientOrganization: val.id_client_organization ?? undefined,
     temporaryClient: val.id_temporary_client ?? undefined,
   }));
+
+  return { result: response, count: pages };
 };
 
 const addOrderRequestMedia = async (orderRequestId, name) => {
@@ -168,6 +189,7 @@ const getOrderRequestMedia = async (orderRequestId) => {
 };
 
 const getOrderRequestById = async (orderRequestId) => {
+  let total = 0;
   const sql = `select "or".id_order_request, "or".description, "or".date_placed, "or".id_client_organization,
   "or".id_temporary_client, "or".deadline, "or".aditional_details, orq.size, orq.quantity, orq.unit_cost,
   pm.id_product_model, pm.name, pm.details, pt.name "type"
@@ -175,7 +197,9 @@ const getOrderRequestById = async (orderRequestId) => {
   left join order_request_requirement orq on "or".id_order_request = orq.id_order_request
   left join product_model pm on orq.id_product_model = pm.id_product_model
   left join product_type pt on pt.id_product_type = pm.type
-  where "or".id_order_request = $1;`;
+  left join "size" on "size".size = orq.size
+  where "or".id_order_request = $1
+  order by "size".sequence;`;
   const { result: queryResult, rowCount } = await query(sql, orderRequestId);
 
   if (rowCount === 0) throw new CustomError('No se encontraron resultados.', 404);
@@ -191,6 +215,7 @@ const getOrderRequestById = async (orderRequestId) => {
         && current.type === item.type,
     );
 
+    total += current.quantity * current.unit_cost;
     if (currentProduct) {
       currentProduct.sizes.push({
         size: current.size,
@@ -231,6 +256,7 @@ const getOrderRequestById = async (orderRequestId) => {
     details: queryResult[0].aditional_details,
     media,
     detail: transformedData.length > 0 ? transformedData : null,
+    total,
   };
 
   return result;
@@ -261,6 +287,63 @@ const replaceTemporaryClientWithOrganization = async ({ orderRequestId, organiza
   }
 };
 
+const addProductRequirement = async ({
+  idOrderRequest,
+  idProductModel,
+  size,
+  quantity,
+  unitCost,
+}) => {
+  const sql = 'insert into order_request_requirement values($1,$2,$3,$4,$5) RETURNING id_order_request as id;';
+
+  try {
+    const { result, rowCount } = await query(
+      sql,
+      idOrderRequest,
+      idProductModel,
+      size,
+      quantity,
+      unitCost,
+    );
+    if (rowCount !== 1) throw new CustomError('No se ha podido añadir el producto al detalle de la intención de pedido.');
+
+    return result[0];
+  } catch (ex) {
+    if (ex?.code === '23505') {
+      const sqlUpdate = `update order_request_requirement set quantity = $1, unit_cost = $2
+      where id_order_request = $3
+        and id_product_model = $4
+        and "size" = $5 RETURNING id_order_request as id;`;
+
+      const { result: updateResult, rowCount: updateCount } = await query(
+        sqlUpdate,
+        quantity,
+        unitCost,
+        idOrderRequest,
+        idProductModel,
+        size,
+      );
+      if (updateCount !== 1) throw new CustomError('No se ha podido actualizar el registro en el detalle de intención de pedido.');
+
+      return updateResult[0];
+    }
+    throw ex;
+  }
+};
+
+const clearOrderRequestRequirements = async ({ idOrderRequest }) => {
+  const sqlQuery = 'DELETE FROM order_request_requirement WHERE id_order_request = $1 ';
+  await query(sqlQuery, idOrderRequest);
+};
+
+const removeOrderRequestMedia = async ({ idOrderRequest, name }) => {
+  const sql = 'DELETE FROM order_request_media WHERE id_order_request = $1 AND name = $2';
+
+  const { rowCount } = await query(sql, idOrderRequest, name);
+
+  if (rowCount === 0) throw new CustomError('No se encontró el recurso multimedia para el modelo de producto.', 404);
+};
+
 export {
   newOrderRequest,
   getOrderRequests,
@@ -270,4 +353,8 @@ export {
   newOrderRequestRequirement,
   getOrderRequestTemporaryClientId,
   replaceTemporaryClientWithOrganization,
+  deleteOrderRequest,
+  addProductRequirement,
+  clearOrderRequestRequirements,
+  removeOrderRequestMedia,
 };

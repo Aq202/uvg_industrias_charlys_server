@@ -18,9 +18,8 @@ ALTER TABLE "order"
 ADD CONSTRAINT order_client_fk FOREIGN KEY (id_client_organization) REFERENCES client_organization(id_client_organization);
 
 ALTER TABLE "order_detail" 
-ALTER TABLE "order_detail" 
-ADD CONSTRAINT od_order_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order),
-ADD CONSTRAINT od_product_fk FOREIGN KEY (id_product) REFERENCES product(id_product),
+ADD CONSTRAINT od_order_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order) ON DELETE CASCADE,
+ADD CONSTRAINT od_product_fk FOREIGN KEY (id_product) REFERENCES product(id_product) ON DELETE CASCADE,
 ADD CONSTRAINT od_size_fk FOREIGN KEY ("size") REFERENCES "size"("size"),
 ADD CONSTRAINT od_quantity_completed_check CHECK (quantity_completed <= quantity);
 
@@ -29,7 +28,7 @@ ADD CONSTRAINT material_type_fk FOREIGN KEY (type) REFERENCES material_type(id_m
 
 ALTER TABLE inventory 
 ADD CONSTRAINT inventory_material_fk FOREIGN KEY (material) REFERENCES material(id_material),
-ADD CONSTRAINT inventory_product_fk FOREIGN KEY (product) REFERENCES product(id_product),
+ADD CONSTRAINT inventory_product_fk FOREIGN KEY (product) REFERENCES product_in_inventory(id),
 ADD CONSTRAINT check_element CHECK (
 	(material IS NULL AND product IS NOT NULL)
 	OR (material IS NOT NULL AND product IS NULL)
@@ -57,12 +56,12 @@ ADD CONSTRAINT client_or_temporary_check CHECK ((id_client_organization IS NULL 
 	OR (id_client_organization IS NOT NULL AND id_temporary_client IS NULL) 
 	OR (id_client_organization IS NULL AND id_temporary_client IS NULL));
 
-
 ALTER TABLE order_request_media
-ADD CONSTRAINT ord_req_media_fk FOREIGN KEY (id_order_request) REFERENCES order_request(id_order_request);
+ADD CONSTRAINT ord_req_media_fk FOREIGN KEY (id_order_request)
+	REFERENCES order_request(id_order_request) ON DELETE CASCADE;
 
 ALTER TABLE order_media
-ADD CONSTRAINT ord_media_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order);
+ADD CONSTRAINT ord_media_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order) ON DELETE CASCADE;
 
 ALTER TABLE temporary_client 
 ADD CONSTRAINT temp_client_check_email CHECK (email ~ '^(([^<>()\[\]\\.,;:\s@”]+(\.[^<>()\[\]\\.,;:\s@”]+)*)|(“.+”))@((\[[0–9]{1,3}\.[0–9]{1,3}\.[0–9]{1,3}\.[0–9]{1,3}])|(([a-zA-Z\-0–9]+\.)+[a-zA-Z]{2,}))$');
@@ -87,13 +86,36 @@ ADD CONSTRAINT product_model_client_fk FOREIGN KEY (id_client_organization) REFE
 
 ALTER TABLE order_request_requirement
 ADD CONSTRAINT orr_min_quantity_check CHECK (quantity > 0),
-ADD CONSTRAINT orr_order_request_fk FOREIGN KEY (id_order_request) REFERENCES order_request (id_order_request),
+ADD CONSTRAINT orr_order_request_fk FOREIGN KEY (id_order_request)
+	REFERENCES order_request (id_order_request) ON DELETE CASCADE,
 ADD CONSTRAINT orr_product_model_fk FOREIGN KEY (id_product_model) REFERENCES product_model (id_product_model),
 ADD CONSTRAINT orr_size_fk FOREIGN KEY ("size") REFERENCES "size"("size");
 
 ALTER TABLE product_color
-ADD CONSTRAINT p_product_fk FOREIGN KEY (id_product) REFERENCES product(id_product),
+ADD CONSTRAINT p_product_fk FOREIGN KEY (id_product) REFERENCES product(id_product) ON DELETE CASCADE,
 ADD CONSTRAINT p_color_fk FOREIGN KEY (id_color) REFERENCES color(id_color);
 
 ALTER TABLE product_media
-ADD CONSTRAINT p_media_fk FOREIGN KEY (id_product) REFERENCES product(id_product);
+ADD CONSTRAINT p_media_fk FOREIGN KEY (id_product) REFERENCES product(id_product) ON DELETE CASCADE;
+
+ALTER TABLE order_progress
+ADD CONSTRAINT p_progress_fk FOREIGN KEY (id_product) REFERENCES product(id_product) ON DELETE CASCADE,
+ADD CONSTRAINT o_progress_fk FOREIGN KEY (id_order) REFERENCES "order"(id_order) ON DELETE CASCADE;
+
+ALTER TABLE "order"
+ADD COLUMN is_finished BOOLEAN DEFAULT false;
+
+ALTER TABLE product_in_inventory 
+ADD CONSTRAINT pinv_unique UNIQUE (id_product, "size")
+ADD CONSTRAINT pinv_product_fk FOREIGN KEY (id_product) REFERENCES product(id_product);
+
+ALTER TABLE "size"
+	DROP COLUMN "sequence",
+	ADD COLUMN "sequence" smallint UNIQUE;
+
+DROP SEQUENCE "size_sequence";
+CREATE SEQUENCE "size_sequence"
+	MINVALUE 0
+	CACHE 10;
+
+UPDATE "size" set "sequence" = nextval('size_sequence');

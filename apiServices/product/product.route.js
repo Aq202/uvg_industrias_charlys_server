@@ -16,6 +16,7 @@ import {
   newProuctTypeController,
   updateProductModelController,
   getProductByIdController,
+  deleteProductTypeController,
 } from './product.controller.js';
 import ensureAdminAuth from '../../middlewares/ensureAdminAuth.js';
 import ensureAdminOrClientAuth from '../../middlewares/ensureAdminOrClientAuth.js';
@@ -33,8 +34,9 @@ productRouter.post(
   validateBody(newProductModelSchema),
   newProductModelController,
 );
-productRouter.post('/type', validateBody(newProductTypeSchema), newProuctTypeController);
+productRouter.post('/type', ensureAdminAuth, validateBody(newProductTypeSchema), newProuctTypeController);
 productRouter.get('/type', ensureAdminOrClientAuth, getProuctTypesController);
+productRouter.delete('/type/:idProductType', ensureAdminAuth, deleteProductTypeController);
 productRouter.get('/type/by-organization/:idOrganization', ensureAdminOrClientAuth, getProuctTypesByOrganizationController);
 productRouter.post('/requirement', validateBody(newProductRequirementSchema), newProductRequirementController);
 productRouter.get('/requirement', ensureAdminAuth, getProductRequirementsController);
