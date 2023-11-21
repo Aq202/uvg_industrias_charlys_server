@@ -33,7 +33,7 @@ orderRouter.get(
 );
 
 orderRouter.get('/inProduction', ensureAdminAuth, getOrdersInProductionController);
-orderRouter.get('/finished', ensureAdminAuth, getOrdersFinishedController);
+orderRouter.get('/finished', ensureAdminOrClientAuth, getOrdersFinishedController);
 
 orderRouter.get(
   '/:orderId?',

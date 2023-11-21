@@ -161,7 +161,14 @@ const getOrdersFinishedController = async (req, res) => {
     page, search, startDeadline, endDeadline, client,
   } = req.query;
 
+  const isAdmin = req.session.role === consts.role.admin;
+
   try {
+    if (!isAdmin) {
+      const { userId } = req.session;
+      await isMemberController({ userId, idClient: client });
+    }
+
     const result = await getOrders({
       idClientOrganization: client, startDeadline, endDeadline, page, search, onlyFinished: true,
     });

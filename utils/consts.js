@@ -11,7 +11,7 @@ const consts = {
     register: 'REGISTER',
   },
   apiPath: '/api',
-  pageLength: 3,
+  pageLength: 10,
   bucketRoutes: {
     orderRequest: 'order-request',
     product: 'product',
