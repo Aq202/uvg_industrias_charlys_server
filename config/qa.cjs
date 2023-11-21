@@ -5,4 +5,5 @@ dotenv.config(); // hace accesibles las variables de entorno
 module.exports = {
   dbName: process.env.DB_DEVELOP_NAME,
   allowInsecureConnections: true,
+  host: 'http://184.72.24.26',
 };
