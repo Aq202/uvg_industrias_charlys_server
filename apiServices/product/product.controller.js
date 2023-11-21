@@ -21,6 +21,7 @@ import {
   verifyProductOwner,
   getProductById,
   removeProductModelMedia,
+  deleteProductType,
 } from './product.model.js';
 import { begin, commit, rollback } from '../../database/transactions.js';
 import deleteFileInBucket from '../../services/cloudStorage/deleteFileInBucket.js';
@@ -379,6 +380,23 @@ const getProductByIdController = async (req, res) => {
   }
 };
 
+const deleteProductTypeController = async (req, res) => {
+  const { idProductType } = req.params;
+  try {
+    await deleteProductType({ idProductType });
+    res.send({ ok: true });
+  } catch (ex) {
+    let err = 'Ocurrio un error al eliminar tipo de producto.';
+    let status = 500;
+    if (ex instanceof CustomError) {
+      err = ex.message;
+      status = ex.status;
+    }
+    res.statusMessage = err;
+    res.status(status).send({ err, status });
+  }
+};
+
 export {
   newProuctTypeController,
   getProuctTypesController,
@@ -392,4 +410,5 @@ export {
   getProductModelByIdController,
   updateProductModelController,
   getProductByIdController,
+  deleteProductTypeController,
 };

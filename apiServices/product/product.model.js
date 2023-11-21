@@ -51,6 +51,19 @@ const newProductType = async ({ name }) => {
   }
 };
 
+const deleteProductType = async ({ idProductType }) => {
+  const sql = 'DELETE FROM product_type WHERE id_product_type = $1';
+
+  try {
+    const { rowCount } = await query(sql, idProductType);
+
+    if (rowCount !== 1) throw new CustomError('No se pudo eliminar el tipo de producto.', 500);
+  } catch (ex) {
+    const error = 'Datos no válidos.';
+    throw new CustomError(error, 400);
+  }
+};
+
 const getProductTypes = async ({ page, search = '' }) => {
   const offset = page * consts.pageLength;
   const sqlCount = 'select ceiling(count(*) /$1::numeric) from product_type where name ilike $2';
@@ -524,4 +537,5 @@ export {
   getProductModelMedia,
   getProductColors,
   getProductModelColors,
+  deleteProductType,
 };
